@@ -3,13 +3,14 @@
   "tasks": [
     {
       "label": "Ship: test, build, commit, push",
-      "type": "shell",
-      "command": "./scripts/ship.sh",
-      "args": ["${input:commitMessage}"],
+      "type": "npm",
+      "script": "ship",
+      "args": ["--", "${input:commitMessage}"],
       "group": {
         "kind": "build",
         "isDefault": true
-      }
+      },
+      "problemMatcher": []
     }
   ],
   "inputs": [
