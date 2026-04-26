@@ -66,3 +66,28 @@ export async function getParticipants(sessionId: string) {
   if (error) throw error;
   return data as DbParticipant[];
 }
+
+export function subscribeToSessionParticipants(
+  sessionId: string,
+  onChange: () => void
+) {
+  const channel = supabase
+    .channel(`session-participants-${sessionId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "session_participants",
+        filter: `session_id=eq.${sessionId}`,
+      },
+      () => {
+        onChange();
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}

@@ -7,6 +7,7 @@ import {
   addParticipant,
   getParticipants,
   getSessionByCode,
+  subscribeToSessionParticipants,
 } from "@/lib/sessionStore";
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 import { getMyRepertoire } from "@/lib/repertoireStore";
@@ -27,7 +28,7 @@ export default function JoinSessionPage() {
   }
 
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
+    let unsubscribe: undefined | (() => void);
 
     async function load() {
       try {
@@ -52,9 +53,9 @@ export default function JoinSessionPage() {
 
         await refreshParticipants(session.id);
 
-        interval = setInterval(() => {
+        unsubscribe = subscribeToSessionParticipants(session.id, () => {
           refreshParticipants(session.id);
-        }, 2000);
+        });
       } catch (err) {
         console.error(err);
         setMessage("Could not load this session.");
@@ -66,7 +67,7 @@ export default function JoinSessionPage() {
     load();
 
     return () => {
-      if (interval) clearInterval(interval);
+      if (unsubscribe) unsubscribe();
     };
   }, [code]);
 
@@ -136,17 +137,11 @@ export default function JoinSessionPage() {
             Join with my repertoire
           </button>
 
-          <a
-            href="/settings"
-            className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200"
-          >
+          <a href="/settings" className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200">
             Change settings
           </a>
 
-          <a
-            href="/repertoire"
-            className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200"
-          >
+          <a href="/repertoire" className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200">
             Edit repertoire
           </a>
         </div>
@@ -162,10 +157,7 @@ export default function JoinSessionPage() {
             )}
 
             {participants.map((p) => (
-              <div
-                key={p.id}
-                className="rounded-xl border border-white/10 bg-white/10 p-4"
-              >
+              <div key={p.id} className="rounded-xl border border-white/10 bg-white/10 p-4">
                 <p className="font-semibold">{p.display_name}</p>
                 <p className="text-sm text-slate-300">
                   {p.repertoire.length} songs loaded
@@ -186,10 +178,7 @@ export default function JoinSessionPage() {
             )}
 
             {matches.map((match) => (
-              <div
-                key={match.songTitle + match.voicing}
-                className="rounded-2xl border border-white/10 bg-white/10 p-5 shadow-lg"
-              >
+              <div key={match.songTitle + match.voicing} className="rounded-2xl border border-white/10 bg-white/10 p-5 shadow-lg">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h3 className="text-2xl font-bold">
@@ -198,8 +187,7 @@ export default function JoinSessionPage() {
 
                     <p className="mt-1 text-sm text-slate-300">
                       {match.category === "ready" && "Ready to sing"}
-                      {match.category === "possible" &&
-                        "Possible match — confirm arrangement"}
+                      {match.category === "possible" && "Possible match — confirm arrangement"}
                       {match.category === "one_part_missing" &&
                         `One part missing: ${match.missingParts.join(", ")}`}
                     </p>
@@ -221,10 +209,7 @@ export default function JoinSessionPage() {
                   ))}
 
                   {match.missingParts.map((part) => (
-                    <div
-                      key={part}
-                      className="rounded-xl border border-rose-300/30 bg-rose-400/10 p-3"
-                    >
+                    <div key={part} className="rounded-xl border border-rose-300/30 bg-rose-400/10 p-3">
                       <p className="font-semibold text-rose-200">{part}</p>
                       <p className="text-sm text-rose-200">Missing</p>
                     </div>
