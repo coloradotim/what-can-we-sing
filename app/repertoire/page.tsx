@@ -2,15 +2,13 @@
 
 import { useEffect, useState } from "react";
 import type { Confidence, Part, Voicing } from "@/lib/matching";
-
-type RepertoireItem = {
-  id: string;
-  songTitle: string;
-  voicing: Voicing;
-  arrangerName?: string;
-  partsKnown: Part[];
-  confidence: Confidence;
-};
+import {
+  addRepertoireItem,
+  deleteRepertoireItem,
+  getMyRepertoire,
+  type RepertoireRow,
+} from "@/lib/repertoireStore";
+import { getCurrentUser } from "@/lib/profileStore";
 
 const voicings: Voicing[] = ["TTBB", "SATB", "SSAA"];
 
@@ -29,21 +27,41 @@ const confidenceLevels: Confidence[] = [
 ];
 
 export default function RepertoirePage() {
-  const [items, setItems] = useState<RepertoireItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<RepertoireRow[]>([]);
   const [songTitle, setSongTitle] = useState("");
   const [voicing, setVoicing] = useState<Voicing>("TTBB");
   const [arrangerName, setArrangerName] = useState("");
   const [partsKnown, setPartsKnown] = useState<Part[]>([]);
   const [confidence, setConfidence] = useState<Confidence>("Solid");
+  const [message, setMessage] = useState("");
+
+  async function loadRepertoire() {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      window.location.href = "/login";
+      return;
+    }
+
+    const data = await getMyRepertoire();
+    setItems(data);
+  }
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("what-can-we-sing-repertoire");
-    if (saved) setItems(JSON.parse(saved));
+    async function load() {
+      try {
+        await loadRepertoire();
+      } catch (err) {
+        console.error(err);
+        setMessage("Could not load repertoire.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
   }, []);
-
-  useEffect(() => {
-    window.localStorage.setItem("what-can-we-sing-repertoire", JSON.stringify(items));
-  }, [items]);
 
   function togglePart(part: Part) {
     setPartsKnown((current) =>
@@ -53,40 +71,68 @@ export default function RepertoirePage() {
     );
   }
 
-  function addItem() {
+  async function addItem() {
     if (!songTitle.trim() || partsKnown.length === 0) return;
 
-    const newItem: RepertoireItem = {
-      id: crypto.randomUUID(),
-      songTitle: songTitle.trim(),
-      voicing,
-      arrangerName: arrangerName.trim() || undefined,
-      partsKnown,
-      confidence,
-    };
+    try {
+      await addRepertoireItem({
+        songTitle: songTitle.trim(),
+        voicing,
+        arrangerName: arrangerName.trim() || undefined,
+        partsKnown,
+        confidence,
+      });
 
-    setItems((current) => [newItem, ...current]);
-    setSongTitle("");
-    setArrangerName("");
-    setPartsKnown([]);
-    setConfidence("Solid");
+      setSongTitle("");
+      setArrangerName("");
+      setPartsKnown([]);
+      setConfidence("Solid");
+      setMessage("Song added.");
+
+      await loadRepertoire();
+    } catch (err) {
+      console.error(err);
+      setMessage("Could not add song.");
+    }
   }
 
-  function deleteItem(id: string) {
-    setItems((current) => current.filter((item) => item.id !== id));
+  async function deleteItem(id: string) {
+    try {
+      await deleteRepertoireItem(id);
+      setMessage("Song deleted.");
+      await loadRepertoire();
+    } catch (err) {
+      console.error(err);
+      setMessage("Could not delete song.");
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+        Loading repertoire...
+      </main>
+    );
   }
 
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-5xl">
-        <a href="/" className="text-sm text-cyan-300 hover:text-cyan-200">
-          ← Back to match demo
-        </a>
+        <div className="flex flex-wrap gap-4">
+          <a href="/" className="text-sm text-cyan-300 hover:text-cyan-200">
+            ← Back home
+          </a>
+          <a href="/settings" className="text-sm text-cyan-300 hover:text-cyan-200">
+            → Settings
+          </a>
+        </div>
 
         <h1 className="mt-4 text-4xl font-bold tracking-tight">My Repertoire</h1>
         <p className="mt-2 text-slate-300">
           Add songs you know, the parts you can sing, and how confident you are.
         </p>
+
+        {message && <p className="mt-4 text-sm text-slate-300">{message}</p>}
 
         <section className="mt-8 rounded-2xl border border-white/10 bg-white/10 p-5 shadow-lg">
           <h2 className="text-2xl font-semibold">Add a song</h2>
@@ -138,7 +184,9 @@ export default function RepertoirePage() {
                 className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
               >
                 {confidenceLevels.map((level) => (
-                  <option key={level}>{level}</option>
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
                 ))}
               </select>
             </label>
@@ -150,6 +198,7 @@ export default function RepertoirePage() {
               {partsByVoicing[voicing].map((part) => (
                 <button
                   key={part}
+                  type="button"
                   onClick={() => togglePart(part)}
                   className={`rounded-full px-4 py-2 text-sm font-semibold ${
                     partsKnown.includes(part)
@@ -189,13 +238,15 @@ export default function RepertoirePage() {
               >
                 <div>
                   <h3 className="text-xl font-semibold">
-                    {item.songTitle} — {item.voicing}
+                    {item.song_title} — {item.voicing}
                   </h3>
                   <p className="mt-1 text-sm text-slate-300">
-                    {item.arrangerName ? `Arr. ${item.arrangerName}` : "Arranger unknown"}
+                    {item.arranger_name
+                      ? `Arr. ${item.arranger_name}`
+                      : "Arranger unknown"}
                   </p>
                   <p className="mt-2 text-sm text-slate-200">
-                    Parts: {item.partsKnown.join(", ")}
+                    Parts: {item.parts_known.join(", ")}
                   </p>
                   <p className="text-sm text-slate-300">
                     Confidence: {item.confidence}

@@ -9,15 +9,7 @@ import {
   getSessionByCode,
 } from "@/lib/sessionStore";
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
-
-type LocalRepertoireItem = {
-  id: string;
-  songTitle: string;
-  voicing: "TTBB" | "SATB" | "SSAA";
-  arrangerName?: string;
-  partsKnown: SingerEntry["partsKnown"];
-  confidence: SingerEntry["confidence"];
-};
+import { getMyRepertoire } from "@/lib/repertoireStore";
 
 export default function JoinSessionPage() {
   const params = useParams<{ code: string }>();
@@ -78,19 +70,16 @@ export default function JoinSessionPage() {
     };
   }, [code]);
 
-  function getMyEntries(name: string): SingerEntry[] {
-    const saved = window.localStorage.getItem("what-can-we-sing-repertoire");
-    if (!saved) return [];
-
-    const repertoire: LocalRepertoireItem[] = JSON.parse(saved);
+  async function getMyEntries(name: string): Promise<SingerEntry[]> {
+    const repertoire = await getMyRepertoire();
 
     return repertoire.map((item) => ({
-      userId: name,
+      userId: item.user_id,
       displayName: name,
-      songTitle: item.songTitle,
+      songTitle: item.song_title,
       voicing: item.voicing,
-      arrangerName: item.arrangerName ?? null,
-      partsKnown: item.partsKnown,
+      arrangerName: item.arranger_name,
+      partsKnown: item.parts_known,
       confidence: item.confidence,
     }));
   }
@@ -98,8 +87,15 @@ export default function JoinSessionPage() {
   async function joinSession() {
     if (!sessionId || !displayName) return;
 
-    await addParticipant(sessionId, displayName, getMyEntries(displayName));
-    await refreshParticipants(sessionId);
+    try {
+      const entries = await getMyEntries(displayName);
+      await addParticipant(sessionId, displayName, entries);
+      await refreshParticipants(sessionId);
+      setMessage(`Joined as ${displayName} with ${entries.length} songs.`);
+    } catch (err) {
+      console.error(err);
+      setMessage("Could not join session.");
+    }
   }
 
   const allEntries: SingerEntry[] = participants.flatMap((p) => p.repertoire);
@@ -123,7 +119,7 @@ export default function JoinSessionPage() {
         <h1 className="mt-4 text-4xl font-bold">Session {code}</h1>
 
         {message && (
-          <p className="mt-4 rounded-xl bg-rose-400/10 p-4 text-rose-200">
+          <p className="mt-4 rounded-xl bg-white/10 p-4 text-slate-200">
             {message}
           </p>
         )}
@@ -145,6 +141,13 @@ export default function JoinSessionPage() {
             className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200"
           >
             Change settings
+          </a>
+
+          <a
+            href="/repertoire"
+            className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200"
+          >
+            Edit repertoire
           </a>
         </div>
 
