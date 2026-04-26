@@ -56,6 +56,21 @@ export async function addParticipant(
   return data as DbParticipant;
 }
 
+export async function updateParticipantRepertoire(
+  participantId: string,
+  repertoire: SingerEntry[]
+) {
+  const { data, error } = await supabase
+    .from("session_participants")
+    .update({ repertoire })
+    .eq("id", participantId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as DbParticipant;
+}
+
 export async function getParticipants(sessionId: string) {
   const { data, error } = await supabase
     .from("session_participants")

@@ -8,6 +8,7 @@ import {
   getParticipants,
   getSessionByCode,
   subscribeToSessionParticipants,
+  updateParticipantRepertoire,
 } from "@/lib/sessionStore";
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 import { getMyRepertoire } from "@/lib/repertoireStore";
@@ -50,16 +51,19 @@ export default function JoinSessionPage() {
     try {
       const existingParticipants = await refreshParticipants(id);
 
-      const alreadyJoined = existingParticipants.some(
+      const existingParticipant = existingParticipants.find(
         (participant) => participant.display_name === name
       );
 
-      if (alreadyJoined) {
-        setMessage(`You are already in this session as ${name}.`);
+      const entries = await getMyEntries(name);
+
+      if (existingParticipant) {
+        await updateParticipantRepertoire(existingParticipant.id, entries);
+        await refreshParticipants(id);
+        setMessage(`Updated ${name}'s repertoire with ${entries.length} songs.`);
         return;
       }
 
-      const entries = await getMyEntries(name);
       await addParticipant(id, name, entries);
       await refreshParticipants(id);
       setMessage(`Joined as ${name} with ${entries.length} songs.`);
