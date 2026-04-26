@@ -6,6 +6,7 @@ import {
   addRepertoireItem,
   deleteRepertoireItem,
   getMyRepertoire,
+  updateRepertoireItem,
   type RepertoireRow,
 } from "@/lib/repertoireStore";
 import { getCurrentUser } from "@/lib/profileStore";
@@ -26,6 +27,14 @@ const confidenceLevels: Confidence[] = [
   "Learning",
 ];
 
+type RepertoireForm = {
+  songTitle: string;
+  voicing: Voicing;
+  arrangerName: string;
+  partsKnown: Part[];
+  confidence: Confidence;
+};
+
 export default function RepertoirePage() {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<RepertoireRow[]>([]);
@@ -34,6 +43,8 @@ export default function RepertoirePage() {
   const [arrangerName, setArrangerName] = useState("");
   const [partsKnown, setPartsKnown] = useState<Part[]>([]);
   const [confidence, setConfidence] = useState<Confidence>("Solid");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<RepertoireForm | null>(null);
   const [message, setMessage] = useState("");
 
   async function loadRepertoire() {
@@ -71,6 +82,40 @@ export default function RepertoirePage() {
     );
   }
 
+  function startEditing(item: RepertoireRow) {
+    setEditingId(item.id);
+    setEditForm({
+      songTitle: item.song_title,
+      voicing: item.voicing,
+      arrangerName: item.arranger_name ?? "",
+      partsKnown: item.parts_known,
+      confidence: item.confidence,
+    });
+    setMessage("");
+  }
+
+  function cancelEditing() {
+    setEditingId(null);
+    setEditForm(null);
+  }
+
+  function toggleEditPart(part: Part) {
+    setEditForm((current) => {
+      if (!current) return current;
+
+      return {
+        ...current,
+        partsKnown: current.partsKnown.includes(part)
+          ? current.partsKnown.filter((p) => p !== part)
+          : [...current.partsKnown, part],
+      };
+    });
+  }
+
+  function updateEditForm(patch: Partial<RepertoireForm>) {
+    setEditForm((current) => (current ? { ...current, ...patch } : current));
+  }
+
   async function addItem() {
     if (!songTitle.trim() || partsKnown.length === 0) return;
 
@@ -96,9 +141,35 @@ export default function RepertoirePage() {
     }
   }
 
+  async function saveEdit(id: string) {
+    if (!editForm || !editForm.songTitle.trim() || editForm.partsKnown.length === 0) {
+      return;
+    }
+
+    try {
+      await updateRepertoireItem(id, {
+        songTitle: editForm.songTitle.trim(),
+        voicing: editForm.voicing,
+        arrangerName: editForm.arrangerName.trim() || undefined,
+        partsKnown: editForm.partsKnown,
+        confidence: editForm.confidence,
+      });
+
+      cancelEditing();
+      setMessage("Song updated.");
+      await loadRepertoire();
+    } catch (err) {
+      console.error(err);
+      setMessage("Could not update song.");
+    }
+  }
+
   async function deleteItem(id: string) {
     try {
       await deleteRepertoireItem(id);
+      if (editingId === id) {
+        cancelEditing();
+      }
       setMessage("Song deleted.");
       await loadRepertoire();
     } catch (err) {
@@ -236,29 +307,160 @@ export default function RepertoirePage() {
                 key={item.id}
                 className="flex flex-col justify-between gap-4 rounded-2xl border border-white/10 bg-white/10 p-5 shadow-lg md:flex-row md:items-center"
               >
-                <div>
-                  <h3 className="text-xl font-semibold">
-                    {item.song_title} — {item.voicing}
-                  </h3>
-                  <p className="mt-1 text-sm text-slate-300">
-                    {item.arranger_name
-                      ? `Arr. ${item.arranger_name}`
-                      : "Arranger unknown"}
-                  </p>
-                  <p className="mt-2 text-sm text-slate-200">
-                    Parts: {item.parts_known.join(", ")}
-                  </p>
-                  <p className="text-sm text-slate-300">
-                    Confidence: {item.confidence}
-                  </p>
-                </div>
+                {editingId === item.id && editForm ? (
+                  <div className="w-full">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <label className="block">
+                        <span className="text-sm font-medium text-slate-300">
+                          Song title
+                        </span>
+                        <input
+                          value={editForm.songTitle}
+                          onChange={(e) =>
+                            updateEditForm({ songTitle: e.target.value })
+                          }
+                          className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                        />
+                      </label>
 
-                <button
-                  onClick={() => deleteItem(item.id)}
-                  className="rounded-xl bg-rose-400/10 px-4 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-400/20"
-                >
-                  Delete
-                </button>
+                      <label className="block">
+                        <span className="text-sm font-medium text-slate-300">
+                          Arranger optional
+                        </span>
+                        <input
+                          value={editForm.arrangerName}
+                          onChange={(e) =>
+                            updateEditForm({ arrangerName: e.target.value })
+                          }
+                          placeholder="Unknown is okay"
+                          className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                        />
+                      </label>
+
+                      <label className="block">
+                        <span className="text-sm font-medium text-slate-300">
+                          Voicing
+                        </span>
+                        <select
+                          value={editForm.voicing}
+                          onChange={(e) =>
+                            updateEditForm({
+                              voicing: e.target.value as Voicing,
+                              partsKnown: [],
+                            })
+                          }
+                          className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                        >
+                          {voicings.map((v) => (
+                            <option key={v}>{v}</option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label className="block">
+                        <span className="text-sm font-medium text-slate-300">
+                          Confidence
+                        </span>
+                        <select
+                          value={editForm.confidence}
+                          onChange={(e) =>
+                            updateEditForm({
+                              confidence: e.target.value as Confidence,
+                            })
+                          }
+                          className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                        >
+                          {confidenceLevels.map((level) => (
+                            <option key={level} value={level}>
+                              {level}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+
+                    <div className="mt-5">
+                      <p className="text-sm font-medium text-slate-300">
+                        Parts you know
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {partsByVoicing[editForm.voicing].map((part) => (
+                          <button
+                            key={part}
+                            type="button"
+                            onClick={() => toggleEditPart(part)}
+                            className={`rounded-full px-4 py-2 text-sm font-semibold ${
+                              editForm.partsKnown.includes(part)
+                                ? "bg-cyan-300 text-slate-950"
+                                : "bg-slate-800 text-slate-200 hover:bg-slate-700"
+                            }`}
+                          >
+                            {part}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                      <button
+                        onClick={() => saveEdit(item.id)}
+                        className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
+                        disabled={
+                          !editForm.songTitle.trim() ||
+                          editForm.partsKnown.length === 0
+                        }
+                      >
+                        Save changes
+                      </button>
+                      <button
+                        onClick={cancelEditing}
+                        className="rounded-xl bg-slate-800 px-5 py-3 font-semibold text-slate-200 hover:bg-slate-700"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => deleteItem(item.id)}
+                        className="rounded-xl bg-rose-400/10 px-5 py-3 font-semibold text-rose-200 hover:bg-rose-400/20"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <h3 className="text-xl font-semibold">
+                        {item.song_title} — {item.voicing}
+                      </h3>
+                      <p className="mt-1 text-sm text-slate-300">
+                        {item.arranger_name
+                          ? `Arr. ${item.arranger_name}`
+                          : "Arranger unknown"}
+                      </p>
+                      <p className="mt-2 text-sm text-slate-200">
+                        Parts: {item.parts_known.join(", ")}
+                      </p>
+                      <p className="text-sm text-slate-300">
+                        Confidence: {item.confidence}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-2 sm:flex-row md:flex-col">
+                      <button
+                        onClick={() => startEditing(item)}
+                        className="rounded-xl bg-cyan-300/10 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-300/20"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteItem(item.id)}
+                        className="rounded-xl bg-rose-400/10 px-4 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-400/20"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
