@@ -37,12 +37,12 @@ export default function RepertoirePage() {
   const [confidence, setConfidence] = useState<Confidence>("Solid");
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("quartet-match-repertoire");
+    const saved = window.localStorage.getItem("what-can-we-sing-repertoire");
     if (saved) setItems(JSON.parse(saved));
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem("quartet-match-repertoire", JSON.stringify(items));
+    window.localStorage.setItem("what-can-we-sing-repertoire", JSON.stringify(items));
   }, [items]);
 
   function togglePart(part: Part) {

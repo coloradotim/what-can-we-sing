@@ -17,7 +17,7 @@ export default function Home() {
 
   useEffect(() => {
     try {
-      const saved = window.localStorage.getItem("quartet-match-repertoire");
+      const saved = window.localStorage.getItem("what-can-we-sing-repertoire");
       if (!saved) return;
 
       const repertoire: RepertoireItem[] = JSON.parse(saved);
@@ -59,7 +59,7 @@ export default function Home() {
         </div>
 
         <p className="mt-4 text-sm font-semibold uppercase tracking-wide text-cyan-300">
-          Quartet Match
+          What Can We Sing
         </p>
 
         <h1 className="mt-3 text-4xl font-bold tracking-tight">

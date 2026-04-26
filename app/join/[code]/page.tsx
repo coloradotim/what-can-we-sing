@@ -79,7 +79,7 @@ export default function JoinSessionPage() {
   }, [code]);
 
   function getMyEntries(name: string): SingerEntry[] {
-    const saved = window.localStorage.getItem("quartet-match-repertoire");
+    const saved = window.localStorage.getItem("what-can-we-sing-repertoire");
     if (!saved) return [];
 
     const repertoire: LocalRepertoireItem[] = JSON.parse(saved);
