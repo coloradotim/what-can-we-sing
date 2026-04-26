@@ -1,0 +1,23 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Ship: test, build, commit, push",
+      "type": "shell",
+      "command": "./scripts/ship.sh",
+      "args": ["${input:commitMessage}"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "commitMessage",
+      "type": "promptString",
+      "description": "Commit message",
+      "default": "Update app"
+    }
+  ]
+}
