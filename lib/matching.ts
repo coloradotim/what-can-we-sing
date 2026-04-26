@@ -37,6 +37,7 @@ export type MatchResult = {
   missingParts: Part[];
   assignments: Partial<Record<Part, SingerEntry[]>>;
   warnings: string[];
+  score: number;
 };
 
 export function requiredPartsForVoicing(voicing: Voicing): Part[] {
@@ -47,6 +48,15 @@ export function requiredPartsForVoicing(voicing: Voicing): Part[] {
 
 function normalizeTitle(title: string): string {
   return title.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function confidenceValue(confidence?: Confidence | null): number {
+  if (confidence === "Performance ready") return 5;
+  if (confidence === "Solid") return 4;
+  if (confidence === "Needs review") return 2;
+  if (confidence === "Rusty") return 1;
+  if (confidence === "Learning") return 0;
+  return 3;
 }
 
 function confidenceWarning(entries: SingerEntry[]): string | null {
@@ -79,9 +89,9 @@ function findDistinctAssignment(
 
     const part = sortedParts[index];
 
-    const candidates = entries.filter(
-      (entry) => entry.partsKnown.includes(part) && !usedSingerIds.has(entry.userId)
-    );
+    const candidates = entries
+      .filter((entry) => entry.partsKnown.includes(part) && !usedSingerIds.has(entry.userId))
+      .sort((a, b) => confidenceValue(b.confidence) - confidenceValue(a.confidence));
 
     for (const candidate of candidates) {
       assignment[part] = candidate;
@@ -109,6 +119,33 @@ function buildAssignments(
   }
 
   return result;
+}
+
+function scoreMatch(
+  category: MatchResult["category"],
+  assignment: Record<Part, SingerEntry>,
+  group: SingerEntry[],
+  requiredParts: Part[],
+  warnings: string[]
+): number {
+  const categoryBase = {
+    ready: 300,
+    possible: 200,
+    one_part_missing: 100,
+  }[category];
+
+  const assignedConfidence = Object.values(assignment).reduce(
+    (sum, entry) => sum + confidenceValue(entry.confidence),
+    0
+  );
+
+  const flexibility = requiredParts.reduce((sum, part) => {
+    return sum + group.filter((entry) => entry.partsKnown.includes(part)).length;
+  }, 0);
+
+  const warningPenalty = warnings.length * 5;
+
+  return categoryBase + assignedConfidence * 10 + flexibility - warningPenalty;
 }
 
 export function findMatches(entries: SingerEntry[]): MatchResult[] {
@@ -158,6 +195,7 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
         missingParts: [],
         assignments: buildAssignments(fullAssignment),
         warnings,
+        score: scoreMatch(category, fullAssignment, group, requiredParts, warnings),
       });
 
       continue;
@@ -192,12 +230,16 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
         missingParts: [bestNearMatch.missingPart],
         assignments: buildAssignments(bestNearMatch.assignment),
         warnings,
+        score: scoreMatch(
+          "one_part_missing",
+          bestNearMatch.assignment,
+          group,
+          requiredParts,
+          warnings
+        ),
       });
     }
   }
 
-  return results.sort((a, b) => {
-    const order = { ready: 0, possible: 1, one_part_missing: 2 };
-    return order[a.category] - order[b.category];
-  });
+  return results.sort((a, b) => b.score - a.score);
 }
