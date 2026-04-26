@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { findMatches, SingerEntry } from "@/lib/matching";
 import {
   addParticipant,
@@ -16,6 +16,8 @@ export default function JoinSessionPage() {
   const params = useParams<{ code: string }>();
   const code = params.code;
 
+  const hasAutoJoined = useRef(false);
+
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
@@ -25,6 +27,46 @@ export default function JoinSessionPage() {
   async function refreshParticipants(id: string) {
     const data = await getParticipants(id);
     setParticipants(data);
+    return data;
+  }
+
+  async function getMyEntries(name: string): Promise<SingerEntry[]> {
+    const repertoire = await getMyRepertoire();
+
+    return repertoire.map((item) => ({
+      userId: item.user_id,
+      displayName: name,
+      songTitle: item.song_title,
+      voicing: item.voicing,
+      arrangerName: item.arranger_name,
+      partsKnown: item.parts_known,
+      confidence: item.confidence,
+    }));
+  }
+
+  async function joinSession(id = sessionId, name = displayName) {
+    if (!id || !name) return;
+
+    try {
+      const existingParticipants = await refreshParticipants(id);
+
+      const alreadyJoined = existingParticipants.some(
+        (participant) => participant.display_name === name
+      );
+
+      if (alreadyJoined) {
+        setMessage(`You are already in this session as ${name}.`);
+        return;
+      }
+
+      const entries = await getMyEntries(name);
+      await addParticipant(id, name, entries);
+      await refreshParticipants(id);
+      setMessage(`Joined as ${name} with ${entries.length} songs.`);
+    } catch (err) {
+      console.error(err);
+      setMessage("Could not join session.");
+    }
   }
 
   useEffect(() => {
@@ -46,16 +88,27 @@ export default function JoinSessionPage() {
           return;
         }
 
-        setDisplayName(profile.display_name);
-
         const session = await getSessionByCode(code);
+
+        setDisplayName(profile.display_name);
         setSessionId(session.id);
 
-        await refreshParticipants(session.id);
+        const currentParticipants = await refreshParticipants(session.id);
 
         unsubscribe = subscribeToSessionParticipants(session.id, () => {
           refreshParticipants(session.id);
         });
+
+        const alreadyJoined = currentParticipants.some(
+          (participant) => participant.display_name === profile.display_name
+        );
+
+        if (!alreadyJoined && !hasAutoJoined.current) {
+          hasAutoJoined.current = true;
+          await joinSession(session.id, profile.display_name);
+        } else {
+          setMessage(`You are already in this session as ${profile.display_name}.`);
+        }
       } catch (err) {
         console.error(err);
         setMessage("Could not load this session.");
@@ -71,41 +124,13 @@ export default function JoinSessionPage() {
     };
   }, [code]);
 
-  async function getMyEntries(name: string): Promise<SingerEntry[]> {
-    const repertoire = await getMyRepertoire();
-
-    return repertoire.map((item) => ({
-      userId: item.user_id,
-      displayName: name,
-      songTitle: item.song_title,
-      voicing: item.voicing,
-      arrangerName: item.arranger_name,
-      partsKnown: item.parts_known,
-      confidence: item.confidence,
-    }));
-  }
-
-  async function joinSession() {
-    if (!sessionId || !displayName) return;
-
-    try {
-      const entries = await getMyEntries(displayName);
-      await addParticipant(sessionId, displayName, entries);
-      await refreshParticipants(sessionId);
-      setMessage(`Joined as ${displayName} with ${entries.length} songs.`);
-    } catch (err) {
-      console.error(err);
-      setMessage("Could not join session.");
-    }
-  }
-
   const allEntries: SingerEntry[] = participants.flatMap((p) => p.repertoire);
   const matches = findMatches(allEntries);
 
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-        Loading session...
+        Joining session...
       </main>
     );
   }
@@ -126,22 +151,28 @@ export default function JoinSessionPage() {
         )}
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/10 p-6">
-          <p className="text-slate-300">You are joining as:</p>
+          <p className="text-slate-300">You are in this session as:</p>
           <p className="mt-1 text-2xl font-bold text-cyan-300">{displayName}</p>
 
           <button
-            onClick={joinSession}
+            onClick={() => joinSession()}
             disabled={!sessionId || !displayName}
             className="mt-4 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
           >
-            Join with my repertoire
+            Rejoin / refresh my repertoire
           </button>
 
-          <a href="/settings" className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200">
+          <a
+            href="/settings"
+            className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200"
+          >
             Change settings
           </a>
 
-          <a href="/repertoire" className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200">
+          <a
+            href="/repertoire"
+            className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200"
+          >
             Edit repertoire
           </a>
         </div>
@@ -157,7 +188,10 @@ export default function JoinSessionPage() {
             )}
 
             {participants.map((p) => (
-              <div key={p.id} className="rounded-xl border border-white/10 bg-white/10 p-4">
+              <div
+                key={p.id}
+                className="rounded-xl border border-white/10 bg-white/10 p-4"
+              >
                 <p className="font-semibold">{p.display_name}</p>
                 <p className="text-sm text-slate-300">
                   {p.repertoire.length} songs loaded
@@ -178,7 +212,10 @@ export default function JoinSessionPage() {
             )}
 
             {matches.map((match) => (
-              <div key={match.songTitle + match.voicing} className="rounded-2xl border border-white/10 bg-white/10 p-5 shadow-lg">
+              <div
+                key={match.songTitle + match.voicing}
+                className="rounded-2xl border border-white/10 bg-white/10 p-5 shadow-lg"
+              >
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h3 className="text-2xl font-bold">
@@ -187,7 +224,8 @@ export default function JoinSessionPage() {
 
                     <p className="mt-1 text-sm text-slate-300">
                       {match.category === "ready" && "Ready to sing"}
-                      {match.category === "possible" && "Possible match — confirm arrangement"}
+                      {match.category === "possible" &&
+                        "Possible match — confirm arrangement"}
                       {match.category === "one_part_missing" &&
                         `One part missing: ${match.missingParts.join(", ")}`}
                     </p>
@@ -209,7 +247,10 @@ export default function JoinSessionPage() {
                   ))}
 
                   {match.missingParts.map((part) => (
-                    <div key={part} className="rounded-xl border border-rose-300/30 bg-rose-400/10 p-3">
+                    <div
+                      key={part}
+                      className="rounded-xl border border-rose-300/30 bg-rose-400/10 p-3"
+                    >
                       <p className="font-semibold text-rose-200">{part}</p>
                       <p className="text-sm text-rose-200">Missing</p>
                     </div>
