@@ -3,6 +3,7 @@ import {
   clearActiveQuartet,
   clearActiveQuartetIfMatches,
   getActiveQuartet,
+  isDifferentActiveQuartet,
   setActiveQuartet,
 } from "../activeQuartet";
 
@@ -64,5 +65,19 @@ describe("active quartet storage", () => {
     clearActiveQuartetIfMatches("session-1", storage);
 
     expect(getActiveQuartet(storage)).toBeNull();
+  });
+
+  it("identifies a different active quartet", () => {
+    const storage = new MemoryStorage();
+
+    expect(isDifferentActiveQuartet("session-1", storage)).toBe(false);
+
+    setActiveQuartet(
+      { sessionId: "session-1", code: "ABC123", joinedAt: "2026-04-27" },
+      storage
+    );
+
+    expect(isDifferentActiveQuartet("session-1", storage)).toBe(false);
+    expect(isDifferentActiveQuartet("session-2", storage)).toBe(true);
   });
 });

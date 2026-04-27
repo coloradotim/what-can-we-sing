@@ -1,10 +1,20 @@
 "use client";
 
 import { AppNav } from "@/components/AppNav";
+import {
+  clearActiveQuartet,
+  getActiveQuartet,
+  type ActiveQuartet,
+} from "@/lib/activeQuartet";
+import { getCurrentUser } from "@/lib/profileStore";
+import { removeParticipant } from "@/lib/sessionStore";
 import { useState } from "react";
 
 export default function JoinPage() {
   const [joinCode, setJoinCode] = useState("");
+  const [pendingCode, setPendingCode] = useState("");
+  const [activeQuartet, setActiveQuartet] = useState<ActiveQuartet | null>(null);
+  const [leavingCurrent, setLeavingCurrent] = useState(false);
   const [message, setMessage] = useState("");
 
   function joinQuartet() {
@@ -14,7 +24,37 @@ export default function JoinPage() {
       return;
     }
 
+    const currentQuartet = getActiveQuartet();
+    if (currentQuartet && currentQuartet.code !== code) {
+      setPendingCode(code);
+      setActiveQuartet(currentQuartet);
+      setMessage("");
+      return;
+    }
+
     window.location.href = `/join/${encodeURIComponent(code)}`;
+  }
+
+  async function leaveCurrentAndContinue() {
+    if (!activeQuartet || !pendingCode) return;
+
+    setLeavingCurrent(true);
+    setMessage("");
+
+    try {
+      const user = await getCurrentUser();
+      if (user) {
+        await removeParticipant(activeQuartet.sessionId, user.id);
+      }
+      clearActiveQuartet();
+      window.location.href = `/join/${encodeURIComponent(pendingCode)}`;
+    } catch (err) {
+      console.error("Failed to leave current quartet", err);
+      setMessage(
+        "Could not leave your current quartet. Check your connection and try again."
+      );
+      setLeavingCurrent(false);
+    }
   }
 
   return (
@@ -55,6 +95,41 @@ export default function JoinPage() {
 
           {message && <p className="mt-4 text-sm text-slate-300">{message}</p>}
         </section>
+
+        {activeQuartet && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="active-quartet-title"
+            className="mt-6 rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-5"
+          >
+            <h2 id="active-quartet-title" className="text-xl font-semibold">
+              You are already in a quartet
+            </h2>
+            <p className="mt-2 text-sm text-slate-200">
+              Return to quartet {activeQuartet.code}, or leave it before
+              joining quartet {pendingCode}.
+            </p>
+            <div className="mt-5 flex flex-col gap-3">
+              <a
+                href={`/join/${activeQuartet.code}`}
+                className="rounded-xl bg-cyan-300 px-5 py-3 text-center font-semibold text-slate-950 hover:bg-cyan-200"
+              >
+                Return to current quartet
+              </a>
+              <button
+                type="button"
+                onClick={leaveCurrentAndContinue}
+                disabled={leavingCurrent}
+                className="rounded-xl bg-slate-800 px-5 py-3 font-semibold text-slate-200 hover:bg-slate-700 disabled:opacity-40"
+              >
+                {leavingCurrent
+                  ? "Leaving..."
+                  : "Leave current quartet and continue"}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

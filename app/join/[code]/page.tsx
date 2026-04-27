@@ -19,7 +19,10 @@ import {
   sessionExpirationLabel,
 } from "@/lib/sessionExpiration";
 import {
+  clearActiveQuartet,
   clearActiveQuartetIfMatches,
+  getActiveQuartet,
+  type ActiveQuartet,
   setActiveQuartet,
 } from "@/lib/activeQuartet";
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
@@ -66,6 +69,9 @@ export default function JoinSessionPage() {
   const [now, setNow] = useState(() => new Date());
   const [leftQuartet, setLeftQuartet] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [pendingActiveQuartet, setPendingActiveQuartet] =
+    useState<ActiveQuartet | null>(null);
+  const [leavingCurrentQuartet, setLeavingCurrentQuartet] = useState(false);
 
   async function refreshParticipants(id: string) {
     const data = await getParticipants(id);
@@ -173,6 +179,32 @@ export default function JoinSessionPage() {
     });
   }
 
+  async function leaveCurrentAndJoinThisQuartet() {
+    if (!pendingActiveQuartet || !currentUserId || !sessionId) {
+      setMessage("Could not continue yet. Wait for this quartet to finish loading.");
+      return;
+    }
+
+    setLeavingCurrentQuartet(true);
+    setMessage("");
+
+    try {
+      await removeParticipant(pendingActiveQuartet.sessionId, currentUserId);
+      clearActiveQuartet();
+      setPendingActiveQuartet(null);
+      await joinSession(sessionId, displayName, currentUserId, {
+        clearLeftFlag: true,
+      });
+    } catch (err) {
+      console.error(err);
+      setMessage(
+        "Could not leave your current quartet. Check your connection and try again."
+      );
+    } finally {
+      setLeavingCurrentQuartet(false);
+    }
+  }
+
   useEffect(() => {
     let unsubscribe: undefined | (() => void);
     const timer = window.setInterval(() => {
@@ -228,6 +260,17 @@ export default function JoinSessionPage() {
         const alreadyJoined = currentParticipants.some(
           (participant) => participant.user_id === user.id
         );
+
+        const activeQuartet = getActiveQuartet();
+        if (
+          activeQuartet &&
+          activeQuartet.sessionId !== session.id &&
+          !hasLeftQuartet
+        ) {
+          setPendingActiveQuartet(activeQuartet);
+          setMessage("");
+          return;
+        }
 
         if (!alreadyJoined && !hasAutoJoined.current && !hasLeftQuartet) {
           hasAutoJoined.current = true;
@@ -317,7 +360,42 @@ export default function JoinSessionPage() {
           </p>
         )}
 
-        {!loadError && !quartetExpired && (
+        {!loadError && !quartetExpired && pendingActiveQuartet && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="active-quartet-title"
+            className="mt-8 rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-6"
+          >
+            <h2 id="active-quartet-title" className="text-2xl font-semibold">
+              You are already in a quartet
+            </h2>
+            <p className="mt-2 text-slate-200">
+              Return to quartet {pendingActiveQuartet.code}, or leave it before
+              joining quartet {code}.
+            </p>
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+              <a
+                href={`/join/${pendingActiveQuartet.code}`}
+                className="rounded-xl bg-cyan-300 px-5 py-3 text-center font-semibold text-slate-950 hover:bg-cyan-200"
+              >
+                Return to current quartet
+              </a>
+              <button
+                type="button"
+                onClick={leaveCurrentAndJoinThisQuartet}
+                disabled={leavingCurrentQuartet}
+                className="rounded-xl bg-slate-800 px-5 py-3 font-semibold text-slate-200 hover:bg-slate-700 disabled:opacity-40"
+              >
+                {leavingCurrentQuartet
+                  ? "Leaving..."
+                  : "Leave current quartet and continue"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!loadError && !quartetExpired && !pendingActiveQuartet && (
           <>
             <div className="mt-6 rounded-2xl border border-white/10 bg-white/10 p-6">
               {leftQuartet ? (
