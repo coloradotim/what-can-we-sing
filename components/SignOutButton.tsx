@@ -1,6 +1,7 @@
 "use client";
 
 import { getCurrentUser, signOut } from "@/lib/profileStore";
+import { resetAnalytics } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 
 export function SignOutButton({ className = "" }: { className?: string }) {
@@ -29,6 +30,7 @@ export function SignOutButton({ className = "" }: { className?: string }) {
 
     try {
       await signOut();
+      resetAnalytics();
       window.location.href = "/login";
     } catch (err) {
       console.error(err);

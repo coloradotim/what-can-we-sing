@@ -8,6 +8,7 @@ import {
   type ActiveQuartet,
 } from "@/lib/activeQuartet";
 import { getCurrentUser } from "@/lib/profileStore";
+import { trackEvent } from "@/lib/analytics";
 import { createSession, removeParticipant } from "@/lib/sessionStore";
 
 function makeJoinCode() {
@@ -40,7 +41,11 @@ export default function SessionPage() {
       const code = makeJoinCode();
 
       try {
-        await createSession(code);
+        const session = await createSession(code);
+        trackEvent("quartet_started", {
+          session_id: session.id,
+          participant_count: 0,
+        });
         window.location.href = `/join/${code}`;
       } catch (err) {
         console.error("Failed to create session", err);
@@ -65,6 +70,9 @@ export default function SessionPage() {
       const user = await getCurrentUser();
       if (user) {
         await removeParticipant(activeQuartet.sessionId, user.id);
+        trackEvent("quartet_left", {
+          session_id: activeQuartet.sessionId,
+        });
       }
       clearActiveQuartet();
       setActiveQuartet(null);

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/AppNav";
 import { MatchCard } from "@/components/MatchCard";
+import { trackEvent } from "@/lib/analytics";
 import { findMatches, type MatchResult, type SingerEntry } from "@/lib/matching";
 import {
   type DbSession,
@@ -78,6 +79,7 @@ export default function JoinSessionPage() {
   const code = params.code;
 
   const hasAutoJoined = useRef(false);
+  const lastTrackedMatchesKey = useRef("");
 
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -192,7 +194,7 @@ export default function JoinSessionPage() {
       setSession((current) =>
         current ? { ...current, last_activity_at: lastActivityAt } : current
       );
-      await refreshParticipants(id);
+      const updatedParticipants = await refreshParticipants(id);
 
       if (existingParticipant) {
         setMessage(
@@ -202,6 +204,11 @@ export default function JoinSessionPage() {
         return;
       }
 
+      trackEvent("quartet_joined", {
+        session_id: id,
+        participant_count: updatedParticipants.length,
+        song_count: entries.length,
+      });
       setMessage(`Joined as ${name} with ${entries.length} songs.`);
     } catch (err) {
       console.error(err);
@@ -270,7 +277,11 @@ export default function JoinSessionPage() {
       await removeParticipant(sessionId, currentUserId);
       clearActiveQuartetIfMatches(sessionId);
       window.sessionStorage.setItem(leftQuartetStorageKey(code), "true");
-      await refreshParticipants(sessionId);
+      const updatedParticipants = await refreshParticipants(sessionId);
+      trackEvent("quartet_left", {
+        session_id: sessionId,
+        participant_count: updatedParticipants.length,
+      });
       window.location.href = "/?leftQuartet=1";
     } catch (err) {
       console.error(err);
@@ -318,6 +329,9 @@ export default function JoinSessionPage() {
 
     try {
       await removeParticipant(pendingActiveQuartet.sessionId, currentUserId);
+      trackEvent("quartet_left", {
+        session_id: pendingActiveQuartet.sessionId,
+      });
       clearActiveQuartet();
       setPendingActiveQuartet(null);
       await joinSession(sessionId, displayName, currentUserId, {
@@ -487,6 +501,15 @@ export default function JoinSessionPage() {
     ...section,
     matches: matches.filter((match) => match.category === section.category),
   }));
+  const readyMatchCount = groupedMatches.find(
+    (section) => section.category === "ready"
+  )?.matches.length ?? 0;
+  const possibleMatchCount = groupedMatches.find(
+    (section) => section.category === "possible"
+  )?.matches.length ?? 0;
+  const onePartMissingCount = groupedMatches.find(
+    (section) => section.category === "one_part_missing"
+  )?.matches.length ?? 0;
   const quartetExpired = session ? isSessionExpired(session, now) : false;
   const expirationLabel = session ? sessionExpirationLabel(session, now) : "";
   const openSingerSlots = Math.max(
@@ -503,6 +526,50 @@ export default function JoinSessionPage() {
     !quartetExpired &&
     !pendingActiveQuartet &&
     participants.length >= MAX_QUARTET_PARTICIPANTS;
+
+  useEffect(() => {
+    if (
+      loading ||
+      !sessionId ||
+      loadError ||
+      quartetExpired ||
+      pendingActiveQuartet
+    ) {
+      return;
+    }
+
+    const trackingKey = [
+      sessionId,
+      participants.length,
+      matches.length,
+      readyMatchCount,
+      possibleMatchCount,
+      onePartMissingCount,
+    ].join(":");
+
+    if (lastTrackedMatchesKey.current === trackingKey) return;
+
+    lastTrackedMatchesKey.current = trackingKey;
+    trackEvent("quartet_matches_viewed", {
+      session_id: sessionId,
+      participant_count: participants.length,
+      match_count: matches.length,
+      ready_match_count: readyMatchCount,
+      possible_match_count: possibleMatchCount,
+      one_part_missing_count: onePartMissingCount,
+    });
+  }, [
+    loading,
+    loadError,
+    matches.length,
+    onePartMissingCount,
+    participants.length,
+    pendingActiveQuartet,
+    possibleMatchCount,
+    quartetExpired,
+    readyMatchCount,
+    sessionId,
+  ]);
 
   function notesForMatch(match: MatchResult) {
     const matchTitle = normalizeSongTitle(match.songTitle);
