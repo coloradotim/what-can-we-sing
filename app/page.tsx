@@ -1,6 +1,6 @@
 "use client";
 
-import { SignOutButton } from "@/components/SignOutButton";
+import { AppNav } from "@/components/AppNav";
 import { useState } from "react";
 
 export default function Home() {
@@ -16,11 +16,9 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950 px-5 py-8 text-white">
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md flex-col justify-center">
-        <div className="mb-8 flex justify-end">
-          <SignOutButton />
-        </div>
+        <AppNav />
 
-        <p className="text-sm font-semibold uppercase text-cyan-300">
+        <p className="mt-8 text-sm font-semibold uppercase text-cyan-300">
           What Can We Sing
         </p>
         <h1 className="mt-3 text-4xl font-bold tracking-tight">
@@ -38,7 +36,10 @@ export default function Home() {
             Start a quartet
           </a>
 
-          <div className="rounded-xl border border-white/10 bg-white/10 p-4">
+          <div
+            id="join-quartet"
+            className="rounded-xl border border-white/10 bg-white/10 p-4"
+          >
             <label className="block">
               <span className="text-sm font-medium text-slate-300">
                 Join a quartet

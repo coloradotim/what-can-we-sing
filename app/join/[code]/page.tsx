@@ -2,8 +2,8 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { AppNav } from "@/components/AppNav";
 import { MatchCard } from "@/components/MatchCard";
-import { SignOutButton } from "@/components/SignOutButton";
 import { findMatches, SingerEntry } from "@/lib/matching";
 import {
   addParticipant,
@@ -77,7 +77,7 @@ export default function JoinSessionPage() {
       setMessage(`Joined as ${name} with ${entries.length} songs.`);
     } catch (err) {
       console.error(err);
-      setMessage("Could not join session.");
+      setMessage("Could not join quartet.");
     }
   }
 
@@ -119,11 +119,11 @@ export default function JoinSessionPage() {
           hasAutoJoined.current = true;
           await joinSession(session.id, profile.display_name);
         } else {
-          setMessage(`You are already in this session as ${profile.display_name}.`);
+          setMessage(`You are already in this quartet as ${profile.display_name}.`);
         }
       } catch (err) {
         console.error(err);
-        setMessage("Could not load this session.");
+        setMessage("Could not load this quartet.");
       } finally {
         setLoading(false);
       }
@@ -146,7 +146,7 @@ export default function JoinSessionPage() {
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-        Joining session...
+        Joining quartet...
       </main>
     );
   }
@@ -154,14 +154,9 @@ export default function JoinSessionPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-5xl">
-        <div className="flex flex-wrap items-center gap-4">
-          <a href="/session" className="text-sm text-cyan-300 hover:text-cyan-200">
-            ← Start another session
-          </a>
-          <SignOutButton />
-        </div>
+        <AppNav />
 
-        <h1 className="mt-4 text-4xl font-bold">Session {code}</h1>
+        <h1 className="mt-4 text-4xl font-bold">Quartet {code}</h1>
 
         {message && (
           <p className="mt-4 rounded-xl bg-white/10 p-4 text-slate-200">
@@ -170,7 +165,7 @@ export default function JoinSessionPage() {
         )}
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/10 p-6">
-          <p className="text-slate-300">You are in this session as:</p>
+          <p className="text-slate-300">You are in this quartet as:</p>
           <p className="mt-1 text-2xl font-bold text-cyan-300">{displayName}</p>
 
           <button
@@ -189,7 +184,7 @@ export default function JoinSessionPage() {
           </a>
 
           <a
-            href="/"
+            href="/repertoire"
             className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200"
           >
             Edit repertoire
