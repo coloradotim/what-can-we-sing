@@ -1,16 +1,36 @@
+import type { EmailOtpType } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getAuthCallbackNextPath } from "@/lib/authRedirect";
 
+const allowedEmailOtpTypes = new Set([
+  "email",
+  "magiclink",
+  "signup",
+  "invite",
+  "recovery",
+  "email_change",
+]);
+
+function getEmailOtpType(type: string | null): EmailOtpType | null {
+  return type && allowedEmailOtpTypes.has(type)
+    ? (type as EmailOtpType)
+    : null;
+}
+
 export async function GET(request: NextRequest) {
   const nextPath = getAuthCallbackNextPath(request.nextUrl.search);
   const code = request.nextUrl.searchParams.get("code");
+  const tokenHash = request.nextUrl.searchParams.get("token_hash");
+  const type = getEmailOtpType(request.nextUrl.searchParams.get("type"));
   const successUrl = new URL(nextPath, request.url);
   const loginUrl = new URL("/login", request.url);
 
-  loginUrl.searchParams.set("redirect", nextPath);
+  if (nextPath !== "/") {
+    loginUrl.searchParams.set("redirect", nextPath);
+  }
 
-  if (!code) {
+  if (!code && (!tokenHash || !type)) {
     return NextResponse.redirect(loginUrl);
   }
 
@@ -24,7 +44,7 @@ export async function GET(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet, headersToSet) {
+        setAll(cookiesToSet, headersToSet = {}) {
           response = NextResponse.redirect(successUrl);
 
           cookiesToSet.forEach(({ name, value, options }) => {
@@ -39,7 +59,13 @@ export async function GET(request: NextRequest) {
     }
   );
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const { error } =
+    tokenHash && type
+      ? await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type,
+        })
+      : await supabase.auth.exchangeCodeForSession(code!);
 
   if (error) {
     return NextResponse.redirect(loginUrl);

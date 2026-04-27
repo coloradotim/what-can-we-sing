@@ -23,6 +23,12 @@ describe("getPostLoginRedirectPath", () => {
   it("ignores protocol-relative redirect URLs", () => {
     expect(getPostLoginRedirectPath("?redirect=//example.com")).toBe("/");
   });
+
+  it("does not preserve auth routes as post-login destinations", () => {
+    expect(getPostLoginRedirectPath("?redirect=/login")).toBe("/");
+    expect(getPostLoginRedirectPath("?redirect=/login?redirect=/join/ABC123")).toBe("/");
+    expect(getPostLoginRedirectPath("?redirect=/auth/callback?code=abc")).toBe("/");
+  });
 });
 
 describe("getAuthCallbackNextPath", () => {
@@ -38,6 +44,11 @@ describe("getAuthCallbackNextPath", () => {
     expect(getAuthCallbackNextPath("?next=https://example.com")).toBe("/");
     expect(getAuthCallbackNextPath("?next=//example.com")).toBe("/");
   });
+
+  it("does not redirect successful callbacks back to auth routes", () => {
+    expect(getAuthCallbackNextPath("?next=/login")).toBe("/");
+    expect(getAuthCallbackNextPath("?next=/auth/callback")).toBe("/");
+  });
 });
 
 describe("getMagicLinkRedirectUrl", () => {
@@ -48,7 +59,7 @@ describe("getMagicLinkRedirectUrl", () => {
         origin: "http://localhost:3000",
         search: "",
       })
-    ).toBe("https://what-can-we-sing.vercel.app/auth/callback");
+    ).toBe("https://what-can-we-sing.vercel.app/auth/callback?next=%2F");
   });
 
   it("passes a safe redirect parameter through the auth callback", () => {
@@ -70,7 +81,7 @@ describe("getMagicLinkRedirectUrl", () => {
         origin: "http://localhost:3000",
         search: "",
       })
-    ).toBe("http://localhost:3000/auth/callback");
+    ).toBe("http://localhost:3000/auth/callback?next=%2F");
   });
 
   it("does not fall back to a production browser origin", () => {
@@ -90,6 +101,6 @@ describe("getMagicLinkRedirectUrl", () => {
         origin: "http://localhost:3000",
         search: "?redirect=https://example.com",
       })
-    ).toBe("https://what-can-we-sing.vercel.app/auth/callback");
+    ).toBe("https://what-can-we-sing.vercel.app/auth/callback?next=%2F");
   });
 });
