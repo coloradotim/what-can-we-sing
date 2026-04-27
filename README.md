@@ -45,3 +45,20 @@ create unique index if not exists session_participants_session_user_unique
 ```
 
 The delete only clears participant snapshots created before `user_id` existed; singers can rejoin active quartets to recreate their current snapshots.
+
+Quartets expire after 24 hours of inactivity. Inactivity is based on the
+`sessions.last_activity_at` timestamp, which is refreshed whenever a singer joins
+or refreshes their repertoire. If your `sessions` table does not already have
+that column, run this in the Supabase SQL editor:
+
+```sql
+alter table public.sessions
+  add column if not exists last_activity_at timestamptz;
+
+update public.sessions
+set last_activity_at = coalesce(last_activity_at, created_at, now());
+
+alter table public.sessions
+  alter column last_activity_at set default now(),
+  alter column last_activity_at set not null;
+```
