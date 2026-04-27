@@ -18,6 +18,10 @@ import {
   isSessionExpired,
   sessionExpirationLabel,
 } from "@/lib/sessionExpiration";
+import {
+  clearActiveQuartetIfMatches,
+  setActiveQuartet,
+} from "@/lib/activeQuartet";
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 import { getMyRepertoire } from "@/lib/repertoireStore";
 
@@ -123,6 +127,7 @@ export default function JoinSessionPage() {
       const lastActivityAt = new Date().toISOString();
 
       await upsertParticipant(id, userId, name, entries, lastActivityAt);
+      setActiveQuartet({ sessionId: id, code, joinedAt: lastActivityAt });
       setSession((current) =>
         current ? { ...current, last_activity_at: lastActivityAt } : current
       );
@@ -151,6 +156,7 @@ export default function JoinSessionPage() {
 
     try {
       await removeParticipant(sessionId, currentUserId);
+      clearActiveQuartetIfMatches(sessionId);
       window.sessionStorage.setItem(leftQuartetStorageKey(code), "true");
       await refreshParticipants(sessionId);
       window.location.href = "/?leftQuartet=1";
@@ -200,6 +206,7 @@ export default function JoinSessionPage() {
 
         if (isSessionExpired(session)) {
           setSession(session);
+          clearActiveQuartetIfMatches(session.id);
           setLoadError("This quartet has expired.");
           return;
         }
@@ -226,8 +233,14 @@ export default function JoinSessionPage() {
           hasAutoJoined.current = true;
           await joinSession(session.id, profile.display_name, user.id);
         } else if (hasLeftQuartet) {
+          clearActiveQuartetIfMatches(session.id);
           setMessage("You left this quartet.");
         } else {
+          setActiveQuartet({
+            sessionId: session.id,
+            code,
+            joinedAt: new Date().toISOString(),
+          });
           setMessage(`You are already in this quartet as ${profile.display_name}.`);
         }
       } catch (err) {

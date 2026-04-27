@@ -26,48 +26,17 @@ Hosted Supabase projects configure Auth email templates in the Supabase dashboar
 
 ## Supabase database
 
-Session participants are keyed by the authenticated Supabase user so one singer can refresh their repertoire without creating duplicate rows, while different singers with the same display name can still join the same quartet.
+The Supabase project should have the current production schema applied:
 
-If your `session_participants` table does not already have `user_id` and a unique constraint for each user in each session, run this in the Supabase SQL editor:
+- `profiles` stores each user's required `display_name`.
+- `user_repertoire` stores each user's songs, voicing, parts known, confidence,
+  and optional arranger name.
+- `sessions` stores quartet codes and `last_activity_at` for 24-hour inactivity
+  expiration.
+- `session_participants` stores participant repertoire snapshots and is keyed by
+  `(session_id, user_id)` so one singer can refresh without creating duplicate
+  rows.
 
-```sql
-alter table public.session_participants
-  add column if not exists user_id uuid references auth.users(id) on delete cascade;
-
-delete from public.session_participants
-where user_id is null;
-
-alter table public.session_participants
-  alter column user_id set not null;
-
-create unique index if not exists session_participants_session_user_unique
-  on public.session_participants (session_id, user_id);
-```
-
-The delete only clears participant snapshots created before `user_id` existed; singers can rejoin active quartets to recreate their current snapshots.
-
-Quartets expire after 24 hours of inactivity. Inactivity is based on the
-`sessions.last_activity_at` timestamp, which is refreshed whenever a singer joins
-or refreshes their repertoire. If your `sessions` table does not already have
-that column, run this in the Supabase SQL editor:
-
-```sql
-alter table public.sessions
-  add column if not exists last_activity_at timestamptz;
-
-update public.sessions
-set last_activity_at = coalesce(last_activity_at, created_at, now());
-
-alter table public.sessions
-  alter column last_activity_at set default now(),
-  alter column last_activity_at set not null;
-```
-
-The app no longer uses a default voice part on profiles. If your `profiles`
-table still has that older column and you want to clean it up, run this in the
-Supabase SQL editor:
-
-```sql
-alter table public.profiles
-  drop column if exists default_part;
-```
+One-time migration SQL is intentionally not kept in this README after it has
+been applied. Add any future schema change to the PR that introduces it, then
+remove the one-time instructions after production is updated.

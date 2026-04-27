@@ -1,6 +1,11 @@
 "use client";
 
 import { AppNav } from "@/components/AppNav";
+import {
+  clearActiveQuartet,
+  getActiveQuartet,
+  type ActiveQuartet,
+} from "@/lib/activeQuartet";
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 import { getMyRepertoire } from "@/lib/repertoireStore";
 import { useEffect, useState } from "react";
@@ -47,6 +52,7 @@ const setupPrompts: Record<
 
 export default function Home() {
   const [setupState, setSetupState] = useState<SetupState>("loading");
+  const [activeQuartet, setActiveQuartet] = useState<ActiveQuartet | null>(null);
   const [message, setMessage] = useState("");
   const [messageTone, setMessageTone] = useState<"error" | "success">("error");
 
@@ -55,6 +61,8 @@ export default function Home() {
       try {
         const searchParams = new URLSearchParams(window.location.search);
         if (searchParams.get("leftQuartet") === "1") {
+          clearActiveQuartet();
+          setActiveQuartet(null);
           setMessage("You left the quartet.");
           setMessageTone("success");
           window.history.replaceState(null, "", window.location.pathname);
@@ -74,6 +82,7 @@ export default function Home() {
         }
 
         const repertoire = await getMyRepertoire();
+        setActiveQuartet(getActiveQuartet());
         setSetupState(repertoire.length > 0 ? "ready" : "missing_repertoire");
       } catch (err) {
         console.error(err);
@@ -138,6 +147,20 @@ export default function Home() {
             <p className="mt-6 rounded-xl bg-white/10 px-4 py-3 text-sm text-slate-300">
               Start a quartet, join with a code, or update your repertoire.
             </p>
+
+            {activeQuartet && (
+              <a
+                href={`/join/${activeQuartet.code}`}
+                className="mt-4 block rounded-xl border border-cyan-300/40 bg-cyan-300/10 px-5 py-4 hover:border-cyan-200/70 hover:bg-cyan-300/15"
+              >
+                <span className="block text-lg font-semibold text-white">
+                  Current quartet
+                </span>
+                <span className="mt-1 block text-sm font-semibold text-cyan-200">
+                  Rejoin quartet {activeQuartet.code}
+                </span>
+              </a>
+            )}
 
             <div className="mt-4 space-y-3">
               {actions.map((action) => (
