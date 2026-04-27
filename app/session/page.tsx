@@ -2,6 +2,7 @@
 
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
+import { SignOutButton } from "@/components/SignOutButton";
 import { createSession } from "@/lib/sessionStore";
 
 function makeJoinCode() {
@@ -45,9 +46,12 @@ export default function SessionPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-3xl">
-        <a href="/" className="text-sm text-cyan-300 hover:text-cyan-200">
-          ← Back home
-        </a>
+        <div className="flex flex-wrap items-center gap-4">
+          <a href="/" className="text-sm text-cyan-300 hover:text-cyan-200">
+            ← Back home
+          </a>
+          <SignOutButton />
+        </div>
 
         <h1 className="mt-4 text-4xl font-bold">Start a session</h1>
 

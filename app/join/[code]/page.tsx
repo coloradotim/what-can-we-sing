@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { MatchCard } from "@/components/MatchCard";
+import { SignOutButton } from "@/components/SignOutButton";
 import { findMatches, SingerEntry } from "@/lib/matching";
 import {
   addParticipant,
@@ -153,9 +154,12 @@ export default function JoinSessionPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-5xl">
-        <a href="/session" className="text-sm text-cyan-300 hover:text-cyan-200">
-          ← Start another session
-        </a>
+        <div className="flex flex-wrap items-center gap-4">
+          <a href="/session" className="text-sm text-cyan-300 hover:text-cyan-200">
+            ← Start another session
+          </a>
+          <SignOutButton />
+        </div>
 
         <h1 className="mt-4 text-4xl font-bold">Session {code}</h1>
 
