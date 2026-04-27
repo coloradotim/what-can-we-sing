@@ -28,6 +28,11 @@ import {
 } from "@/lib/activeQuartet";
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 import { getMyRepertoire } from "@/lib/repertoireStore";
+import {
+  getRecentSungSongs,
+  markSongAsSung,
+  type SungSongEvent,
+} from "@/lib/sungSongStore";
 
 const matchSections = [
   {
@@ -63,6 +68,10 @@ function normalizeSongTitle(title: string) {
   return title.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+function normalizeOptionalText(value: string | null | undefined) {
+  return value?.toLowerCase().replace(/[^a-z0-9]/g, "") ?? "";
+}
+
 export default function JoinSessionPage() {
   const params = useParams<{ code: string }>();
   const code = params.code;
@@ -78,6 +87,8 @@ export default function JoinSessionPage() {
   const [personalSongNotes, setPersonalSongNotes] = useState<PersonalSongNote[]>(
     []
   );
+  const [recentSungSongs, setRecentSungSongs] = useState<SungSongEvent[]>([]);
+  const [markingSungKey, setMarkingSungKey] = useState("");
   const [message, setMessage] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
   const [qrUrl, setQrUrl] = useState("");
@@ -255,6 +266,42 @@ export default function JoinSessionPage() {
     }
   }
 
+  async function refreshRecentSungSongs() {
+    const events = await getRecentSungSongs();
+    setRecentSungSongs(events);
+  }
+
+  function matchKey(match: MatchResult) {
+    return `${normalizeSongTitle(match.songTitle)}:${match.voicing}`;
+  }
+
+  async function markMatchAsSung(match: MatchResult) {
+    if (!sessionId) {
+      setMessage("Could not mark that yet. Wait for the quartet to finish loading.");
+      return;
+    }
+
+    const key = matchKey(match);
+    setMarkingSungKey(key);
+    setMessage("");
+
+    try {
+      await markSongAsSung({
+        sessionId,
+        songTitle: match.songTitle,
+        voicing: match.voicing,
+        arrangerName: match.arrangerNames.join(", ") || undefined,
+      });
+      await refreshRecentSungSongs();
+      setMessage(`Marked "${match.songTitle}" as sung.`);
+    } catch (err) {
+      console.error(err);
+      setMessage("Could not mark that song as sung. Check your connection and try again.");
+    } finally {
+      setMarkingSungKey("");
+    }
+  }
+
   useEffect(() => {
     let unsubscribe: undefined | (() => void);
     const timer = window.setInterval(() => {
@@ -297,6 +344,7 @@ export default function JoinSessionPage() {
         setDisplayName(profile.display_name);
         setSessionId(session.id);
         setSession(session);
+        await refreshRecentSungSongs();
 
         const joinUrl = `${window.location.origin}/join/${code}`;
         const qr = await QRCode.toDataURL(joinUrl);
@@ -389,6 +437,23 @@ export default function JoinSessionPage() {
           normalizeSongTitle(note.songTitle) === matchTitle
       )
       .map((note) => note.notes);
+  }
+
+  function wasRecentlySung(match: MatchResult) {
+    const matchTitle = normalizeSongTitle(match.songTitle);
+    const matchArrangers = match.arrangerNames.map(normalizeOptionalText);
+
+    return recentSungSongs.some(
+      (event) => {
+        if (event.voicing !== match.voicing) return false;
+        if (normalizeSongTitle(event.song_title) !== matchTitle) return false;
+
+        const eventArranger = normalizeOptionalText(event.arranger_name);
+        if (!eventArranger || matchArrangers.length === 0) return true;
+
+        return matchArrangers.includes(eventArranger);
+      }
+    );
   }
 
   if (loading) {
@@ -687,6 +752,9 @@ export default function JoinSessionPage() {
                               key={match.songTitle + match.voicing}
                               match={match}
                               personalNotes={notesForMatch(match)}
+                              isRecentlySung={wasRecentlySung(match)}
+                              isMarkingSung={markingSungKey === matchKey(match)}
+                              onMarkAsSung={() => markMatchAsSung(match)}
                             />
                           ))}
                         </div>
