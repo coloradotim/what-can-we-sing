@@ -5,10 +5,14 @@ import { useState } from "react";
 
 export default function JoinPage() {
   const [joinCode, setJoinCode] = useState("");
+  const [message, setMessage] = useState("");
 
   function joinQuartet() {
     const code = joinCode.trim().toUpperCase();
-    if (!code) return;
+    if (!code) {
+      setMessage("Enter the quartet code another singer shared with you.");
+      return;
+    }
 
     window.location.href = `/join/${encodeURIComponent(code)}`;
   }
@@ -44,11 +48,12 @@ export default function JoinPage() {
           <button
             type="button"
             onClick={joinQuartet}
-            disabled={!joinCode.trim()}
             className="mt-4 w-full rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
           >
             Join quartet
           </button>
+
+          {message && <p className="mt-4 text-sm text-slate-300">{message}</p>}
         </section>
       </div>
     </main>

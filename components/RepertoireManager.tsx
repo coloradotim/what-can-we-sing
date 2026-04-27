@@ -47,8 +47,10 @@ export default function RepertoireManager() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<RepertoireForm | null>(null);
   const [message, setMessage] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   async function loadRepertoire() {
+    setLoadError("");
     const user = await getCurrentUser();
 
     if (!user) {
@@ -58,6 +60,7 @@ export default function RepertoireManager() {
 
     const data = await getMyRepertoire();
     setItems(data);
+    setLoadError("");
   }
 
   useEffect(() => {
@@ -80,7 +83,9 @@ export default function RepertoireManager() {
         setItems(data);
       } catch (err) {
         console.error(err);
-        setMessage("Could not load repertoire.");
+        setLoadError(
+          "Could not load your repertoire. Check your connection and try again."
+        );
       } finally {
         setLoading(false);
       }
@@ -132,7 +137,15 @@ export default function RepertoireManager() {
   }
 
   async function addItem() {
-    if (!songTitle.trim() || partsKnown.length === 0) return;
+    if (!songTitle.trim()) {
+      setMessage("Add a song title before saving.");
+      return;
+    }
+
+    if (partsKnown.length === 0) {
+      setMessage("Choose at least one part you know before saving.");
+      return;
+    }
 
     try {
       await addRepertoireItem({
@@ -152,7 +165,7 @@ export default function RepertoireManager() {
       await loadRepertoire();
     } catch (err) {
       console.error(err);
-      setMessage("Could not add song.");
+      setMessage("Could not add song. Check your connection and try again.");
     }
   }
 
@@ -166,12 +179,22 @@ export default function RepertoireManager() {
       await loadRepertoire();
     } catch (err) {
       console.error(err);
-      setMessage("Could not delete song.");
+      setMessage("Could not delete song. Check your connection and try again.");
     }
   }
 
   async function saveEdit(id: string) {
-    if (!editForm || !editForm.songTitle.trim() || editForm.partsKnown.length === 0) {
+    if (!editForm) {
+      return;
+    }
+
+    if (!editForm.songTitle.trim()) {
+      setMessage("Add a song title before saving changes.");
+      return;
+    }
+
+    if (editForm.partsKnown.length === 0) {
+      setMessage("Choose at least one part you know before saving changes.");
       return;
     }
 
@@ -189,7 +212,7 @@ export default function RepertoireManager() {
       await loadRepertoire();
     } catch (err) {
       console.error(err);
-      setMessage("Could not update song.");
+      setMessage("Could not update song. Check your connection and try again.");
     }
   }
 
@@ -210,6 +233,19 @@ export default function RepertoireManager() {
         <p className="mt-2 text-slate-300">
           Add songs you know, the parts you can sing, and how confident you are.
         </p>
+
+        {loadError && (
+          <div className="mt-4 rounded-xl border border-rose-300/20 bg-rose-400/10 p-4 text-sm text-rose-100">
+            <p>{loadError}</p>
+            <button
+              type="button"
+              onClick={loadRepertoire}
+              className="mt-3 rounded-xl bg-rose-100 px-4 py-2 font-semibold text-slate-950 hover:bg-white"
+            >
+              Try again
+            </button>
+          </div>
+        )}
 
         {message && <p className="mt-4 text-sm text-slate-300">{message}</p>}
 
@@ -294,7 +330,6 @@ export default function RepertoireManager() {
           <button
             onClick={addItem}
             className="mt-6 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
-            disabled={!songTitle.trim() || partsKnown.length === 0}
           >
             Add to repertoire
           </button>
@@ -305,9 +340,13 @@ export default function RepertoireManager() {
 
           <div className="mt-4 space-y-3">
             {items.length === 0 && (
-              <p className="rounded-2xl border border-white/10 bg-white/5 p-5 text-slate-300">
-                No songs yet. Add your first one above.
-              </p>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-slate-300">
+                <p className="font-semibold text-white">No songs yet.</p>
+                <p className="mt-1">
+                  Add a song above with the part or parts you know. Your
+                  repertoire is what powers quartet matches.
+                </p>
+              </div>
             )}
 
             {items.map((item) => (
@@ -413,10 +452,6 @@ export default function RepertoireManager() {
                       <button
                         onClick={() => saveEdit(item.id)}
                         className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
-                        disabled={
-                          !editForm.songTitle.trim() ||
-                          editForm.partsKnown.length === 0
-                        }
                       >
                         Save changes
                       </button>

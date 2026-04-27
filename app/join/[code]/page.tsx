@@ -33,6 +33,7 @@ export default function JoinSessionPage() {
   const [displayName, setDisplayName] = useState("");
   const [participants, setParticipants] = useState<DbParticipant[]>([]);
   const [message, setMessage] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   async function refreshParticipants(id: string) {
     const data = await getParticipants(id);
@@ -59,7 +60,10 @@ export default function JoinSessionPage() {
     name = displayName,
     userId = currentUserId
   ) {
-    if (!id || !name || !userId) return;
+    if (!id || !name || !userId) {
+      setMessage("Could not refresh yet. Wait for the quartet to finish loading.");
+      return;
+    }
 
     try {
       const existingParticipants = await refreshParticipants(id);
@@ -81,7 +85,7 @@ export default function JoinSessionPage() {
       setMessage(`Joined as ${name} with ${entries.length} songs.`);
     } catch (err) {
       console.error(err);
-      setMessage("Could not join quartet.");
+      setMessage("Could not join quartet. Check your connection and try again.");
     }
   }
 
@@ -106,6 +110,13 @@ export default function JoinSessionPage() {
 
         const session = await getSessionByCode(code);
 
+        if (!session) {
+          setLoadError(
+            "That quartet code was not found. Check the code and try again."
+          );
+          return;
+        }
+
         setCurrentUserId(user.id);
         setDisplayName(profile.display_name);
         setSessionId(session.id);
@@ -128,7 +139,9 @@ export default function JoinSessionPage() {
         }
       } catch (err) {
         console.error(err);
-        setMessage("Could not load this quartet.");
+        setLoadError(
+          "Could not load this quartet. Check your connection and try again."
+        );
       } finally {
         setLoading(false);
       }
@@ -163,94 +176,112 @@ export default function JoinSessionPage() {
 
         <h1 className="mt-4 text-4xl font-bold">Quartet {code}</h1>
 
-        {message && (
+        {loadError && (
+          <div className="mt-8 rounded-2xl border border-rose-300/20 bg-rose-400/10 p-6">
+            <p className="font-semibold text-rose-100">{loadError}</p>
+            <a
+              href="/join"
+              className="mt-4 inline-block rounded-xl bg-rose-100 px-5 py-3 font-semibold text-slate-950 hover:bg-white"
+            >
+              Enter a different code
+            </a>
+          </div>
+        )}
+
+        {!loadError && message && (
           <p className="mt-4 rounded-xl bg-white/10 p-4 text-slate-200">
             {message}
           </p>
         )}
 
-        <div className="mt-6 rounded-2xl border border-white/10 bg-white/10 p-6">
-          <p className="text-slate-300">You are in this quartet as:</p>
-          <p className="mt-1 text-2xl font-bold text-cyan-300">{displayName}</p>
-
-          <button
-            onClick={() => joinSession()}
-            disabled={!sessionId || !displayName || !currentUserId}
-            className="mt-4 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
-          >
-            Rejoin / refresh my repertoire
-          </button>
-
-          <a
-            href="/settings"
-            className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200"
-          >
-            Change settings
-          </a>
-
-          <a
-            href="/repertoire"
-            className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200"
-          >
-            Edit repertoire
-          </a>
-        </div>
-
-        <div className="mt-8">
-          <h2 className="text-2xl font-semibold">Participants</h2>
-
-          <div className="mt-4 space-y-3">
-            {participants.length === 0 && (
-              <p className="rounded-2xl border border-white/10 bg-white/5 p-5 text-slate-300">
-                No singers have joined yet.
+        {!loadError && (
+          <>
+            <div className="mt-6 rounded-2xl border border-white/10 bg-white/10 p-6">
+              <p className="text-slate-300">You are in this quartet as:</p>
+              <p className="mt-1 text-2xl font-bold text-cyan-300">
+                {displayName}
               </p>
-            )}
 
-            {participants.map((p) => (
-              <div
-                key={p.id}
-                className="rounded-xl border border-white/10 bg-white/10 p-4"
+              <button
+                onClick={() => joinSession()}
+                disabled={!sessionId || !displayName || !currentUserId}
+                className="mt-4 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
               >
-                <p className="font-semibold">{p.display_name}</p>
-                <p className="text-sm text-slate-300">
-                  {p.repertoire.length} songs loaded
-                </p>
+                Rejoin / refresh my repertoire
+              </button>
+
+              <a
+                href="/settings"
+                className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200"
+              >
+                Change settings
+              </a>
+
+              <a
+                href="/repertoire"
+                className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200"
+              >
+                Edit repertoire
+              </a>
+            </div>
+
+            <div className="mt-8">
+              <h2 className="text-2xl font-semibold">Participants</h2>
+
+              <div className="mt-4 space-y-3">
+                {participants.length === 0 && (
+                  <p className="rounded-2xl border border-white/10 bg-white/5 p-5 text-slate-300">
+                    No singers have joined yet.
+                  </p>
+                )}
+
+                {participants.map((p) => (
+                  <div
+                    key={p.id}
+                    className="rounded-xl border border-white/10 bg-white/10 p-4"
+                  >
+                    <p className="font-semibold">{p.display_name}</p>
+                    <p className="text-sm text-slate-300">
+                      {p.repertoire.length} songs loaded
+                    </p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        <div className="mt-10">
-          <h2 className="text-2xl font-semibold">Matches</h2>
+            <div className="mt-10">
+              <h2 className="text-2xl font-semibold">Matches</h2>
 
-          <div className="mt-4 space-y-6">
-            {matches.length === 0 && (
-              <p className="rounded-2xl border border-white/10 bg-white/5 p-5 text-slate-300">
-                No matches yet. Add more singers or repertoire.
-              </p>
-            )}
+              <div className="mt-4 space-y-6">
+                {matches.length === 0 && (
+                  <p className="rounded-2xl border border-white/10 bg-white/5 p-5 text-slate-300">
+                    No matches yet. Add more singers or repertoire.
+                  </p>
+                )}
 
-            {groupedMatches.map(
-              (section) =>
-                section.matches.length > 0 && (
-                  <section key={section.category} className="space-y-3">
-                    <h3 className="text-lg font-semibold text-slate-100">
-                      {section.title}
-                    </h3>
+                {groupedMatches.map(
+                  (section) =>
+                    section.matches.length > 0 && (
+                      <section key={section.category} className="space-y-3">
+                        <h3 className="text-lg font-semibold text-slate-100">
+                          {section.title}
+                        </h3>
 
-                    <div className="space-y-4">
-                      {section.matches.map((match) => (
-                        <MatchCard
-                          key={match.songTitle + match.voicing}
-                          match={match}
-                        />
-                      ))}
-                    </div>
-                  </section>
-                )
-            )}
-          </div>
-        </div>
+                        <div className="space-y-4">
+                          {section.matches.map((match) => (
+                            <MatchCard
+                              key={match.songTitle + match.voicing}
+                              match={match}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    )
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </main>
   );
