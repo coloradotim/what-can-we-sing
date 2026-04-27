@@ -1,5 +1,6 @@
 "use client";
 
+import { ActiveQuartetIndicator } from "@/components/ActiveQuartetIndicator";
 import { usePathname } from "next/navigation";
 import { SignOutButton } from "@/components/SignOutButton";
 
@@ -61,6 +62,7 @@ export function AppNav() {
 
         <SignOutButton className="rounded-xl px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-white/10 hover:text-white disabled:opacity-50" />
       </div>
+      <ActiveQuartetIndicator />
     </nav>
   );
 }

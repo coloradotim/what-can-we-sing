@@ -1,4 +1,5 @@
 const ACTIVE_QUARTET_STORAGE_KEY = "active-quartet";
+export const ACTIVE_QUARTET_CHANGED_EVENT = "active-quartet-changed";
 
 type StorageLike = Pick<Storage, "getItem" | "removeItem" | "setItem">;
 
@@ -11,6 +12,12 @@ export type ActiveQuartet = {
 function getBrowserStorage(): StorageLike | null {
   if (typeof window === "undefined") return null;
   return window.localStorage;
+}
+
+function notifyActiveQuartetChanged() {
+  if (typeof window === "undefined") return;
+
+  window.dispatchEvent(new Event(ACTIVE_QUARTET_CHANGED_EVENT));
 }
 
 export function getActiveQuartet(
@@ -42,12 +49,14 @@ export function setActiveQuartet(
   if (!storage) return;
 
   storage.setItem(ACTIVE_QUARTET_STORAGE_KEY, JSON.stringify(activeQuartet));
+  notifyActiveQuartetChanged();
 }
 
 export function clearActiveQuartet(storage = getBrowserStorage()) {
   if (!storage) return;
 
   storage.removeItem(ACTIVE_QUARTET_STORAGE_KEY);
+  notifyActiveQuartetChanged();
 }
 
 export function clearActiveQuartetIfMatches(
