@@ -97,6 +97,7 @@ export default function JoinSessionPage() {
   const [now, setNow] = useState(() => new Date());
   const [leftQuartet, setLeftQuartet] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [refreshingSnapshot, setRefreshingSnapshot] = useState(false);
   const [pendingActiveQuartet, setPendingActiveQuartet] =
     useState<ActiveQuartet | null>(null);
   const [leavingCurrentQuartet, setLeavingCurrentQuartet] = useState(false);
@@ -107,7 +108,7 @@ export default function JoinSessionPage() {
     return data;
   }
 
-  async function getMyEntries(name: string): Promise<SingerEntry[]> {
+  async function loadMyRepertoire() {
     const repertoire = await getMyRepertoire();
     setPersonalSongNotes(
       repertoire
@@ -118,6 +119,12 @@ export default function JoinSessionPage() {
           notes: item.notes?.trim() ?? "",
         }))
     );
+
+    return repertoire;
+  }
+
+  async function getMyEntries(name: string): Promise<SingerEntry[]> {
+    const repertoire = await loadMyRepertoire();
 
     return repertoire.map((item) => ({
       userId: item.user_id,
@@ -199,6 +206,54 @@ export default function JoinSessionPage() {
     } catch (err) {
       console.error(err);
       setMessage("Could not join quartet. Check your connection and try again.");
+    }
+  }
+
+  async function refreshMySnapshot() {
+    if (!sessionId || !currentUserId || !displayName) {
+      setMessage("Could not refresh yet. Wait for the quartet to finish loading.");
+      return;
+    }
+
+    setRefreshingSnapshot(true);
+    setMessage("");
+
+    try {
+      const currentParticipants = await refreshParticipants(sessionId);
+      const existingParticipant = currentParticipants.find(
+        (participant) => participant.user_id === currentUserId
+      );
+
+      if (!existingParticipant) {
+        await joinSession(sessionId, displayName, currentUserId);
+        return;
+      }
+
+      const entries = await getMyEntries(displayName);
+      const lastActivityAt = new Date().toISOString();
+
+      await updateParticipantSnapshot(
+        existingParticipant.id,
+        currentUserId,
+        displayName,
+        entries,
+        lastActivityAt
+      );
+      setActiveQuartet({ sessionId, code, joinedAt: lastActivityAt });
+      setSession((current) =>
+        current ? { ...current, last_activity_at: lastActivityAt } : current
+      );
+      await refreshParticipants(sessionId);
+      setMessage(
+        `Updated ${displayName}'s repertoire with ${entries.length} songs.`
+      );
+    } catch (err) {
+      console.error(err);
+      setMessage(
+        "Could not update your repertoire snapshot. Check your connection and try again."
+      );
+    } finally {
+      setRefreshingSnapshot(false);
     }
   }
 
@@ -378,6 +433,7 @@ export default function JoinSessionPage() {
 
         const activeQuartet = getActiveQuartet();
         if (
+          !alreadyJoined &&
           activeQuartet &&
           activeQuartet.sessionId !== session.id &&
           !hasLeftQuartet
@@ -387,16 +443,25 @@ export default function JoinSessionPage() {
           return;
         }
 
-        if (!alreadyJoined && !hasAutoJoined.current && !hasLeftQuartet) {
+        if (alreadyJoined) {
+          if (hasLeftQuartet) {
+            window.sessionStorage.removeItem(leftQuartetStorageKey(code));
+            setLeftQuartet(false);
+          }
+
+          await loadMyRepertoire();
+          setActiveQuartet({
+            sessionId: session.id,
+            code,
+            joinedAt: new Date().toISOString(),
+          });
+          setMessage(`You are in this quartet as ${profile.display_name}.`);
+        } else if (!hasAutoJoined.current && !hasLeftQuartet) {
           hasAutoJoined.current = true;
           await joinSession(session.id, profile.display_name, user.id);
         } else if (hasLeftQuartet) {
           clearActiveQuartetIfMatches(session.id);
           setMessage("You left this quartet.");
-        } else {
-          await joinSession(session.id, profile.display_name, user.id, {
-            successMessage: `You are in this quartet as ${profile.display_name}. Matches use your latest repertoire.`,
-          });
         }
       } catch (err) {
         console.error(err);
@@ -672,6 +737,22 @@ export default function JoinSessionPage() {
                     </button>
 
                     <div className="flex flex-wrap gap-x-4 gap-y-2">
+                      <button
+                        type="button"
+                        onClick={refreshMySnapshot}
+                        disabled={
+                          refreshingSnapshot ||
+                          !sessionId ||
+                          !displayName ||
+                          !currentUserId
+                        }
+                        className="text-sm font-semibold text-cyan-300 hover:text-cyan-200 disabled:opacity-40"
+                      >
+                        {refreshingSnapshot
+                          ? "Updating repertoire..."
+                          : "Update repertoire snapshot"}
+                      </button>
+
                       <a
                         href="/settings"
                         className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
