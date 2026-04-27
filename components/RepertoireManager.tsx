@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/AppNav";
 import type { Confidence, Part, Voicing } from "@/lib/matching";
+import { partAbbreviation, partButtonLabel } from "@/lib/partAbbreviations";
 import {
   addRepertoireItem,
   deleteRepertoireItem,
@@ -34,36 +35,6 @@ type RepertoireForm = {
   confidence: Confidence;
   notes: string;
 };
-
-function partAbbreviation(voicing: Voicing, part: Part): string {
-  if (voicing === "TTBB") {
-    if (part === "Tenor") return "T";
-    if (part === "Lead") return "L";
-    if (part === "Baritone") return "Bari";
-    if (part === "Bass") return "Bass";
-  }
-
-  if (voicing === "SATB") {
-    if (part === "Soprano") return "S";
-    if (part === "Alto") return "A";
-    if (part === "Tenor") return "T";
-    if (part === "Bass") return "Bass";
-  }
-
-  if (part === "Soprano 1") return "S1";
-  if (part === "Soprano 2") return "S2";
-  if (part === "Alto 1") return "A1";
-  if (part === "Alto 2") return "A2";
-
-  return part;
-}
-
-function partButtonLabel(voicing: Voicing, part: Part): string {
-  const abbreviation = partAbbreviation(voicing, part);
-
-  if (abbreviation === part) return part;
-  return `${abbreviation} ${part}`;
-}
 
 export default function RepertoireManager() {
   const songTitleInputRef = useRef<HTMLInputElement>(null);

@@ -10,6 +10,29 @@ describe("findMatches", () => {
     expect(normalizeConfidence("Learning")).toBe("Music Required");
   });
 
+  it("keeps current confidence values and rejects unknown values", () => {
+    expect(normalizeConfidence("Good to Go")).toBe("Good to Go");
+    expect(normalizeConfidence("A Little Rusty")).toBe("A Little Rusty");
+    expect(normalizeConfidence("Music Required")).toBe("Music Required");
+    expect(normalizeConfidence("Unknown")).toBeNull();
+    expect(normalizeConfidence(null)).toBeNull();
+  });
+
+  it("adds confidence warnings for rusty or music-required singers", () => {
+    const entries: SingerEntry[] = [
+      { userId: "1", displayName: "Ready", songTitle: "Warning Song", voicing: "TTBB", partsKnown: ["Tenor"], confidence: "Good to Go" },
+      { userId: "2", displayName: "Rusty", songTitle: "Warning Song", voicing: "TTBB", partsKnown: ["Lead"], confidence: "A Little Rusty" },
+      { userId: "3", displayName: "Music", songTitle: "Warning Song", voicing: "TTBB", partsKnown: ["Baritone"], confidence: "Music Required" },
+      { userId: "4", displayName: "Ready Bass", songTitle: "Warning Song", voicing: "TTBB", partsKnown: ["Bass"], confidence: "Good to Go" },
+    ];
+
+    const matches = findMatches(entries);
+
+    expect(matches[0].warnings).toContain(
+      "Confidence warning: Rusty marked A Little Rusty, Music marked Music Required"
+    );
+  });
+
   it("does not let one singer cover multiple quartet parts", () => {
     const entries: SingerEntry[] = [
       {
@@ -232,6 +255,39 @@ describe("findMatches", () => {
 
     expect(matches[0].songTitle).toBe("Strong Song");
     expect(matches[0].score).toBeGreaterThan(matches[1].score);
+  });
+
+  it("ranks a little rusty above music required within the same category", () => {
+    const entries: SingerEntry[] = [
+      { userId: "1", displayName: "A", songTitle: "Music Required Song", voicing: "TTBB", partsKnown: ["Tenor"], confidence: "Music Required" },
+      { userId: "2", displayName: "B", songTitle: "Music Required Song", voicing: "TTBB", partsKnown: ["Lead"], confidence: "Music Required" },
+      { userId: "3", displayName: "C", songTitle: "Music Required Song", voicing: "TTBB", partsKnown: ["Baritone"], confidence: "Music Required" },
+      { userId: "4", displayName: "D", songTitle: "Music Required Song", voicing: "TTBB", partsKnown: ["Bass"], confidence: "Music Required" },
+
+      { userId: "1", displayName: "A", songTitle: "Rusty Song", voicing: "TTBB", partsKnown: ["Tenor"], confidence: "A Little Rusty" },
+      { userId: "2", displayName: "B", songTitle: "Rusty Song", voicing: "TTBB", partsKnown: ["Lead"], confidence: "A Little Rusty" },
+      { userId: "3", displayName: "C", songTitle: "Rusty Song", voicing: "TTBB", partsKnown: ["Baritone"], confidence: "A Little Rusty" },
+      { userId: "4", displayName: "D", songTitle: "Rusty Song", voicing: "TTBB", partsKnown: ["Bass"], confidence: "A Little Rusty" },
+    ];
+
+    const matches = findMatches(entries);
+
+    expect(matches[0].songTitle).toBe("Rusty Song");
+    expect(matches[0].score).toBeGreaterThan(matches[1].score);
+  });
+
+  it("prefers the stronger singer when multiple singers can cover the same part", () => {
+    const entries: SingerEntry[] = [
+      { userId: "1", displayName: "Rusty Tenor", songTitle: "Choice Song", voicing: "TTBB", partsKnown: ["Tenor"], confidence: "Music Required" },
+      { userId: "2", displayName: "Ready Tenor", songTitle: "Choice Song", voicing: "TTBB", partsKnown: ["Tenor"], confidence: "Good to Go" },
+      { userId: "3", displayName: "Lead", songTitle: "Choice Song", voicing: "TTBB", partsKnown: ["Lead"], confidence: "Good to Go" },
+      { userId: "4", displayName: "Bari", songTitle: "Choice Song", voicing: "TTBB", partsKnown: ["Baritone"], confidence: "Good to Go" },
+      { userId: "5", displayName: "Bass", songTitle: "Choice Song", voicing: "TTBB", partsKnown: ["Bass"], confidence: "Good to Go" },
+    ];
+
+    const matches = findMatches(entries);
+
+    expect(matches[0].assignments.Tenor?.[0].displayName).toBe("Ready Tenor");
   });
 
   it("uses extra part coverage as a modest tie-breaker", () => {
