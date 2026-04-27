@@ -48,10 +48,18 @@ const setupPrompts: Record<
 export default function Home() {
   const [setupState, setSetupState] = useState<SetupState>("loading");
   const [message, setMessage] = useState("");
+  const [messageTone, setMessageTone] = useState<"error" | "success">("error");
 
   useEffect(() => {
     async function loadSetupState() {
       try {
+        const searchParams = new URLSearchParams(window.location.search);
+        if (searchParams.get("leftQuartet") === "1") {
+          setMessage("You left the quartet.");
+          setMessageTone("success");
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+
         const user = await getCurrentUser();
 
         if (!user) {
@@ -69,6 +77,7 @@ export default function Home() {
         setSetupState(repertoire.length > 0 ? "ready" : "missing_repertoire");
       } catch (err) {
         console.error(err);
+        setMessageTone("error");
         setMessage("Could not check your setup. Refresh the page and try again.");
         setSetupState("ready");
       }
@@ -94,7 +103,15 @@ export default function Home() {
           Find songs your quartet can sing now.
         </h1>
 
-        {message && <p className="mt-4 text-sm text-rose-200">{message}</p>}
+        {message && (
+          <p
+            className={`mt-4 text-sm ${
+              messageTone === "success" ? "text-cyan-200" : "text-rose-200"
+            }`}
+          >
+            {message}
+          </p>
+        )}
 
         {setupState === "loading" && (
           <div className="mt-10 rounded-xl border border-white/10 bg-white/10 px-5 py-4 text-slate-300">

@@ -88,6 +88,16 @@ export async function getParticipants(sessionId: string) {
   return data as DbParticipant[];
 }
 
+export async function removeParticipant(sessionId: string, userId: string) {
+  const { error } = await supabase
+    .from("session_participants")
+    .delete()
+    .eq("session_id", sessionId)
+    .eq("user_id", userId);
+
+  if (error) throw error;
+}
+
 export function subscribeToSessionParticipants(
   sessionId: string,
   onChange: () => void
