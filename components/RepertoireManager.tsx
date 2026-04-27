@@ -245,6 +245,16 @@ export default function RepertoireManager() {
         <p className="mt-2 text-slate-300">
           Add songs you know, the parts you can sing, and how confident you are.
         </p>
+        <p className="mt-3 text-sm text-slate-400">
+          Your repertoire is stored so the app can find quartet matches.{" "}
+          <a
+            href="/privacy"
+            className="font-semibold text-cyan-300 hover:text-cyan-200"
+          >
+            Read privacy
+          </a>
+          .
+        </p>
 
         {loadError && (
           <div className="mt-4 rounded-xl border border-rose-300/20 bg-rose-400/10 p-4 text-sm text-rose-100">
