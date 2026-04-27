@@ -18,7 +18,6 @@ export default function SettingsPage() {
   const [userId, setUserId] = useState("");
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [savedDisplayName, setSavedDisplayName] = useState("");
   const [message, setMessage] = useState("");
   const [displayNameError, setDisplayNameError] = useState("");
   const [showRepertoireNextStep, setShowRepertoireNextStep] = useState(false);
@@ -42,7 +41,6 @@ export default function SettingsPage() {
 
         if (profile) {
           setDisplayName(profile.display_name ?? "");
-          setSavedDisplayName(profile.display_name ?? "");
         } else {
           setMessage(
             "Add a display name before joining a quartet so other singers know who you are."
@@ -77,7 +75,6 @@ export default function SettingsPage() {
       const activeQuartetDisplayNameSync = getActiveQuartetDisplayNameSync({
         activeQuartet: getActiveQuartet(),
         userId,
-        previousDisplayName: savedDisplayName,
         nextDisplayName: trimmedDisplayName,
       });
       let activeQuartetSyncFailed = false;
@@ -93,10 +90,6 @@ export default function SettingsPage() {
           activeQuartetSyncFailed = true;
           console.error(err);
         }
-      }
-
-      if (!activeQuartetSyncFailed) {
-        setSavedDisplayName(trimmedDisplayName);
       }
 
       let repertoireCount: number | null = null;
