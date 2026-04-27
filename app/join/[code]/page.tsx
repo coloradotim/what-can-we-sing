@@ -22,6 +22,7 @@ import {
   updateParticipantSnapshot,
   upsertParticipant,
 } from "@/lib/sessionStore";
+import { getCurrentParticipantDisplayName } from "@/lib/sessionParticipantDisplayName";
 import {
   isSessionExpired,
   sessionExpirationLabel,
@@ -234,7 +235,9 @@ export default function JoinSessionPage() {
   }
 
   async function refreshMySongs() {
-    if (!sessionId || !currentUserId || !displayName) {
+    const name = currentParticipantDisplayName;
+
+    if (!sessionId || !currentUserId || !name) {
       setMessage("Could not refresh yet. Wait for the quartet to finish loading.");
       return;
     }
@@ -250,17 +253,17 @@ export default function JoinSessionPage() {
       );
 
       if (!existingParticipant) {
-        await joinSession(sessionId, displayName, currentUserId);
+        await joinSession(sessionId, name, currentUserId);
         return;
       }
 
-      const entries = await getMyEntries(displayName);
+      const entries = await getMyEntries(name);
       const lastActivityAt = new Date().toISOString();
 
       await updateParticipantSnapshot(
         existingParticipant.id,
         currentUserId,
-        displayName,
+        name,
         entries,
         lastActivityAt
       );
@@ -269,9 +272,7 @@ export default function JoinSessionPage() {
         current ? { ...current, last_activity_at: lastActivityAt } : current
       );
       await refreshParticipants(sessionId);
-      setMessage(
-        `Updated ${displayName}'s repertoire with ${entries.length} songs.`
-      );
+      setMessage(`Updated ${name}'s repertoire with ${entries.length} songs.`);
     } catch (err) {
       console.error(err);
       setMessage(
@@ -309,7 +310,7 @@ export default function JoinSessionPage() {
   }
 
   async function rejoinQuartet() {
-    await joinSession(sessionId, displayName, currentUserId, {
+    await joinSession(sessionId, currentParticipantDisplayName, currentUserId, {
       clearLeftFlag: true,
     });
   }
@@ -577,6 +578,11 @@ export default function JoinSessionPage() {
   )?.matches.length ?? 0;
   const quartetExpired = session ? isSessionExpired(session, now) : false;
   const expirationLabel = session ? sessionExpirationLabel(session, now) : "";
+  const currentParticipantDisplayName = getCurrentParticipantDisplayName(
+    participants,
+    currentUserId,
+    displayName
+  );
   const openSingerSlots = Math.max(
     0,
     MAX_QUARTET_PARTICIPANTS - participants.length
@@ -883,7 +889,7 @@ export default function JoinSessionPage() {
                 <>
                   <p className="text-slate-300">You are in this quartet as:</p>
                   <p className="mt-1 text-2xl font-bold text-cyan-300">
-                    {displayName}
+                    {currentParticipantDisplayName}
                   </p>
 
                   <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -902,7 +908,7 @@ export default function JoinSessionPage() {
                         disabled={
                           refreshingSongs ||
                           !sessionId ||
-                          !displayName ||
+                          !currentParticipantDisplayName ||
                           !currentUserId
                         }
                         className="text-sm font-semibold text-cyan-300 hover:text-cyan-200 disabled:opacity-40"
