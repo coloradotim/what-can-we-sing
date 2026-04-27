@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import type { SingerEntry } from "@/lib/matching";
+import { applyParticipantDisplayName } from "@/lib/sessionParticipantDisplayName";
 import type { ParticipantChangePayload } from "@/lib/sessionParticipantChanges";
 
 export type DbSession = {
@@ -107,21 +108,37 @@ export async function updateParticipantDisplayName(
   displayName: string,
   lastActivityAt = new Date().toISOString()
 ) {
-  const { data, error } = await supabase
+  const { data: currentParticipant, error: selectError } = await supabase
     .from("session_participants")
-    .update({ display_name: displayName })
+    .select("*")
     .eq("session_id", sessionId)
     .eq("user_id", userId)
-    .select()
     .maybeSingle();
+
+  if (selectError) throw selectError;
+  if (!currentParticipant) return null;
+
+  const participant = applyParticipantDisplayName(
+    currentParticipant as DbParticipant,
+    displayName
+  );
+
+  const { data, error } = await supabase
+    .from("session_participants")
+    .update({
+      display_name: participant.display_name,
+      repertoire: participant.repertoire,
+    })
+    .eq("id", participant.id)
+    .eq("user_id", userId)
+    .select()
+    .single();
 
   if (error) throw error;
 
-  if (data) {
-    await updateSessionActivity(sessionId, lastActivityAt);
-  }
+  await updateSessionActivity(sessionId, lastActivityAt);
 
-  return data as DbParticipant | null;
+  return data as DbParticipant;
 }
 
 export async function getParticipants(sessionId: string) {
