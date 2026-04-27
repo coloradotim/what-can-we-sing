@@ -100,7 +100,7 @@ export default function JoinSessionPage() {
   const [now, setNow] = useState(() => new Date());
   const [leftQuartet, setLeftQuartet] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const [refreshingSnapshot, setRefreshingSnapshot] = useState(false);
+  const [refreshingSongs, setRefreshingSongs] = useState(false);
   const [pendingActiveQuartet, setPendingActiveQuartet] =
     useState<ActiveQuartet | null>(null);
   const [leavingCurrentQuartet, setLeavingCurrentQuartet] = useState(false);
@@ -217,13 +217,13 @@ export default function JoinSessionPage() {
     }
   }
 
-  async function refreshMySnapshot() {
+  async function refreshMySongs() {
     if (!sessionId || !currentUserId || !displayName) {
       setMessage("Could not refresh yet. Wait for the quartet to finish loading.");
       return;
     }
 
-    setRefreshingSnapshot(true);
+    setRefreshingSongs(true);
     setMessage("");
 
     try {
@@ -258,10 +258,10 @@ export default function JoinSessionPage() {
     } catch (err) {
       console.error(err);
       setMessage(
-        "Could not update your repertoire snapshot. Check your connection and try again."
+        "Could not refresh your songs. Check your connection and try again."
       );
     } finally {
-      setRefreshingSnapshot(false);
+      setRefreshingSongs(false);
     }
   }
 
@@ -469,11 +469,27 @@ export default function JoinSessionPage() {
             setLeftQuartet(false);
           }
 
-          await loadMyRepertoire();
+          const existingParticipant = currentParticipants.find(
+            (participant) => participant.user_id === user.id
+          );
+          const entries = await getMyEntries(profile.display_name);
+          const lastActivityAt = new Date().toISOString();
+
+          if (existingParticipant) {
+            await updateParticipantSnapshot(
+              existingParticipant.id,
+              user.id,
+              profile.display_name,
+              entries,
+              lastActivityAt
+            );
+            await refreshParticipants(session.id);
+          }
+
           setActiveQuartet({
             sessionId: session.id,
             code,
-            joinedAt: new Date().toISOString(),
+            joinedAt: lastActivityAt,
           });
           setMessage(`You are in this quartet as ${profile.display_name}.`);
         } else if (!hasAutoJoined.current && !hasLeftQuartet) {
@@ -811,18 +827,16 @@ export default function JoinSessionPage() {
                     <div className="flex flex-wrap gap-x-4 gap-y-2">
                       <button
                         type="button"
-                        onClick={refreshMySnapshot}
+                        onClick={refreshMySongs}
                         disabled={
-                          refreshingSnapshot ||
+                          refreshingSongs ||
                           !sessionId ||
                           !displayName ||
                           !currentUserId
                         }
                         className="text-sm font-semibold text-cyan-300 hover:text-cyan-200 disabled:opacity-40"
                       >
-                        {refreshingSnapshot
-                          ? "Updating repertoire..."
-                          : "Update repertoire snapshot"}
+                        {refreshingSongs ? "Refreshing songs..." : "Refresh my songs"}
                       </button>
 
                       <a
