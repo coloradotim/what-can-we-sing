@@ -101,6 +101,29 @@ export async function updateParticipantSnapshot(
   return data as DbParticipant;
 }
 
+export async function updateParticipantDisplayName(
+  sessionId: string,
+  userId: string,
+  displayName: string,
+  lastActivityAt = new Date().toISOString()
+) {
+  const { data, error } = await supabase
+    .from("session_participants")
+    .update({ display_name: displayName })
+    .eq("session_id", sessionId)
+    .eq("user_id", userId)
+    .select()
+    .maybeSingle();
+
+  if (error) throw error;
+
+  if (data) {
+    await updateSessionActivity(sessionId, lastActivityAt);
+  }
+
+  return data as DbParticipant | null;
+}
+
 export async function getParticipants(sessionId: string) {
   const { data, error } = await supabase
     .from("session_participants")
