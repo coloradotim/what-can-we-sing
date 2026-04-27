@@ -1,93 +1,150 @@
-import type { MatchResult } from "@/lib/matching";
+import {
+  requiredPartsForVoicing,
+  type MatchResult,
+  type Part,
+  type Voicing,
+} from "@/lib/matching";
 
 type MatchCardProps = {
   match: MatchResult;
 };
 
-const categoryLabels: Record<MatchResult["category"], string> = {
-  ready: "Ready to sing",
-  possible: "Confirm arrangement",
-  one_part_missing: "One part missing",
-};
-
 const categoryStyles: Record<
   MatchResult["category"],
   {
-    article: string;
-    badge: string;
+    row: string;
+    part: string;
   }
 > = {
   ready: {
-    article: "border-emerald-300/30 bg-emerald-300/10",
-    badge: "bg-emerald-300 text-slate-950",
+    row: "border-emerald-300/25 bg-emerald-300/10",
+    part: "bg-emerald-300/15 text-emerald-100 ring-emerald-300/20",
   },
   possible: {
-    article: "border-amber-300/30 bg-amber-300/10",
-    badge: "bg-amber-300 text-slate-950",
+    row: "border-amber-300/25 bg-amber-300/10",
+    part: "bg-amber-300/15 text-amber-100 ring-amber-300/20",
   },
   one_part_missing: {
-    article: "border-rose-300/30 bg-rose-400/10",
-    badge: "bg-rose-200 text-slate-950",
+    row: "border-rose-300/25 bg-rose-400/10",
+    part: "bg-slate-900/80 text-slate-100 ring-white/10",
   },
 };
 
+function partAbbreviation(voicing: Voicing, part: Part): string {
+  if (voicing === "TTBB") {
+    if (part === "Tenor") return "T";
+    if (part === "Lead") return "L";
+    if (part === "Baritone") return "Bari";
+    if (part === "Bass") return "Bs";
+  }
+
+  if (voicing === "SATB") {
+    if (part === "Soprano") return "S";
+    if (part === "Alto") return "A";
+    if (part === "Tenor") return "T";
+    if (part === "Bass") return "B";
+  }
+
+  if (part === "Soprano 1") return "S1";
+  if (part === "Soprano 2") return "S2";
+  if (part === "Alto 1") return "A1";
+  if (part === "Alto 2") return "A2";
+
+  return part;
+}
+
 export function MatchCard({ match }: MatchCardProps) {
   const styles = categoryStyles[match.category];
+  const parts = requiredPartsForVoicing(match.voicing);
+  const hasDetails = match.warnings.length > 0 || match.arrangerNames.length > 0;
 
   return (
-    <article
-      className={`rounded-2xl border p-4 shadow-lg sm:p-5 ${styles.article}`}
+    <details
+      className={`group rounded-xl border px-3 py-2 shadow-lg open:pb-3 ${styles.row}`}
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h3 className="break-words text-xl font-bold sm:text-2xl">
-            {match.songTitle} — {match.voicing}
-          </h3>
-
-          <p className="mt-1 text-sm text-slate-300">
-            {match.category === "ready" && "Ready to sing"}
-            {match.category === "possible" &&
-              "Possible match — confirm arrangement"}
-            {match.category === "one_part_missing" &&
-              `One part missing: ${match.missingParts.join(", ")}`}
-          </p>
-        </div>
-
-        <span
-          className={`w-fit rounded-full px-3 py-1 text-sm font-semibold ${styles.badge}`}
-        >
-          {categoryLabels[match.category]}
-        </span>
-      </div>
-
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        {Object.entries(match.assignments).map(([part, singers]) => (
-          <div key={part} className="rounded-xl bg-slate-900/70 p-3">
-            <p className="font-semibold">{part}</p>
-            <p className="text-sm text-slate-300">
-              {singers.map((singer) => singer.displayName).join(", ")}
+      <summary className="cursor-pointer list-none">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="truncate text-base font-semibold text-white">
+              {match.songTitle}
+            </h3>
+            <p className="mt-0.5 text-xs font-semibold uppercase tracking-normal text-slate-400">
+              {match.voicing}
             </p>
           </div>
-        ))}
-
-        {match.missingParts.map((part) => (
-          <div
-            key={part}
-            className="rounded-xl border border-rose-300/30 bg-rose-400/10 p-3"
-          >
-            <p className="font-semibold text-rose-200">{part}</p>
-            <p className="text-sm text-rose-200">Missing</p>
-          </div>
-        ))}
-      </div>
-
-      {match.warnings.length > 0 && (
-        <div className="mt-4 rounded-xl bg-amber-300/10 p-3 text-sm text-amber-200">
-          {match.warnings.map((warning) => (
-            <p key={warning}>⚠ {warning}</p>
-          ))}
+          <span className="shrink-0 rounded-full bg-slate-950/80 px-2 py-1 text-xs font-semibold text-slate-300 group-open:hidden">
+            Details
+          </span>
         </div>
-      )}
-    </article>
+
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {parts.map((part) => {
+            const singers = match.assignments[part] ?? [];
+            const abbreviation = partAbbreviation(match.voicing, part);
+            const isMissing = match.missingParts.includes(part);
+
+            return (
+              <span
+                key={part}
+                className={`inline-flex max-w-full items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold ring-1 ${
+                  isMissing
+                    ? "bg-rose-400/15 text-rose-100 ring-rose-300/30"
+                    : styles.part
+                }`}
+              >
+                <span>{isMissing ? `Missing ${abbreviation}` : abbreviation}</span>
+                {singers.length > 0 && (
+                  <span className="truncate font-medium text-slate-200">
+                    {singers.map((singer) => singer.displayName).join(", ")}
+                  </span>
+                )}
+              </span>
+            );
+          })}
+        </div>
+      </summary>
+
+      <div className="mt-3 border-t border-white/10 pt-3 text-sm text-slate-300">
+        <div className="grid gap-2 sm:grid-cols-2">
+          {parts.map((part) => {
+            const singers = match.assignments[part] ?? [];
+            const abbreviation = partAbbreviation(match.voicing, part);
+            const isMissing = match.missingParts.includes(part);
+
+            return (
+              <p key={part} className={isMissing ? "text-rose-200" : undefined}>
+                <span className="font-semibold text-white">{abbreviation}:</span>{" "}
+                {isMissing
+                  ? "Missing"
+                  : singers.map((singer) => singer.displayName).join(", ")}
+              </p>
+            );
+          })}
+        </div>
+
+        {match.arrangerNames.length > 0 && (
+          <p className="mt-3">
+            <span className="font-semibold text-white">Arranger:</span>{" "}
+            {match.arrangerNames.join(", ")}
+          </p>
+        )}
+
+        {match.warnings.length > 0 && (
+          <div
+            className="mt-3 rounded-lg bg-amber-300/10 p-2 text-sm text-amber-100"
+          >
+            {match.warnings.map((warning) => (
+              <p key={warning}>{warning}</p>
+            ))}
+          </div>
+        )}
+
+        {!hasDetails && (
+          <p className="mt-3 text-xs font-semibold uppercase tracking-normal text-slate-500">
+            No arrangement warnings
+          </p>
+        )}
+      </div>
+    </details>
   );
 }
