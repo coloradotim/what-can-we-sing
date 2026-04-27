@@ -1,5 +1,6 @@
 "use client";
 
+import { getMagicLinkRedirectUrl } from "@/lib/authRedirect";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 
@@ -10,10 +11,21 @@ export default function LoginPage() {
   async function sendMagicLink() {
     if (!email.trim()) return;
 
+    const emailRedirectTo = getMagicLinkRedirectUrl({
+      siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+      origin: window.location.origin,
+      search: window.location.search,
+    });
+
+    if (!emailRedirectTo) {
+      setMessage("Login is not configured for this site yet.");
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        emailRedirectTo: `${window.location.origin}/settings`,
+        emailRedirectTo,
       },
     });
 
