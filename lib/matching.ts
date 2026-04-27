@@ -148,10 +148,12 @@ function scoreMatch(
   requiredParts: Part[],
   warnings: string[]
 ): number {
+  // Keep category bands wide so a weaker ready match still beats any possible
+  // match, and any possible match still beats a one-part-missing result.
   const categoryBase = {
-    ready: 300,
-    possible: 200,
-    one_part_missing: 100,
+    ready: 3000,
+    possible: 2000,
+    one_part_missing: 1000,
   }[category];
 
   const assignedConfidence = Object.values(assignment).reduce(
@@ -159,13 +161,20 @@ function scoreMatch(
     0
   );
 
+  // Flexibility is backup coverage: additional singers who can cover required
+  // parts. It is useful in real pickup quartets, but stays a small tie-breaker.
   const flexibility = requiredParts.reduce((sum, part) => {
-    return sum + group.filter((entry) => entry.partsKnown.includes(part)).length;
+    const coverage = group.filter((entry) => entry.partsKnown.includes(part)).length;
+    return sum + Math.max(0, coverage - 1);
   }, 0);
 
-  const warningPenalty = warnings.length * 5;
+  const warningPenalty = warnings.reduce((sum, warning) => {
+    if (warning === "Possible arranger conflict.") return sum + 50;
+    if (warning.startsWith("Confidence warning:")) return sum + 30;
+    return sum + 20;
+  }, 0);
 
-  return categoryBase + assignedConfidence * 10 + flexibility - warningPenalty;
+  return categoryBase + assignedConfidence * 20 + flexibility * 2 - warningPenalty;
 }
 
 export function findMatches(entries: SingerEntry[]): MatchResult[] {
