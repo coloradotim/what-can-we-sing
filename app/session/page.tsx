@@ -1,6 +1,5 @@
 "use client";
 
-import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 import { AppNav } from "@/components/AppNav";
 import {
@@ -16,8 +15,6 @@ function makeJoinCode() {
 }
 
 export default function SessionPage() {
-  const [joinCode, setJoinCode] = useState("");
-  const [qrUrl, setQrUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [activeQuartet, setActiveQuartet] = useState<ActiveQuartet | null>(null);
   const [leavingCurrent, setLeavingCurrent] = useState(false);
@@ -44,11 +41,7 @@ export default function SessionPage() {
 
       try {
         await createSession(code);
-        setJoinCode(code);
-
-        const joinUrl = `${window.location.origin}/join/${code}`;
-        const qr = await QRCode.toDataURL(joinUrl);
-        setQrUrl(qr);
+        window.location.href = `/join/${code}`;
       } catch (err) {
         console.error("Failed to create session", err);
         setErrorMessage(
@@ -149,26 +142,8 @@ export default function SessionPage() {
         )}
 
         {!activeQuartet && !errorMessage && (
-          <div className="mt-8 rounded-2xl border border-white/10 bg-white/10 p-6 text-center">
-            {qrUrl && (
-              <img
-                src={qrUrl}
-                alt="QR code"
-                className="mx-auto rounded-xl bg-white p-4"
-              />
-            )}
-
-            <p className="mt-6 text-sm text-slate-400">Quartet code</p>
-            <p className="text-5xl font-bold tracking-widest text-cyan-300">
-              {joinCode}
-            </p>
-
-            <a
-              href={`/join/${joinCode}`}
-              className="mt-6 inline-block rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200"
-            >
-              Join this quartet
-            </a>
+          <div className="mt-8 rounded-2xl border border-white/10 bg-white/10 p-6">
+            <p className="text-slate-300">Creating your quartet...</p>
           </div>
         )}
       </div>

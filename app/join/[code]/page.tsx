@@ -1,5 +1,6 @@
 "use client";
 
+import QRCode from "qrcode";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/AppNav";
@@ -65,6 +66,8 @@ export default function JoinSessionPage() {
   const [displayName, setDisplayName] = useState("");
   const [participants, setParticipants] = useState<DbParticipant[]>([]);
   const [message, setMessage] = useState("");
+  const [copyMessage, setCopyMessage] = useState("");
+  const [qrUrl, setQrUrl] = useState("");
   const [loadError, setLoadError] = useState("");
   const [now, setNow] = useState(() => new Date());
   const [leftQuartet, setLeftQuartet] = useState(false);
@@ -179,6 +182,28 @@ export default function JoinSessionPage() {
     });
   }
 
+  async function copyJoinLink() {
+    const joinUrl = `${window.location.origin}/join/${code}`;
+
+    try {
+      await window.navigator.clipboard.writeText(joinUrl);
+      setCopyMessage("Join link copied.");
+    } catch (err) {
+      console.error(err);
+      setCopyMessage("Could not copy automatically. Share the code instead.");
+    }
+  }
+
+  async function copyJoinCode() {
+    try {
+      await window.navigator.clipboard.writeText(code);
+      setCopyMessage("Quartet code copied.");
+    } catch (err) {
+      console.error(err);
+      setCopyMessage("Could not copy automatically. You can still share the code.");
+    }
+  }
+
   async function leaveCurrentAndJoinThisQuartet() {
     if (!pendingActiveQuartet || !currentUserId || !sessionId) {
       setMessage("Could not continue yet. Wait for this quartet to finish loading.");
@@ -247,6 +272,11 @@ export default function JoinSessionPage() {
         setDisplayName(profile.display_name);
         setSessionId(session.id);
         setSession(session);
+
+        const joinUrl = `${window.location.origin}/join/${code}`;
+        const qr = await QRCode.toDataURL(joinUrl);
+        setQrUrl(qr);
+
         const hasLeftQuartet =
           window.sessionStorage.getItem(leftQuartetStorageKey(code)) === "true";
         setLeftQuartet(hasLeftQuartet);
@@ -312,6 +342,12 @@ export default function JoinSessionPage() {
   }));
   const quartetExpired = session ? isSessionExpired(session, now) : false;
   const expirationLabel = session ? sessionExpirationLabel(session, now) : "";
+  const openSingerSlots = Math.max(0, MAX_QUARTET_PARTICIPANTS - participants.length);
+  const showJoinInfo =
+    Boolean(session) &&
+    !quartetExpired &&
+    !pendingActiveQuartet &&
+    participants.length < MAX_QUARTET_PARTICIPANTS;
 
   if (loading) {
     return (
@@ -397,6 +433,54 @@ export default function JoinSessionPage() {
 
         {!loadError && !quartetExpired && !pendingActiveQuartet && (
           <>
+            {showJoinInfo && (
+              <section className="mt-6 rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-5">
+                <div className="flex flex-col gap-5 md:flex-row md:items-center">
+                  {qrUrl && (
+                    <img
+                      src={qrUrl}
+                      alt="QR code for joining this quartet"
+                      className="mx-auto w-44 rounded-xl bg-white p-3 md:mx-0"
+                    />
+                  )}
+
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold uppercase text-cyan-200">
+                      Waiting for singers
+                    </p>
+                    <p className="mt-2 text-5xl font-bold tracking-widest text-white">
+                      {code}
+                    </p>
+                    <p className="mt-2 text-sm text-slate-200">
+                      {openSingerSlots} {openSingerSlots === 1 ? "spot" : "spots"} open.
+                      Share this code or QR link with singers nearby.
+                    </p>
+
+                    <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                      <button
+                        type="button"
+                        onClick={copyJoinCode}
+                        className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200"
+                      >
+                        Copy code
+                      </button>
+                      <button
+                        type="button"
+                        onClick={copyJoinLink}
+                        className="rounded-xl bg-slate-800 px-5 py-3 font-semibold text-slate-200 hover:bg-slate-700"
+                      >
+                        Copy join link
+                      </button>
+                    </div>
+
+                    {copyMessage && (
+                      <p className="mt-2 text-sm text-cyan-100">{copyMessage}</p>
+                    )}
+                  </div>
+                </div>
+              </section>
+            )}
+
             <div className="mt-6 rounded-2xl border border-white/10 bg-white/10 p-6">
               {leftQuartet ? (
                 <>
