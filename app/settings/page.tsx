@@ -1,6 +1,6 @@
 "use client";
 
-import { SignOutButton } from "@/components/SignOutButton";
+import { AppNav } from "@/components/AppNav";
 import {
   getCurrentUser,
   getMyProfile,
@@ -91,12 +91,7 @@ export default function SettingsPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-2xl">
-        <div className="flex flex-wrap items-center gap-4">
-          <a href="/" className="text-sm text-cyan-300 hover:text-cyan-200">
-            ← Back home
-          </a>
-          {isLoggedIn && <SignOutButton />}
-        </div>
+        <AppNav />
 
         <h1 className="mt-4 text-4xl font-bold">Settings</h1>
         <p className="mt-2 text-slate-300">{email}</p>
