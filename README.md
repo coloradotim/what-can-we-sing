@@ -17,7 +17,7 @@ NEXT_PUBLIC_POSTHOG_HOST=your PostHog host URL
 
 `NEXT_PUBLIC_POSTHOG_KEY` and `NEXT_PUBLIC_POSTHOG_HOST` enable optional product analytics. Leave them blank to disable analytics in local development. Analytics events use counts, IDs, and booleans only; free-text repertoire notes, feedback text, song titles, arranger names, names, and email addresses should not be sent to PostHog.
 
-Magic links redirect through `/auth/callback`, where the app exchanges the Supabase code for a session before sending the user to the intended page. In Supabase Auth URL configuration, add the production callback URL and any required local development callback URL to the allowed redirect URLs, such as:
+Magic links redirect through `/auth/callback`, where the app exchanges the Supabase code or token hash for a session before sending the user to the intended page. In Supabase Auth URL configuration, add the production callback URL and any required local development callback URL to the allowed redirect URLs, such as:
 
 ```text
 https://your-production-app-url/auth/callback
@@ -27,6 +27,9 @@ http://localhost:3000/auth/callback
 ## Supabase auth email
 
 Hosted Supabase projects configure Auth email templates in the Supabase dashboard, not in this repo. Use the recommended Magic Link template in [docs/auth-email-template.md](docs/auth-email-template.md) so login emails are clearly branded as What Can We Sing and include a button plus fallback link.
+
+After changing auth settings or email templates, run the manual checklist in
+[docs/auth-manual-test-checklist.md](docs/auth-manual-test-checklist.md).
 
 ## Supabase database
 

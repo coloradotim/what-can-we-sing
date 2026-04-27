@@ -1,6 +1,8 @@
 const DEFAULT_AUTH_REDIRECT_PATH = "/";
 const AUTH_CALLBACK_PATH = "/auth/callback";
 
+const disallowedAuthRedirectPaths = ["/login", "/auth/callback"];
+
 function normalizeSiteUrl(siteUrl: string | undefined): string | null {
   if (!siteUrl?.trim()) return null;
 
@@ -24,7 +26,7 @@ function isLocalOrigin(origin: string): boolean {
 export function getPostLoginRedirectPath(search: string): string {
   const redirect = new URLSearchParams(search).get("redirect");
 
-  if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//")) {
+  if (!isSafeAppRedirectPath(redirect)) {
     return DEFAULT_AUTH_REDIRECT_PATH;
   }
 
@@ -34,11 +36,22 @@ export function getPostLoginRedirectPath(search: string): string {
 export function getAuthCallbackNextPath(search: string): string {
   const next = new URLSearchParams(search).get("next");
 
-  if (!next || !next.startsWith("/") || next.startsWith("//")) {
+  if (!isSafeAppRedirectPath(next)) {
     return DEFAULT_AUTH_REDIRECT_PATH;
   }
 
   return next;
+}
+
+export function isSafeAppRedirectPath(path: string | null): path is string {
+  if (!path || !path.startsWith("/") || path.startsWith("//")) return false;
+
+  const { pathname } = new URL(path, "https://example.com");
+
+  return !disallowedAuthRedirectPaths.some(
+    (disallowedPath) =>
+      pathname === disallowedPath || pathname.startsWith(`${disallowedPath}/`)
+  );
 }
 
 export function getMagicLinkRedirectUrl({
@@ -57,9 +70,7 @@ export function getMagicLinkRedirectUrl({
 
   const callbackUrl = new URL(AUTH_CALLBACK_PATH, baseUrl);
 
-  if (redirectPath !== DEFAULT_AUTH_REDIRECT_PATH) {
-    callbackUrl.searchParams.set("next", redirectPath);
-  }
+  callbackUrl.searchParams.set("next", redirectPath);
 
   return callbackUrl.toString();
 }

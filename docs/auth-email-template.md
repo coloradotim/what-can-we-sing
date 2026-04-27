@@ -20,7 +20,7 @@ Body:
   </p>
   <p style="margin: 0 0 24px;">
     <a
-      href="{{ .ConfirmationURL }}"
+      href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email"
       style="display: inline-block; border-radius: 8px; background: #67e8f9; color: #0f172a; font-weight: 700; padding: 12px 18px; text-decoration: none;"
     >
       Log in to What Can We Sing
@@ -30,9 +30,9 @@ Body:
     If the button does not work, copy and paste this link into your browser.
   </p>
   <p style="margin: 0; font-size: 14px; word-break: break-all;">
-    <a href="{{ .ConfirmationURL }}" style="color: #0369a1;">{{ .ConfirmationURL }}</a>
+    <a href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email" style="color: #0369a1;">{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email</a>
   </p>
 </div>
 ```
 
-Supabase provides `{{ .ConfirmationURL }}` for the one-time login URL. Keep that variable in both links.
+Supabase's server-side auth guidance recommends sending `{{ .TokenHash }}` to an app callback route for PKCE/SSR flows. This template uses `{{ .RedirectTo }}` so the app's `emailRedirectTo` value, including any intended `next` path, is preserved. Keep the `token_hash={{ .TokenHash }}` and `type=email` query parameters in both links.
