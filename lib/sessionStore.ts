@@ -42,6 +42,17 @@ async function updateSessionActivity(sessionId: string, lastActivityAt: string) 
   if (error) throw error;
 }
 
+async function tryUpdateSessionActivity(
+  sessionId: string,
+  lastActivityAt: string
+) {
+  try {
+    await updateSessionActivity(sessionId, lastActivityAt);
+  } catch (err) {
+    console.warn("Could not update session activity", err);
+  }
+}
+
 export async function getSessionByCode(joinCode: string) {
   const { data, error } = await supabase
     .from("sessions")
@@ -136,7 +147,7 @@ export async function updateParticipantDisplayName(
 
   if (error) throw error;
 
-  await updateSessionActivity(sessionId, lastActivityAt);
+  await tryUpdateSessionActivity(sessionId, lastActivityAt);
 
   return data as DbParticipant;
 }

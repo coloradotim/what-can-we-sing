@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { applyParticipantDisplayName } from "../sessionParticipantDisplayName";
+import {
+  applyParticipantDisplayName,
+  getCurrentParticipantDisplayName,
+} from "../sessionParticipantDisplayName";
 import type { DbParticipant } from "../sessionStore";
 
 function participant(): DbParticipant {
@@ -31,6 +34,22 @@ function participant(): DbParticipant {
 }
 
 describe("session participant display name sync", () => {
+  it("uses the current participant row name ahead of stale profile state", () => {
+    expect(
+      getCurrentParticipantDisplayName(
+        [applyParticipantDisplayName(participant(), "New Name")],
+        "user-1",
+        "Old Name"
+      )
+    ).toBe("New Name");
+  });
+
+  it("falls back to profile state when the current participant is not loaded", () => {
+    expect(getCurrentParticipantDisplayName([], "user-1", "Profile Name")).toBe(
+      "Profile Name"
+    );
+  });
+
   it("updates both the participant row name and repertoire snapshot names", () => {
     const result = applyParticipantDisplayName(participant(), "New Name");
 
