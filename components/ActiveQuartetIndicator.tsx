@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   ACTIVE_QUARTET_CHANGED_EVENT,
   clearActiveQuartet,
@@ -10,7 +11,12 @@ import {
 import { getCurrentUser } from "@/lib/profileStore";
 import { removeParticipant } from "@/lib/sessionStore";
 
+function isViewingActiveQuartet(pathname: string, code: string) {
+  return pathname.toUpperCase() === `/JOIN/${code.toUpperCase()}`;
+}
+
 export function ActiveQuartetIndicator() {
+  const pathname = usePathname();
   const [activeQuartet, setActiveQuartet] = useState<ActiveQuartet | null>(null);
   const [leaving, setLeaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -59,6 +65,10 @@ export function ActiveQuartetIndicator() {
   }
 
   if (!activeQuartet) return null;
+
+  if (isViewingActiveQuartet(pathname, activeQuartet.code)) {
+    return null;
+  }
 
   return (
     <div className="mt-3 rounded-xl border border-cyan-300/30 bg-cyan-300/10 p-3">
