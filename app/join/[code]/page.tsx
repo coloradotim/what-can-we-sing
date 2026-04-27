@@ -22,7 +22,12 @@ import {
   updateParticipantSnapshot,
   upsertParticipant,
 } from "@/lib/sessionStore";
-import { getCurrentParticipantDisplayName } from "@/lib/sessionParticipantDisplayName";
+import {
+  getCurrentParticipantDisplayName,
+  getParticipantDisplayName,
+  getParticipantEntriesWithProfileNames,
+  type ProfileDisplayNamesByUserId,
+} from "@/lib/sessionParticipantDisplayName";
 import {
   isSessionExpired,
   sessionExpirationLabel,
@@ -34,7 +39,11 @@ import {
   type ActiveQuartet,
   setActiveQuartet,
 } from "@/lib/activeQuartet";
-import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
+import {
+  getCurrentUser,
+  getMyProfile,
+  getProfilesByIds,
+} from "@/lib/profileStore";
 import { getMyRepertoire } from "@/lib/repertoireStore";
 import {
   getRecentSungSongs,
@@ -93,6 +102,8 @@ export default function JoinSessionPage() {
   const [currentUserId, setCurrentUserId] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [participants, setParticipants] = useState<DbParticipant[]>([]);
+  const [profileDisplayNamesByUserId, setProfileDisplayNamesByUserId] =
+    useState<ProfileDisplayNamesByUserId>({});
   const [personalSongNotes, setPersonalSongNotes] = useState<PersonalSongNote[]>(
     []
   );
@@ -112,10 +123,25 @@ export default function JoinSessionPage() {
     useState<ActiveQuartet | null>(null);
   const [leavingCurrentQuartet, setLeavingCurrentQuartet] = useState(false);
 
+  async function refreshParticipantProfileNames(data: DbParticipant[]) {
+    try {
+      const profileDisplayNames = await getProfilesByIds(
+        data.map((participant) => participant.user_id)
+      );
+      setProfileDisplayNamesByUserId((current) => ({
+        ...current,
+        ...profileDisplayNames,
+      }));
+    } catch (err) {
+      console.error("Could not refresh participant profile names", err);
+    }
+  }
+
   async function refreshParticipants(id: string) {
     try {
       const data = await getParticipants(id);
       setParticipants(data);
+      await refreshParticipantProfileNames(data);
       return data;
     } catch (err) {
       console.error(err);
@@ -198,7 +224,6 @@ export default function JoinSessionPage() {
         await updateParticipantSnapshot(
           participantResolution.participant.id,
           userId,
-          name,
           entries,
           lastActivityAt
         );
@@ -263,7 +288,6 @@ export default function JoinSessionPage() {
       await updateParticipantSnapshot(
         existingParticipant.id,
         currentUserId,
-        name,
         entries,
         lastActivityAt
       );
@@ -412,9 +436,15 @@ export default function JoinSessionPage() {
 
     return subscribeToSessionParticipants(sessionId, (payload) => {
       setRealtimeMessage("");
-      setParticipants((currentParticipants) =>
-        applyParticipantChange(currentParticipants, payload, sessionId)
-      );
+      setParticipants((currentParticipants) => {
+        const updatedParticipants = applyParticipantChange(
+          currentParticipants,
+          payload,
+          sessionId
+        );
+        void refreshParticipantProfileNames(updatedParticipants);
+        return updatedParticipants;
+      });
     }, () => {
       setRealtimeMessage(
         "Live updates are having trouble. You can still use the current results or refresh singers."
@@ -461,6 +491,10 @@ export default function JoinSessionPage() {
 
         setCurrentUserId(user.id);
         setDisplayName(profile.display_name);
+        setProfileDisplayNamesByUserId((current) => ({
+          ...current,
+          [user.id]: profile.display_name,
+        }));
         setSessionId(session.id);
         setSession(session);
         try {
@@ -516,7 +550,6 @@ export default function JoinSessionPage() {
               await updateParticipantSnapshot(
                 existingParticipant.id,
                 user.id,
-                profile.display_name,
                 entries,
                 lastActivityAt
               );
@@ -561,7 +594,10 @@ export default function JoinSessionPage() {
     };
   }, [code]);
 
-  const allEntries: SingerEntry[] = participants.flatMap((p) => p.repertoire);
+  const allEntries: SingerEntry[] = getParticipantEntriesWithProfileNames(
+    participants,
+    profileDisplayNamesByUserId
+  );
   const matches = findMatches(allEntries);
   const groupedMatches = matchSections.map((section) => ({
     ...section,
@@ -581,6 +617,7 @@ export default function JoinSessionPage() {
   const currentParticipantDisplayName = getCurrentParticipantDisplayName(
     participants,
     currentUserId,
+    profileDisplayNamesByUserId,
     displayName
   );
   const openSingerSlots = Math.max(
@@ -876,7 +913,7 @@ export default function JoinSessionPage() {
                     disabled={
                       joiningQuartet ||
                       !sessionId ||
-                      !displayName ||
+                      !currentParticipantDisplayName ||
                       !currentUserId ||
                       quartetExpired
                     }
@@ -950,7 +987,12 @@ export default function JoinSessionPage() {
                     key={p.id}
                     className="rounded-xl border border-white/10 bg-white/10 p-4"
                   >
-                    <p className="font-semibold">{p.display_name}</p>
+                    <p className="font-semibold">
+                      {getParticipantDisplayName(
+                        p,
+                        profileDisplayNamesByUserId
+                      )}
+                    </p>
                     <p className="text-sm text-slate-300">
                       {p.repertoire.length} songs loaded
                     </p>

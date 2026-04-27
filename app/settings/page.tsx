@@ -1,21 +1,17 @@
 "use client";
 
 import { AppNav } from "@/components/AppNav";
-import { getActiveQuartet } from "@/lib/activeQuartet";
-import { getActiveQuartetDisplayNameSync } from "@/lib/activeQuartetDisplayNameSync";
 import {
   getCurrentUser,
   getMyProfile,
   upsertMyProfile,
 } from "@/lib/profileStore";
 import { getMyRepertoire } from "@/lib/repertoireStore";
-import { updateParticipantDisplayName } from "@/lib/sessionStore";
 import { useEffect, useState } from "react";
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userId, setUserId] = useState("");
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [message, setMessage] = useState("");
@@ -34,7 +30,6 @@ export default function SettingsPage() {
         }
 
         setIsLoggedIn(true);
-        setUserId(user.id);
         setEmail(user.email ?? "");
 
         const profile = await getMyProfile();
@@ -72,26 +67,6 @@ export default function SettingsPage() {
       const trimmedDisplayName = displayName.trim();
       await upsertMyProfile(trimmedDisplayName);
 
-      const activeQuartetDisplayNameSync = getActiveQuartetDisplayNameSync({
-        activeQuartet: getActiveQuartet(),
-        userId,
-        nextDisplayName: trimmedDisplayName,
-      });
-      let activeQuartetSyncFailed = false;
-
-      if (activeQuartetDisplayNameSync) {
-        try {
-          await updateParticipantDisplayName(
-            activeQuartetDisplayNameSync.sessionId,
-            activeQuartetDisplayNameSync.userId,
-            activeQuartetDisplayNameSync.displayName
-          );
-        } catch (err) {
-          activeQuartetSyncFailed = true;
-          console.error(err);
-        }
-      }
-
       let repertoireCount: number | null = null;
       try {
         const repertoire = await getMyRepertoire();
@@ -101,19 +76,13 @@ export default function SettingsPage() {
       }
 
       if (repertoireCount === 0) {
-        setMessage(
-          activeQuartetSyncFailed
-            ? "Settings saved. Could not update your active quartet name yet."
-            : "Settings saved. Next, add a few songs you know."
-        );
+        setMessage("Settings saved. Next, add a few songs you know.");
         setShowRepertoireNextStep(true);
         return;
       }
 
       setMessage(
-        activeQuartetSyncFailed
-          ? "Settings saved. Could not update your active quartet name yet."
-          : repertoireCount === null
+        repertoireCount === null
           ? "Settings saved. Could not check your songs yet."
           : "Settings saved."
       );

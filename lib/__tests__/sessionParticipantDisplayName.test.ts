@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-  applyParticipantDisplayName,
   getCurrentParticipantDisplayName,
+  getParticipantDisplayName,
+  getParticipantEntriesWithProfileNames,
 } from "../sessionParticipantDisplayName";
 import type { DbParticipant } from "../sessionStore";
 
@@ -34,40 +35,55 @@ function participant(): DbParticipant {
 }
 
 describe("session participant display name sync", () => {
-  it("uses the current participant row name ahead of stale profile state", () => {
+  it("uses the profile name for participant display", () => {
+    expect(
+      getParticipantDisplayName(participant(), { "user-1": "Profile Name" })
+    ).toBe("Profile Name");
+  });
+
+  it("does not fall back to stale session participant display_name", () => {
+    expect(getParticipantDisplayName(participant(), {})).toBe("Singer");
+  });
+
+  it("uses the profile name for the current participant", () => {
     expect(
       getCurrentParticipantDisplayName(
-        [applyParticipantDisplayName(participant(), "New Name")],
+        [participant()],
         "user-1",
-        "Old Name"
+        { "user-1": "Profile Name" },
+        "Loaded Profile"
       )
-    ).toBe("New Name");
+    ).toBe("Profile Name");
+  });
+
+  it("uses the loaded profile fallback for the current participant while names load", () => {
+    expect(
+      getCurrentParticipantDisplayName(
+        [participant()],
+        "user-1",
+        {},
+        "Loaded Profile"
+      )
+    ).toBe("Loaded Profile");
   });
 
   it("falls back to profile state when the current participant is not loaded", () => {
-    expect(getCurrentParticipantDisplayName([], "user-1", "Profile Name")).toBe(
-      "Profile Name"
+    expect(
+      getCurrentParticipantDisplayName([], "user-1", {}, "Loaded Profile")
+    ).toBe("Loaded Profile");
+  });
+
+  it("uses profile names for match entries instead of snapshot names", () => {
+    const entries = getParticipantEntriesWithProfileNames(
+      [participant()],
+      { "user-1": "Profile Name" }
     );
-  });
 
-  it("updates both the participant row name and repertoire snapshot names", () => {
-    const result = applyParticipantDisplayName(participant(), "New Name");
-
-    expect(result.display_name).toBe("New Name");
-    expect(result.repertoire.map((entry) => entry.displayName)).toEqual([
-      "New Name",
-      "New Name",
+    expect(entries.map((entry) => entry.displayName)).toEqual([
+      "Profile Name",
+      "Profile Name",
     ]);
-  });
-
-  it("does not change participant identity or repertoire song details", () => {
-    const original = participant();
-    const result = applyParticipantDisplayName(original, "New Name");
-
-    expect(result.id).toBe("participant-1");
-    expect(result.session_id).toBe("session-1");
-    expect(result.user_id).toBe("user-1");
-    expect(result.repertoire[0]).toMatchObject({
+    expect(entries[0]).toMatchObject({
       userId: "user-1",
       songTitle: "Test Song",
       voicing: "TTBB",
