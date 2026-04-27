@@ -32,10 +32,10 @@ export async function getSessionByCode(joinCode: string) {
     .from("sessions")
     .select("*")
     .eq("join_code", joinCode)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
-  return data as DbSession;
+  return data as DbSession | null;
 }
 
 export async function upsertParticipant(

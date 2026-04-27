@@ -7,9 +7,16 @@ import { useState } from "react";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
 
   async function sendMagicLink() {
-    if (!email.trim()) return;
+    if (!email.trim()) {
+      setMessage("Enter your email address and we’ll send a login link.");
+      return;
+    }
+
+    setIsSending(true);
+    setMessage("");
 
     const emailRedirectTo = getMagicLinkRedirectUrl({
       siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
@@ -19,6 +26,7 @@ export default function LoginPage() {
 
     if (!emailRedirectTo) {
       setMessage("Login is not configured for this site yet.");
+      setIsSending(false);
       return;
     }
 
@@ -30,11 +38,15 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setMessage(error.message);
+      setMessage(`${error.message} Check the email address and try again.`);
+      setIsSending(false);
       return;
     }
 
-    setMessage("Check your email for a login link.");
+    setMessage(
+      "Check your email for a What Can We Sing login link. Open it in this browser to continue."
+    );
+    setIsSending(false);
   }
 
   return (
@@ -42,23 +54,29 @@ export default function LoginPage() {
       <div className="mx-auto max-w-md">
         <h1 className="text-4xl font-bold">Log in</h1>
         <p className="mt-3 text-slate-300">
-          Enter your email and we’ll send you a magic link.
+          Enter your email and we’ll send you a magic link. There is no password
+          to remember.
         </p>
 
         <div className="mt-8 rounded-2xl border border-white/10 bg-white/10 p-6">
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            className="w-full rounded-xl bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-          />
+          <label className="block">
+            <span className="text-sm font-medium text-slate-300">
+              Email address
+            </span>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="mt-1 w-full rounded-xl bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+            />
+          </label>
 
           <button
             onClick={sendMagicLink}
-            disabled={!email.trim()}
+            disabled={isSending}
             className="mt-4 w-full rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
           >
-            Send magic link
+            {isSending ? "Sending..." : "Send magic link"}
           </button>
 
           {message && <p className="mt-4 text-sm text-slate-300">{message}</p>}

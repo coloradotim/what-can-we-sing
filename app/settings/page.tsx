@@ -48,10 +48,14 @@ export default function SettingsPage() {
         if (profile) {
           setDisplayName(profile.display_name ?? "");
           setDefaultPart(profile.default_part ?? "");
+        } else {
+          setMessage(
+            "Add a display name before joining a quartet so other singers know who you are."
+          );
         }
       } catch (err) {
         console.error(err);
-        setMessage("Could not load settings.");
+        setMessage("Could not load settings. Refresh the page and try again.");
       } finally {
         setLoading(false);
       }
@@ -61,14 +65,17 @@ export default function SettingsPage() {
   }, []);
 
   async function saveSettings() {
-    if (!displayName.trim()) return;
+    if (!displayName.trim()) {
+      setMessage("Add a display name before saving settings.");
+      return;
+    }
 
     try {
       await upsertMyProfile(displayName.trim(), defaultPart);
       setMessage("Settings saved.");
     } catch (err) {
       console.error(err);
-      setMessage("Could not save settings.");
+      setMessage("Could not save settings. Check your connection and try again.");
     }
   }
 
@@ -128,7 +135,6 @@ export default function SettingsPage() {
 
           <button
             onClick={saveSettings}
-            disabled={!displayName.trim()}
             className="mt-6 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
           >
             Save settings

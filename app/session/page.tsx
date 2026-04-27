@@ -13,6 +13,7 @@ export default function SessionPage() {
   const [joinCode, setJoinCode] = useState("");
   const [qrUrl, setQrUrl] = useState("");
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     async function init() {
@@ -27,6 +28,9 @@ export default function SessionPage() {
         setQrUrl(qr);
       } catch (err) {
         console.error("Failed to create session", err);
+        setErrorMessage(
+          "Could not create a quartet code. Check your connection and try again."
+        );
       } finally {
         setLoading(false);
       }
@@ -50,27 +54,42 @@ export default function SessionPage() {
 
         <h1 className="mt-4 text-4xl font-bold">Start a quartet</h1>
 
-        <div className="mt-8 rounded-2xl border border-white/10 bg-white/10 p-6 text-center">
-          {qrUrl && (
-            <img
-              src={qrUrl}
-              alt="QR code"
-              className="mx-auto rounded-xl bg-white p-4"
-            />
-          )}
+        {errorMessage && (
+          <div className="mt-8 rounded-2xl border border-rose-300/20 bg-rose-400/10 p-6">
+            <p className="font-semibold text-rose-100">{errorMessage}</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-4 rounded-xl bg-rose-100 px-5 py-3 font-semibold text-slate-950 hover:bg-white"
+            >
+              Try again
+            </button>
+          </div>
+        )}
 
-          <p className="mt-6 text-sm text-slate-400">Quartet code</p>
-          <p className="text-5xl font-bold tracking-widest text-cyan-300">
-            {joinCode}
-          </p>
+        {!errorMessage && (
+          <div className="mt-8 rounded-2xl border border-white/10 bg-white/10 p-6 text-center">
+            {qrUrl && (
+              <img
+                src={qrUrl}
+                alt="QR code"
+                className="mx-auto rounded-xl bg-white p-4"
+              />
+            )}
 
-          <a
-            href={`/join/${joinCode}`}
-            className="mt-6 inline-block rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200"
-          >
-            Join this quartet
-          </a>
-        </div>
+            <p className="mt-6 text-sm text-slate-400">Quartet code</p>
+            <p className="text-5xl font-bold tracking-widest text-cyan-300">
+              {joinCode}
+            </p>
+
+            <a
+              href={`/join/${joinCode}`}
+              className="mt-6 inline-block rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200"
+            >
+              Join this quartet
+            </a>
+          </div>
+        )}
       </div>
     </main>
   );
