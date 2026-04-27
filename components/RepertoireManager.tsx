@@ -282,12 +282,12 @@ export default function RepertoireManager() {
           Add songs you know, the parts you can sing, and how confident you are.
         </p>
         <p className="mt-3 text-sm text-slate-400">
-          Your repertoire is stored so the app can find quartet matches.{" "}
+          See what data is stored and why on the{" "}
           <a
             href="/privacy"
             className="font-semibold text-cyan-300 hover:text-cyan-200"
           >
-            Read privacy
+            privacy page
           </a>
           .
         </p>
