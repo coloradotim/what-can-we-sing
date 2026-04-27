@@ -17,6 +17,7 @@ export default function SettingsPage() {
   const [message, setMessage] = useState("");
   const [displayNameError, setDisplayNameError] = useState("");
   const [showRepertoireNextStep, setShowRepertoireNextStep] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -52,6 +53,8 @@ export default function SettingsPage() {
   }, []);
 
   async function saveSettings() {
+    if (isSaving) return;
+
     if (!displayName.trim()) {
       setDisplayNameError("Display name is required.");
       setMessage("");
@@ -59,21 +62,35 @@ export default function SettingsPage() {
     }
 
     try {
+      setIsSaving(true);
       setDisplayNameError("");
       await upsertMyProfile(displayName.trim());
-      const repertoire = await getMyRepertoire();
 
-      if (repertoire.length === 0) {
+      let repertoireCount: number | null = null;
+      try {
+        const repertoire = await getMyRepertoire();
+        repertoireCount = repertoire.length;
+      } catch (err) {
+        console.error(err);
+      }
+
+      if (repertoireCount === 0) {
         setMessage("Settings saved. Next, add a few songs you know.");
         setShowRepertoireNextStep(true);
         return;
       }
 
-      setMessage("Settings saved.");
+      setMessage(
+        repertoireCount === null
+          ? "Settings saved. Could not check your songs yet."
+          : "Settings saved."
+      );
       setShowRepertoireNextStep(false);
     } catch (err) {
       console.error(err);
-      setMessage("Could not save settings. Check your connection and try again.");
+      setMessage("Could not save changes. Please try again.");
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -131,9 +148,10 @@ export default function SettingsPage() {
 
           <button
             onClick={saveSettings}
+            disabled={isSaving}
             className="mt-6 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
           >
-            Save settings
+            {isSaving ? "Saving..." : "Save settings"}
           </button>
 
           {message && <p className="mt-4 text-sm text-slate-300">{message}</p>}

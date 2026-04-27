@@ -54,19 +54,38 @@ export default function RepertoireManager() {
   const [editForm, setEditForm] = useState<RepertoireForm | null>(null);
   const [message, setMessage] = useState("");
   const [loadError, setLoadError] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [savingEditId, setSavingEditId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   async function loadRepertoire() {
-    setLoadError("");
-    const user = await getCurrentUser();
+    try {
+      setLoadError("");
+      const user = await getCurrentUser();
 
-    if (!user) {
-      window.location.href = "/login";
-      return;
+      if (!user) {
+        window.location.href = "/login";
+        return;
+      }
+
+      const data = await getMyRepertoire();
+      setItems(data);
+      setLoadError("");
+    } catch (err) {
+      console.error(err);
+      setLoadError(
+        "Could not load your repertoire. Check your connection and try again."
+      );
+      throw err;
     }
+  }
 
-    const data = await getMyRepertoire();
-    setItems(data);
-    setLoadError("");
+  async function retryLoadRepertoire() {
+    try {
+      await loadRepertoire();
+    } catch {
+      // loadRepertoire already shows the retry message.
+    }
   }
 
   useEffect(() => {
@@ -175,6 +194,8 @@ export default function RepertoireManager() {
   }
 
   async function addItem() {
+    if (isAdding) return;
+
     if (!songTitle.trim()) {
       setMessage("Add a song title before saving.");
       return;
@@ -196,6 +217,7 @@ export default function RepertoireManager() {
     }
 
     try {
+      setIsAdding(true);
       await addRepertoireItem({
         songTitle: songTitle.trim(),
         voicing,
@@ -213,15 +235,24 @@ export default function RepertoireManager() {
         parts_known_count: partsKnown.length,
       });
 
-      await loadRepertoire();
+      try {
+        await loadRepertoire();
+      } catch {
+        setMessage("Song added. Could not refresh the list yet.");
+      }
     } catch (err) {
       console.error(err);
-      setMessage("Could not add song. Check your connection and try again.");
+      setMessage("Could not add song. Please try again.");
+    } finally {
+      setIsAdding(false);
     }
   }
 
   async function deleteItem(id: string) {
+    if (deletingId) return;
+
     try {
+      setDeletingId(id);
       await deleteRepertoireItem(id);
       if (editingId === id) {
         cancelEditing();
@@ -230,14 +261,22 @@ export default function RepertoireManager() {
       trackEvent("repertoire_song_deleted", {
         song_count: Math.max(0, items.length - 1),
       });
-      await loadRepertoire();
+      try {
+        await loadRepertoire();
+      } catch {
+        setMessage("Song deleted. Could not refresh the list yet.");
+      }
     } catch (err) {
       console.error(err);
-      setMessage("Could not delete song. Check your connection and try again.");
+      setMessage("Could not delete song. Please try again.");
+    } finally {
+      setDeletingId(null);
     }
   }
 
   async function saveEdit(id: string) {
+    if (savingEditId) return;
+
     if (!editForm) {
       return;
     }
@@ -253,6 +292,7 @@ export default function RepertoireManager() {
     }
 
     try {
+      setSavingEditId(id);
       await updateRepertoireItem(id, {
         songTitle: editForm.songTitle.trim(),
         voicing: editForm.voicing,
@@ -268,10 +308,16 @@ export default function RepertoireManager() {
         song_count: items.length,
         parts_known_count: editForm.partsKnown.length,
       });
-      await loadRepertoire();
+      try {
+        await loadRepertoire();
+      } catch {
+        setMessage("Song updated. Could not refresh the list yet.");
+      }
     } catch (err) {
       console.error(err);
-      setMessage("Could not update song. Check your connection and try again.");
+      setMessage("Could not save changes. Please try again.");
+    } finally {
+      setSavingEditId(null);
     }
   }
 
@@ -323,7 +369,7 @@ export default function RepertoireManager() {
             <p>{loadError}</p>
             <button
               type="button"
-              onClick={loadRepertoire}
+              onClick={retryLoadRepertoire}
               className="mt-3 rounded-xl bg-rose-100 px-4 py-2 font-semibold text-slate-950 hover:bg-white"
             >
               Try again
@@ -505,21 +551,24 @@ export default function RepertoireManager() {
                     <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                       <button
                         onClick={() => saveEdit(item.id)}
+                        disabled={savingEditId === item.id || deletingId === item.id}
                         className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
                       >
-                        Save changes
+                        {savingEditId === item.id ? "Saving..." : "Save changes"}
                       </button>
                       <button
                         onClick={cancelEditing}
+                        disabled={savingEditId === item.id || deletingId === item.id}
                         className="rounded-xl bg-slate-800 px-5 py-3 font-semibold text-slate-200 hover:bg-slate-700"
                       >
                         Cancel
                       </button>
                       <button
                         onClick={() => deleteItem(item.id)}
-                        className="rounded-xl bg-rose-400/10 px-5 py-3 font-semibold text-rose-200 hover:bg-rose-400/20"
+                        disabled={savingEditId === item.id || deletingId === item.id}
+                        className="rounded-xl bg-rose-400/10 px-5 py-3 font-semibold text-rose-200 hover:bg-rose-400/20 disabled:opacity-40"
                       >
-                        Delete
+                        {deletingId === item.id ? "Deleting..." : "Delete"}
                       </button>
                     </div>
                   </div>
@@ -563,15 +612,17 @@ export default function RepertoireManager() {
                     <div className="flex shrink-0 gap-1">
                       <button
                         onClick={() => startEditing(item)}
+                        disabled={Boolean(deletingId)}
                         className="rounded-lg bg-cyan-300/10 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-300/20"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => deleteItem(item.id)}
-                        className="rounded-lg bg-rose-400/10 px-3 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-400/20"
+                        disabled={deletingId === item.id}
+                        className="rounded-lg bg-rose-400/10 px-3 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-400/20 disabled:opacity-40"
                       >
-                        Delete
+                        {deletingId === item.id ? "Deleting..." : "Delete"}
                       </button>
                     </div>
                   </div>
@@ -744,10 +795,10 @@ export default function RepertoireManager() {
                 <button
                   type="button"
                   onClick={addItem}
-                  disabled={!canAddSong}
+                  disabled={!canAddSong || isAdding}
                   className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
                 >
-                  Add to repertoire
+                  {isAdding ? "Adding..." : "Add to repertoire"}
                 </button>
                 <button
                   type="button"

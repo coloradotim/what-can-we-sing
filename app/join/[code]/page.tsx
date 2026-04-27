@@ -105,14 +105,22 @@ export default function JoinSessionPage() {
   const [leftQuartet, setLeftQuartet] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [refreshingSongs, setRefreshingSongs] = useState(false);
+  const [joiningQuartet, setJoiningQuartet] = useState(false);
+  const [realtimeMessage, setRealtimeMessage] = useState("");
   const [pendingActiveQuartet, setPendingActiveQuartet] =
     useState<ActiveQuartet | null>(null);
   const [leavingCurrentQuartet, setLeavingCurrentQuartet] = useState(false);
 
   async function refreshParticipants(id: string) {
-    const data = await getParticipants(id);
-    setParticipants(data);
-    return data;
+    try {
+      const data = await getParticipants(id);
+      setParticipants(data);
+      return data;
+    } catch (err) {
+      console.error(err);
+      setMessage("Could not refresh singers. Please try again.");
+      throw err;
+    }
   }
 
   async function loadMyRepertoire() {
@@ -150,6 +158,8 @@ export default function JoinSessionPage() {
     userId = currentUserId,
     options: { clearLeftFlag?: boolean; successMessage?: string } = {}
   ) {
+    if (joiningQuartet) return;
+
     if (session && isSessionExpired(session)) {
       setLoadError("This quartet has expired.");
       return;
@@ -161,6 +171,7 @@ export default function JoinSessionPage() {
     }
 
     try {
+      setJoiningQuartet(true);
       if (options.clearLeftFlag) {
         window.sessionStorage.removeItem(leftQuartetStorageKey(code));
         setLeftQuartet(false);
@@ -216,7 +227,9 @@ export default function JoinSessionPage() {
       setMessage(`Joined as ${name} with ${entries.length} songs.`);
     } catch (err) {
       console.error(err);
-      setMessage("Could not join quartet. Check your connection and try again.");
+      setMessage("Could not join quartet. Please try again.");
+    } finally {
+      setJoiningQuartet(false);
     }
   }
 
@@ -353,8 +366,13 @@ export default function JoinSessionPage() {
   }
 
   async function refreshRecentSungSongs() {
-    const events = await getRecentSungSongs();
-    setRecentSungSongs(events);
+    try {
+      const events = await getRecentSungSongs();
+      setRecentSungSongs(events);
+    } catch (err) {
+      console.error(err);
+      setMessage("Could not refresh recent songs. Matches still work.");
+    }
   }
 
   function matchKey(match: MatchResult) {
@@ -392,8 +410,13 @@ export default function JoinSessionPage() {
     if (!sessionId) return;
 
     return subscribeToSessionParticipants(sessionId, (payload) => {
+      setRealtimeMessage("");
       setParticipants((currentParticipants) =>
         applyParticipantChange(currentParticipants, payload, sessionId)
+      );
+    }, () => {
+      setRealtimeMessage(
+        "Live updates are having trouble. You can still use the current results or refresh singers."
       );
     });
   }, [sessionId]);
@@ -439,11 +462,20 @@ export default function JoinSessionPage() {
         setDisplayName(profile.display_name);
         setSessionId(session.id);
         setSession(session);
-        await refreshRecentSungSongs();
+        try {
+          await refreshRecentSungSongs();
+        } catch {
+          // refreshRecentSungSongs handles its own message.
+        }
 
         const joinUrl = `${window.location.origin}/join/${code}`;
-        const qr = await QRCode.toDataURL(joinUrl);
-        setQrUrl(qr);
+        try {
+          const qr = await QRCode.toDataURL(joinUrl);
+          setQrUrl(qr);
+        } catch (err) {
+          console.error(err);
+          setCopyMessage("QR code unavailable. Share the code or link instead.");
+        }
 
         const hasLeftQuartet =
           window.sessionStorage.getItem(leftQuartetStorageKey(code)) === "true";
@@ -475,11 +507,11 @@ export default function JoinSessionPage() {
             setLeftQuartet(false);
           }
 
-          const entries = await getMyEntries(profile.display_name);
           const lastActivityAt = new Date().toISOString();
 
           if (existingParticipant) {
             try {
+              const entries = await getMyEntries(profile.display_name);
               await updateParticipantSnapshot(
                 existingParticipant.id,
                 user.id,
@@ -671,6 +703,15 @@ export default function JoinSessionPage() {
             >
               {quartetExpired ? "Start a new quartet" : "Enter a different code"}
             </a>
+            {!quartetExpired && (
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="ml-0 mt-3 rounded-xl bg-slate-800 px-5 py-3 font-semibold text-slate-200 hover:bg-slate-700 sm:ml-3"
+              >
+                Try again
+              </button>
+            )}
           </div>
         )}
 
@@ -678,6 +719,23 @@ export default function JoinSessionPage() {
           <p className="mt-4 rounded-xl bg-white/10 p-4 text-slate-200">
             {message}
           </p>
+        )}
+
+        {!loadError && !quartetExpired && realtimeMessage && (
+          <div className="mt-4 rounded-xl border border-amber-200/20 bg-amber-200/10 p-4 text-sm text-amber-50">
+            <p>{realtimeMessage}</p>
+            {sessionId && (
+              <button
+                type="button"
+                onClick={() => {
+                  void refreshParticipants(sessionId).catch(() => undefined);
+                }}
+                className="mt-3 rounded-xl bg-amber-100 px-4 py-2 font-semibold text-slate-950 hover:bg-white"
+              >
+                Refresh singers
+              </button>
+            )}
+          </div>
         )}
 
         {!loadError && !quartetExpired && pendingActiveQuartet && (
@@ -810,6 +868,7 @@ export default function JoinSessionPage() {
                   <button
                     onClick={rejoinQuartet}
                     disabled={
+                      joiningQuartet ||
                       !sessionId ||
                       !displayName ||
                       !currentUserId ||
@@ -817,7 +876,7 @@ export default function JoinSessionPage() {
                     }
                     className="mt-4 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
                   >
-                    Join this quartet again
+                    {joiningQuartet ? "Joining..." : "Join this quartet again"}
                   </button>
                 </>
               ) : (
