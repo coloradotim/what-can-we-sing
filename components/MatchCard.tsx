@@ -35,14 +35,14 @@ function partAbbreviation(voicing: Voicing, part: Part): string {
     if (part === "Tenor") return "T";
     if (part === "Lead") return "L";
     if (part === "Baritone") return "Bari";
-    if (part === "Bass") return "Bs";
+    if (part === "Bass") return "Bass";
   }
 
   if (voicing === "SATB") {
     if (part === "Soprano") return "S";
     if (part === "Alto") return "A";
     if (part === "Tenor") return "T";
-    if (part === "Bass") return "B";
+    if (part === "Bass") return "Bass";
   }
 
   if (part === "Soprano 1") return "S1";
