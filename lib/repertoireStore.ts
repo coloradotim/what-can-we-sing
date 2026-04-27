@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabase";
-import type { Confidence, Part, Voicing } from "@/lib/matching";
+import { normalizeConfidence, type Confidence, type Part, type Voicing } from "@/lib/matching";
 import { getCurrentUser } from "@/lib/profileStore";
 
 export type RepertoireRow = {
@@ -14,6 +14,17 @@ export type RepertoireRow = {
   updated_at: string;
 };
 
+type RawRepertoireRow = Omit<RepertoireRow, "confidence"> & {
+  confidence: string | null;
+};
+
+function normalizeRepertoireRow(row: RawRepertoireRow): RepertoireRow {
+  return {
+    ...row,
+    confidence: normalizeConfidence(row.confidence) ?? "Music Required",
+  };
+}
+
 export async function getMyRepertoire() {
   const user = await getCurrentUser();
   if (!user) return [];
@@ -25,7 +36,7 @@ export async function getMyRepertoire() {
     .order("song_title", { ascending: true });
 
   if (error) throw error;
-  return data as RepertoireRow[];
+  return (data as RawRepertoireRow[]).map(normalizeRepertoireRow);
 }
 
 export async function addRepertoireItem(input: {
