@@ -1,18 +1,24 @@
-"use client";
-
 import { AppNav } from "@/components/AppNav";
-import { useState } from "react";
+
+const actions = [
+  {
+    href: "/session",
+    title: "Start a quartet",
+    description: "Create a code for others to join.",
+  },
+  {
+    href: "/join",
+    title: "Join a quartet",
+    description: "Enter a code from another singer.",
+  },
+  {
+    href: "/repertoire",
+    title: "My repertoire",
+    description: "Add or update songs you know.",
+  },
+];
 
 export default function Home() {
-  const [joinCode, setJoinCode] = useState("");
-
-  function joinQuartet() {
-    const code = joinCode.trim().toUpperCase();
-    if (!code) return;
-
-    window.location.href = `/join/${encodeURIComponent(code)}`;
-  }
-
   return (
     <main className="min-h-screen bg-slate-950 px-5 py-8 text-white">
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md flex-col justify-center">
@@ -29,49 +35,20 @@ export default function Home() {
         </p>
 
         <div className="mt-10 space-y-3">
-          <a
-            href="/session"
-            className="block rounded-xl bg-cyan-300 px-5 py-4 text-center font-semibold text-slate-950 hover:bg-cyan-200"
-          >
-            Start a quartet
-          </a>
-
-          <div
-            id="join-quartet"
-            className="rounded-xl border border-white/10 bg-white/10 p-4"
-          >
-            <label className="block">
-              <span className="text-sm font-medium text-slate-300">
-                Join a quartet
+          {actions.map((action) => (
+            <a
+              key={action.href}
+              href={action.href}
+              className="block rounded-xl border border-white/10 bg-white/10 px-5 py-4 hover:border-cyan-300/60 hover:bg-white/15"
+            >
+              <span className="block text-lg font-semibold text-white">
+                {action.title}
               </span>
-              <div className="mt-2 flex gap-2">
-                <input
-                  value={joinCode}
-                  onChange={(event) => setJoinCode(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") joinQuartet();
-                  }}
-                  placeholder="Code"
-                  className="min-w-0 flex-1 rounded-xl bg-slate-900 px-4 py-3 text-white uppercase outline-none ring-cyan-300 focus:ring-2"
-                />
-                <button
-                  type="button"
-                  onClick={joinQuartet}
-                  disabled={!joinCode.trim()}
-                  className="rounded-xl bg-cyan-300 px-4 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
-                >
-                  Join
-                </button>
-              </div>
-            </label>
-          </div>
-
-          <a
-            href="/repertoire"
-            className="block rounded-xl bg-white/10 px-5 py-4 text-center font-semibold text-white hover:bg-white/20"
-          >
-            My repertoire
-          </a>
+              <span className="mt-1 block text-sm text-slate-300">
+                {action.description}
+              </span>
+            </a>
+          ))}
         </div>
       </div>
     </main>
