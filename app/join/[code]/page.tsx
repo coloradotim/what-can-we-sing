@@ -13,6 +13,7 @@ import {
   getSessionByCode,
   removeParticipant,
   subscribeToSessionParticipants,
+  updateParticipantSnapshot,
   upsertParticipant,
 } from "@/lib/sessionStore";
 import {
@@ -168,7 +169,18 @@ export default function JoinSessionPage() {
       const entries = await getMyEntries(name);
       const lastActivityAt = new Date().toISOString();
 
-      await upsertParticipant(id, userId, name, entries, lastActivityAt);
+      if (existingParticipant) {
+        await updateParticipantSnapshot(
+          existingParticipant.id,
+          userId,
+          name,
+          entries,
+          lastActivityAt
+        );
+      } else {
+        await upsertParticipant(id, userId, name, entries, lastActivityAt);
+      }
+
       setActiveQuartet({ sessionId: id, code, joinedAt: lastActivityAt });
       setSession((current) =>
         current ? { ...current, last_activity_at: lastActivityAt } : current
