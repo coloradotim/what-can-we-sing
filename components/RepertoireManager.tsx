@@ -258,7 +258,6 @@ export default function RepertoireManager() {
               <input
                 value={songTitle}
                 onChange={(e) => setSongTitle(e.target.value)}
-                placeholder="Hello Mary Lou"
                 className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
               />
             </label>
@@ -270,7 +269,6 @@ export default function RepertoireManager() {
               <input
                 value={arrangerName}
                 onChange={(e) => setArrangerName(e.target.value)}
-                placeholder="Unknown is okay"
                 className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
               />
             </label>
@@ -379,7 +377,6 @@ export default function RepertoireManager() {
                           onChange={(e) =>
                             updateEditForm({ arrangerName: e.target.value })
                           }
-                          placeholder="Unknown is okay"
                           className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
                         />
                       </label>

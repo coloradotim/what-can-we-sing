@@ -122,14 +122,13 @@ export default function SettingsPage() {
             <input
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Tim"
               className="mt-1 w-full rounded-xl bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
             />
           </label>
 
           <label className="mt-5 block">
             <span className="text-sm font-medium text-slate-300">
-              Default part optional
+              Default voice part (optional)
             </span>
             <select
               value={defaultPart}
