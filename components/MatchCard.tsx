@@ -7,6 +7,7 @@ import {
 
 type MatchCardProps = {
   match: MatchResult;
+  personalNotes?: string[];
 };
 
 const categoryStyles: Record<
@@ -53,10 +54,13 @@ function partAbbreviation(voicing: Voicing, part: Part): string {
   return part;
 }
 
-export function MatchCard({ match }: MatchCardProps) {
+export function MatchCard({ match, personalNotes = [] }: MatchCardProps) {
   const styles = categoryStyles[match.category];
   const parts = requiredPartsForVoicing(match.voicing);
-  const hasDetails = match.warnings.length > 0 || match.arrangerNames.length > 0;
+  const hasDetails =
+    match.warnings.length > 0 ||
+    match.arrangerNames.length > 0 ||
+    personalNotes.length > 0;
 
   return (
     <details
@@ -135,6 +139,17 @@ export function MatchCard({ match }: MatchCardProps) {
           >
             {match.warnings.map((warning) => (
               <p key={warning}>{warning}</p>
+            ))}
+          </div>
+        )}
+
+        {personalNotes.length > 0 && (
+          <div className="mt-3 rounded-lg bg-white/5 p-2 text-xs text-slate-300">
+            <p className="font-semibold text-slate-200">My notes</p>
+            {personalNotes.map((note, index) => (
+              <p key={`${note}-${index}`} className="mt-1 whitespace-pre-wrap">
+                {note}
+              </p>
             ))}
           </div>
         )}

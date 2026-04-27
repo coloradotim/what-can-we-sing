@@ -10,6 +10,7 @@ export type RepertoireRow = {
   arranger_name: string | null;
   parts_known: Part[];
   confidence: Confidence;
+  notes: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -45,6 +46,7 @@ export async function addRepertoireItem(input: {
   arrangerName?: string;
   partsKnown: Part[];
   confidence: Confidence;
+  notes?: string;
 }) {
   const user = await getCurrentUser();
   if (!user) throw new Error("You must be logged in.");
@@ -58,6 +60,7 @@ export async function addRepertoireItem(input: {
       arranger_name: input.arrangerName || null,
       parts_known: input.partsKnown,
       confidence: input.confidence,
+      notes: input.notes || null,
     })
     .select()
     .single();
@@ -74,6 +77,7 @@ export async function updateRepertoireItem(
     arrangerName?: string;
     partsKnown: Part[];
     confidence: Confidence;
+    notes?: string;
   }
 ) {
   const user = await getCurrentUser();
@@ -87,6 +91,7 @@ export async function updateRepertoireItem(
       arranger_name: input.arrangerName || null,
       parts_known: input.partsKnown,
       confidence: input.confidence,
+      notes: input.notes || null,
     })
     .eq("id", id)
     .eq("user_id", user.id)

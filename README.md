@@ -30,7 +30,7 @@ The Supabase project should have the current production schema applied:
 
 - `profiles` stores each user's required `display_name`.
 - `user_repertoire` stores each user's songs, voicing, parts known, confidence,
-  and optional arranger name.
+  optional arranger name, and private notes.
 - `sessions` stores quartet codes and `last_activity_at` for 24-hour inactivity
   expiration.
 - `session_participants` stores participant repertoire snapshots and is keyed by
@@ -40,3 +40,6 @@ The Supabase project should have the current production schema applied:
 One-time migration SQL is intentionally not kept in this README after it has
 been applied. Add any future schema change to the PR that introduces it, then
 remove the one-time instructions after production is updated.
+
+For the private repertoire notes feature, apply the one-time SQL in
+[docs/private-repertoire-notes.md](docs/private-repertoire-notes.md).
