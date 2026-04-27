@@ -342,12 +342,20 @@ export default function JoinSessionPage() {
   }));
   const quartetExpired = session ? isSessionExpired(session, now) : false;
   const expirationLabel = session ? sessionExpirationLabel(session, now) : "";
-  const openSingerSlots = Math.max(0, MAX_QUARTET_PARTICIPANTS - participants.length);
+  const openSingerSlots = Math.max(
+    0,
+    MAX_QUARTET_PARTICIPANTS - participants.length
+  );
   const showJoinInfo =
     Boolean(session) &&
     !quartetExpired &&
     !pendingActiveQuartet &&
     participants.length < MAX_QUARTET_PARTICIPANTS;
+  const showCompactJoinInfo =
+    Boolean(session) &&
+    !quartetExpired &&
+    !pendingActiveQuartet &&
+    participants.length >= MAX_QUARTET_PARTICIPANTS;
 
   if (loading) {
     return (
@@ -478,6 +486,42 @@ export default function JoinSessionPage() {
                     )}
                   </div>
                 </div>
+              </section>
+            )}
+
+            {showCompactJoinInfo && (
+              <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-200">
+                      Quartet is full
+                    </p>
+                    <p className="mt-1 text-sm text-slate-400">
+                      Code {code} is still available if someone needs the link.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={copyJoinCode}
+                      className="rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-white/10"
+                    >
+                      Copy code
+                    </button>
+                    <button
+                      type="button"
+                      onClick={copyJoinLink}
+                      className="rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-white/10"
+                    >
+                      Copy link
+                    </button>
+                  </div>
+                </div>
+
+                {copyMessage && (
+                  <p className="mt-2 text-sm text-slate-300">{copyMessage}</p>
+                )}
               </section>
             )}
 
