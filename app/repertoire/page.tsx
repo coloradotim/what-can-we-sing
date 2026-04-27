@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import RepertoireManager from "@/components/RepertoireManager";
 
 export default function RepertoirePage() {
-  redirect("/");
+  return <RepertoireManager />;
 }
