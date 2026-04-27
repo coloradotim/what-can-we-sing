@@ -10,6 +10,7 @@ import {
   type DbParticipant,
   getParticipants,
   getSessionByCode,
+  removeParticipant,
   subscribeToSessionParticipants,
   upsertParticipant,
 } from "@/lib/sessionStore";
@@ -38,6 +39,10 @@ const matchSections = [
   },
 ] as const;
 
+function leftQuartetStorageKey(code: string) {
+  return `left-quartet:${code}`;
+}
+
 export default function JoinSessionPage() {
   const params = useParams<{ code: string }>();
   const code = params.code;
@@ -53,6 +58,8 @@ export default function JoinSessionPage() {
   const [message, setMessage] = useState("");
   const [loadError, setLoadError] = useState("");
   const [now, setNow] = useState(() => new Date());
+  const [leftQuartet, setLeftQuartet] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   async function refreshParticipants(id: string) {
     const data = await getParticipants(id);
@@ -77,7 +84,8 @@ export default function JoinSessionPage() {
   async function joinSession(
     id = sessionId,
     name = displayName,
-    userId = currentUserId
+    userId = currentUserId,
+    options: { clearLeftFlag?: boolean } = {}
   ) {
     if (session && isSessionExpired(session)) {
       setLoadError("This quartet has expired.");
@@ -90,6 +98,11 @@ export default function JoinSessionPage() {
     }
 
     try {
+      if (options.clearLeftFlag) {
+        window.sessionStorage.removeItem(leftQuartetStorageKey(code));
+        setLeftQuartet(false);
+      }
+
       const existingParticipants = await refreshParticipants(id);
 
       const existingParticipant = existingParticipants.find(
@@ -115,6 +128,33 @@ export default function JoinSessionPage() {
       console.error(err);
       setMessage("Could not join quartet. Check your connection and try again.");
     }
+  }
+
+  async function leaveQuartet() {
+    if (!sessionId || !currentUserId) {
+      setMessage("Could not leave yet. Wait for the quartet to finish loading.");
+      return;
+    }
+
+    setLeaving(true);
+    setMessage("");
+
+    try {
+      await removeParticipant(sessionId, currentUserId);
+      window.sessionStorage.setItem(leftQuartetStorageKey(code), "true");
+      await refreshParticipants(sessionId);
+      window.location.href = "/?leftQuartet=1";
+    } catch (err) {
+      console.error(err);
+      setMessage("Could not leave quartet. Check your connection and try again.");
+      setLeaving(false);
+    }
+  }
+
+  async function rejoinQuartet() {
+    await joinSession(sessionId, displayName, currentUserId, {
+      clearLeftFlag: true,
+    });
   }
 
   useEffect(() => {
@@ -158,6 +198,9 @@ export default function JoinSessionPage() {
         setDisplayName(profile.display_name);
         setSessionId(session.id);
         setSession(session);
+        const hasLeftQuartet =
+          window.sessionStorage.getItem(leftQuartetStorageKey(code)) === "true";
+        setLeftQuartet(hasLeftQuartet);
 
         const currentParticipants = await refreshParticipants(session.id);
 
@@ -169,9 +212,11 @@ export default function JoinSessionPage() {
           (participant) => participant.user_id === user.id
         );
 
-        if (!alreadyJoined && !hasAutoJoined.current) {
+        if (!alreadyJoined && !hasAutoJoined.current && !hasLeftQuartet) {
           hasAutoJoined.current = true;
           await joinSession(session.id, profile.display_name, user.id);
+        } else if (hasLeftQuartet) {
+          setMessage("You left this quartet.");
         } else {
           setMessage(`You are already in this quartet as ${profile.display_name}.`);
         }
@@ -252,18 +297,54 @@ export default function JoinSessionPage() {
         {!loadError && !quartetExpired && (
           <>
             <div className="mt-6 rounded-2xl border border-white/10 bg-white/10 p-6">
-              <p className="text-slate-300">You are in this quartet as:</p>
-              <p className="mt-1 text-2xl font-bold text-cyan-300">
-                {displayName}
-              </p>
+              {leftQuartet ? (
+                <>
+                  <p className="text-slate-300">
+                    You are not currently in this quartet.
+                  </p>
+                  <button
+                    onClick={rejoinQuartet}
+                    disabled={
+                      !sessionId ||
+                      !displayName ||
+                      !currentUserId ||
+                      quartetExpired
+                    }
+                    className="mt-4 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
+                  >
+                    Join this quartet again
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="text-slate-300">You are in this quartet as:</p>
+                  <p className="mt-1 text-2xl font-bold text-cyan-300">
+                    {displayName}
+                  </p>
 
-              <button
-                onClick={() => joinSession()}
-                disabled={!sessionId || !displayName || !currentUserId || quartetExpired}
-                className="mt-4 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
-              >
-                Rejoin / refresh my repertoire
-              </button>
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <button
+                      onClick={() => joinSession()}
+                      disabled={
+                        !sessionId ||
+                        !displayName ||
+                        !currentUserId ||
+                        quartetExpired
+                      }
+                      className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
+                    >
+                      Rejoin / refresh my repertoire
+                    </button>
+                    <button
+                      onClick={leaveQuartet}
+                      disabled={leaving || !sessionId || !currentUserId}
+                      className="rounded-xl bg-rose-400/10 px-5 py-3 font-semibold text-rose-200 hover:bg-rose-400/20 disabled:opacity-40"
+                    >
+                      {leaving ? "Leaving..." : "Leave quartet"}
+                    </button>
+                  </div>
+                </>
+              )}
 
               <a
                 href="/settings"
