@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import type { SingerEntry } from "@/lib/matching";
+import type { ParticipantChangePayload } from "@/lib/sessionParticipantChanges";
 
 export type DbSession = {
   id: string;
@@ -123,7 +124,7 @@ export async function removeParticipant(sessionId: string, userId: string) {
 
 export function subscribeToSessionParticipants(
   sessionId: string,
-  onChange: () => void
+  onChange: (payload: ParticipantChangePayload) => void
 ) {
   const channel = supabase
     .channel(`session-participants-${sessionId}`)
@@ -135,8 +136,8 @@ export function subscribeToSessionParticipants(
         table: "session_participants",
         filter: `session_id=eq.${sessionId}`,
       },
-      () => {
-        onChange();
+      (payload) => {
+        onChange(payload as ParticipantChangePayload);
       }
     )
     .subscribe();

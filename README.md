@@ -39,7 +39,8 @@ The Supabase project should have the current production schema applied:
   expiration.
 - `session_participants` stores participant repertoire snapshots and is keyed by
   `(session_id, user_id)` so one singer can refresh without creating duplicate
-  rows.
+  rows. Supabase Realtime must be enabled for this table so joined clients see
+  participant insert, update, and delete changes immediately.
 - `sung_song_events` stores each user's private "marked as sung" events for
   recent-use indicators.
 

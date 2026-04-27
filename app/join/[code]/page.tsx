@@ -7,6 +7,7 @@ import { AppNav } from "@/components/AppNav";
 import { MatchCard } from "@/components/MatchCard";
 import { trackEvent } from "@/lib/analytics";
 import { findMatches, type MatchResult, type SingerEntry } from "@/lib/matching";
+import { applyParticipantChange } from "@/lib/sessionParticipantChanges";
 import {
   type DbSession,
   type DbParticipant,
@@ -384,7 +385,16 @@ export default function JoinSessionPage() {
   }
 
   useEffect(() => {
-    let unsubscribe: undefined | (() => void);
+    if (!sessionId) return;
+
+    return subscribeToSessionParticipants(sessionId, (payload) => {
+      setParticipants((currentParticipants) =>
+        applyParticipantChange(currentParticipants, payload, sessionId)
+      );
+    });
+  }, [sessionId]);
+
+  useEffect(() => {
     const timer = window.setInterval(() => {
       setNow(new Date());
     }, 60 * 1000);
@@ -437,10 +447,6 @@ export default function JoinSessionPage() {
 
         const currentParticipants = await refreshParticipants(session.id);
 
-        unsubscribe = subscribeToSessionParticipants(session.id, () => {
-          refreshParticipants(session.id);
-        });
-
         const alreadyJoined = currentParticipants.some(
           (participant) => participant.user_id === user.id
         );
@@ -491,7 +497,6 @@ export default function JoinSessionPage() {
 
     return () => {
       window.clearInterval(timer);
-      if (unsubscribe) unsubscribe();
     };
   }, [code]);
 
