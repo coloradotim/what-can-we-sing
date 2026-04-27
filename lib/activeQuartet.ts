@@ -60,3 +60,12 @@ export function clearActiveQuartetIfMatches(
     clearActiveQuartet(storage);
   }
 }
+
+export function isDifferentActiveQuartet(
+  sessionId: string,
+  storage = getBrowserStorage()
+): boolean {
+  const activeQuartet = getActiveQuartet(storage);
+
+  return Boolean(activeQuartet && activeQuartet.sessionId !== sessionId);
+}
