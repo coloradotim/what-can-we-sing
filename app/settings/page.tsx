@@ -1,19 +1,24 @@
 "use client";
 
 import { AppNav } from "@/components/AppNav";
+import { getActiveQuartet } from "@/lib/activeQuartet";
+import { getActiveQuartetDisplayNameSync } from "@/lib/activeQuartetDisplayNameSync";
 import {
   getCurrentUser,
   getMyProfile,
   upsertMyProfile,
 } from "@/lib/profileStore";
 import { getMyRepertoire } from "@/lib/repertoireStore";
+import { updateParticipantDisplayName } from "@/lib/sessionStore";
 import { useEffect, useState } from "react";
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userId, setUserId] = useState("");
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [savedDisplayName, setSavedDisplayName] = useState("");
   const [message, setMessage] = useState("");
   const [displayNameError, setDisplayNameError] = useState("");
   const [showRepertoireNextStep, setShowRepertoireNextStep] = useState(false);
@@ -30,12 +35,14 @@ export default function SettingsPage() {
         }
 
         setIsLoggedIn(true);
+        setUserId(user.id);
         setEmail(user.email ?? "");
 
         const profile = await getMyProfile();
 
         if (profile) {
           setDisplayName(profile.display_name ?? "");
+          setSavedDisplayName(profile.display_name ?? "");
         } else {
           setMessage(
             "Add a display name before joining a quartet so other singers know who you are."
@@ -64,7 +71,33 @@ export default function SettingsPage() {
     try {
       setIsSaving(true);
       setDisplayNameError("");
-      await upsertMyProfile(displayName.trim());
+      const trimmedDisplayName = displayName.trim();
+      await upsertMyProfile(trimmedDisplayName);
+
+      const activeQuartetDisplayNameSync = getActiveQuartetDisplayNameSync({
+        activeQuartet: getActiveQuartet(),
+        userId,
+        previousDisplayName: savedDisplayName,
+        nextDisplayName: trimmedDisplayName,
+      });
+      let activeQuartetSyncFailed = false;
+
+      if (activeQuartetDisplayNameSync) {
+        try {
+          await updateParticipantDisplayName(
+            activeQuartetDisplayNameSync.sessionId,
+            activeQuartetDisplayNameSync.userId,
+            activeQuartetDisplayNameSync.displayName
+          );
+        } catch (err) {
+          activeQuartetSyncFailed = true;
+          console.error(err);
+        }
+      }
+
+      if (!activeQuartetSyncFailed) {
+        setSavedDisplayName(trimmedDisplayName);
+      }
 
       let repertoireCount: number | null = null;
       try {
@@ -75,13 +108,19 @@ export default function SettingsPage() {
       }
 
       if (repertoireCount === 0) {
-        setMessage("Settings saved. Next, add a few songs you know.");
+        setMessage(
+          activeQuartetSyncFailed
+            ? "Settings saved. Could not update your active quartet name yet."
+            : "Settings saved. Next, add a few songs you know."
+        );
         setShowRepertoireNextStep(true);
         return;
       }
 
       setMessage(
-        repertoireCount === null
+        activeQuartetSyncFailed
+          ? "Settings saved. Could not update your active quartet name yet."
+          : repertoireCount === null
           ? "Settings saved. Could not check your songs yet."
           : "Settings saved."
       );
