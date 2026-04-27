@@ -28,6 +28,11 @@ describe("getPostLoginRedirectPath", () => {
     expect(getPostLoginRedirectPath("?redirect=/login")).toBe("/");
     expect(getPostLoginRedirectPath("?redirect=/login?redirect=/join/ABC123")).toBe("/");
     expect(getPostLoginRedirectPath("?redirect=/auth/callback?code=abc")).toBe("/");
+    expect(
+      getPostLoginRedirectPath(
+        "?redirect=/auth/callback&token_hash=abc&type=email"
+      )
+    ).toBe("/");
   });
 });
 
@@ -48,6 +53,11 @@ describe("getAuthCallbackNextPath", () => {
   it("does not redirect successful callbacks back to auth routes", () => {
     expect(getAuthCallbackNextPath("?next=/login")).toBe("/");
     expect(getAuthCallbackNextPath("?next=/auth/callback")).toBe("/");
+    expect(
+      getAuthCallbackNextPath(
+        "?next=%2Fauth%2Fcallback%26token_hash%3Dabc%26type%3Demail"
+      )
+    ).toBe("/");
   });
 });
 
