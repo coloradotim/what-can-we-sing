@@ -6,6 +6,10 @@ describe("isPublicAuthPath", () => {
     expect(isPublicAuthPath("/login")).toBe(true);
   });
 
+  it("allows the auth callback route", () => {
+    expect(isPublicAuthPath("/auth/callback")).toBe(true);
+  });
+
   it("protects app routes", () => {
     expect(isPublicAuthPath("/repertoire")).toBe(false);
     expect(isPublicAuthPath("/join/ABC123")).toBe(false);
