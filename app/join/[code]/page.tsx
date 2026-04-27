@@ -7,6 +7,10 @@ import { AppNav } from "@/components/AppNav";
 import { MatchCard } from "@/components/MatchCard";
 import { trackEvent } from "@/lib/analytics";
 import { findMatches, type MatchResult, type SingerEntry } from "@/lib/matching";
+import {
+  findParticipantByUserId,
+  resolveParticipantForJoin,
+} from "@/lib/sessionParticipantResolution";
 import { applyParticipantChange } from "@/lib/sessionParticipantChanges";
 import {
   type DbSession,
@@ -164,14 +168,13 @@ export default function JoinSessionPage() {
 
       const existingParticipants = await refreshParticipants(id);
 
-      const existingParticipant = existingParticipants.find(
-        (participant) => participant.user_id === userId
+      const participantResolution = resolveParticipantForJoin(
+        existingParticipants,
+        userId,
+        MAX_QUARTET_PARTICIPANTS
       );
 
-      if (
-        !existingParticipant &&
-        existingParticipants.length >= MAX_QUARTET_PARTICIPANTS
-      ) {
+      if (participantResolution.status === "full") {
         setMessage("This quartet already has four singers.");
         return;
       }
@@ -179,9 +182,9 @@ export default function JoinSessionPage() {
       const entries = await getMyEntries(name);
       const lastActivityAt = new Date().toISOString();
 
-      if (existingParticipant) {
+      if (participantResolution.status === "existing") {
         await updateParticipantSnapshot(
-          existingParticipant.id,
+          participantResolution.participant.id,
           userId,
           name,
           entries,
@@ -197,7 +200,7 @@ export default function JoinSessionPage() {
       );
       const updatedParticipants = await refreshParticipants(id);
 
-      if (existingParticipant) {
+      if (participantResolution.status === "existing") {
         setMessage(
           options.successMessage ??
             `Updated ${name}'s repertoire with ${entries.length} songs.`
@@ -228,8 +231,9 @@ export default function JoinSessionPage() {
 
     try {
       const currentParticipants = await refreshParticipants(sessionId);
-      const existingParticipant = currentParticipants.find(
-        (participant) => participant.user_id === currentUserId
+      const existingParticipant = findParticipantByUserId(
+        currentParticipants,
+        currentUserId
       );
 
       if (!existingParticipant) {
@@ -447,9 +451,11 @@ export default function JoinSessionPage() {
 
         const currentParticipants = await refreshParticipants(session.id);
 
-        const alreadyJoined = currentParticipants.some(
-          (participant) => participant.user_id === user.id
+        const existingParticipant = findParticipantByUserId(
+          currentParticipants,
+          user.id
         );
+        const alreadyJoined = Boolean(existingParticipant);
 
         const activeQuartet = getActiveQuartet();
         if (
@@ -469,21 +475,25 @@ export default function JoinSessionPage() {
             setLeftQuartet(false);
           }
 
-          const existingParticipant = currentParticipants.find(
-            (participant) => participant.user_id === user.id
-          );
           const entries = await getMyEntries(profile.display_name);
           const lastActivityAt = new Date().toISOString();
 
           if (existingParticipant) {
-            await updateParticipantSnapshot(
-              existingParticipant.id,
-              user.id,
-              profile.display_name,
-              entries,
-              lastActivityAt
-            );
-            await refreshParticipants(session.id);
+            try {
+              await updateParticipantSnapshot(
+                existingParticipant.id,
+                user.id,
+                profile.display_name,
+                entries,
+                lastActivityAt
+              );
+              await refreshParticipants(session.id);
+            } catch (err) {
+              console.error("Could not refresh returning participant", err);
+              setMessage(
+                "You are in this quartet. Refresh my songs if your latest changes do not appear."
+              );
+            }
           }
 
           setActiveQuartet({
@@ -491,7 +501,9 @@ export default function JoinSessionPage() {
             code,
             joinedAt: lastActivityAt,
           });
-          setMessage(`You are in this quartet as ${profile.display_name}.`);
+          setMessage((current) =>
+            current || `You are in this quartet as ${profile.display_name}.`
+          );
         } else if (!hasAutoJoined.current && !hasLeftQuartet) {
           hasAutoJoined.current = true;
           await joinSession(session.id, profile.display_name, user.id);
