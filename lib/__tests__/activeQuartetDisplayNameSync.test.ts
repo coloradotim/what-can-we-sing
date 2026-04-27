@@ -13,7 +13,6 @@ describe("active quartet display name sync", () => {
       getActiveQuartetDisplayNameSync({
         activeQuartet,
         userId: "user-1",
-        previousDisplayName: "Old Name",
         nextDisplayName: "New Name",
       })
     ).toEqual({
@@ -28,7 +27,6 @@ describe("active quartet display name sync", () => {
       getActiveQuartetDisplayNameSync({
         activeQuartet,
         userId: "user-1",
-        previousDisplayName: "Old Name",
         nextDisplayName: "  New Name  ",
       })
     ).toMatchObject({ displayName: "New Name" });
@@ -39,19 +37,31 @@ describe("active quartet display name sync", () => {
       getActiveQuartetDisplayNameSync({
         activeQuartet: null,
         userId: "user-1",
-        previousDisplayName: "Old Name",
         nextDisplayName: "New Name",
       })
     ).toBeNull();
   });
 
-  it("does not sync unchanged display names", () => {
+  it("still syncs when the profile display name did not change", () => {
     expect(
       getActiveQuartetDisplayNameSync({
         activeQuartet,
         userId: "user-1",
-        previousDisplayName: "New Name",
-        nextDisplayName: " New Name ",
+        nextDisplayName: "Tim - new name",
+      })
+    ).toEqual({
+      sessionId: "session-1",
+      userId: "user-1",
+      displayName: "Tim - new name",
+    });
+  });
+
+  it("does not sync blank display names", () => {
+    expect(
+      getActiveQuartetDisplayNameSync({
+        activeQuartet,
+        userId: "user-1",
+        nextDisplayName: "   ",
       })
     ).toBeNull();
   });
