@@ -53,6 +53,29 @@ async function tryUpdateSessionActivity(
   }
 }
 
+async function tryUpdateParticipantSnapshotDisplayName(
+  participant: DbParticipant,
+  userId: string,
+  displayName: string
+) {
+  const updatedParticipant = applyParticipantDisplayName(
+    participant,
+    displayName
+  );
+
+  try {
+    const { error } = await supabase
+      .from("session_participants")
+      .update({ repertoire: updatedParticipant.repertoire })
+      .eq("id", participant.id)
+      .eq("user_id", userId);
+
+    if (error) throw error;
+  } catch (err) {
+    console.warn("Could not update participant repertoire display names", err);
+  }
+}
+
 export async function getSessionByCode(joinCode: string) {
   const { data, error } = await supabase
     .from("sessions")
@@ -119,34 +142,22 @@ export async function updateParticipantDisplayName(
   displayName: string,
   lastActivityAt = new Date().toISOString()
 ) {
-  const { data: currentParticipant, error: selectError } = await supabase
-    .from("session_participants")
-    .select("*")
-    .eq("session_id", sessionId)
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (selectError) throw selectError;
-  if (!currentParticipant) return null;
-
-  const participant = applyParticipantDisplayName(
-    currentParticipant as DbParticipant,
-    displayName
-  );
-
   const { data, error } = await supabase
     .from("session_participants")
-    .update({
-      display_name: participant.display_name,
-      repertoire: participant.repertoire,
-    })
-    .eq("id", participant.id)
+    .update({ display_name: displayName })
+    .eq("session_id", sessionId)
     .eq("user_id", userId)
     .select()
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
+  if (!data) return null;
 
+  await tryUpdateParticipantSnapshotDisplayName(
+    data as DbParticipant,
+    userId,
+    displayName
+  );
   await tryUpdateSessionActivity(sessionId, lastActivityAt);
 
   return data as DbParticipant;
