@@ -124,7 +124,8 @@ export async function removeParticipant(sessionId: string, userId: string) {
 
 export function subscribeToSessionParticipants(
   sessionId: string,
-  onChange: (payload: ParticipantChangePayload) => void
+  onChange: (payload: ParticipantChangePayload) => void,
+  onStatusChange?: (status: string) => void
 ) {
   const channel = supabase
     .channel(`session-participants-${sessionId}`)
@@ -140,7 +141,15 @@ export function subscribeToSessionParticipants(
         onChange(payload as ParticipantChangePayload);
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+      if (
+        status === "CHANNEL_ERROR" ||
+        status === "TIMED_OUT" ||
+        status === "CLOSED"
+      ) {
+        onStatusChange?.(status);
+      }
+    });
 
   return () => {
     supabase.removeChannel(channel);

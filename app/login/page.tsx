@@ -30,23 +30,28 @@ export default function LoginPage() {
       return;
     }
 
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: {
-        emailRedirectTo,
-      },
-    });
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          emailRedirectTo,
+        },
+      });
 
-    if (error) {
-      setMessage(`${error.message} Check the email address and try again.`);
+      if (error) {
+        setMessage(`${error.message} Check the email address and try again.`);
+        return;
+      }
+
+      setMessage(
+        "Check your email for a What Can We Sing login link. Open it in this browser to continue."
+      );
+    } catch (err) {
+      console.error(err);
+      setMessage("Network unavailable. Try again when you have a connection.");
+    } finally {
       setIsSending(false);
-      return;
     }
-
-    setMessage(
-      "Check your email for a What Can We Sing login link. Open it in this browser to continue."
-    );
-    setIsSending(false);
   }
 
   return (
