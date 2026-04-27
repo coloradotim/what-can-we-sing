@@ -34,9 +34,33 @@ type RepertoireForm = {
   confidence: Confidence;
 };
 
+function partAbbreviation(voicing: Voicing, part: Part): string {
+  if (voicing === "TTBB") {
+    if (part === "Tenor") return "T";
+    if (part === "Lead") return "L";
+    if (part === "Baritone") return "Bari";
+    if (part === "Bass") return "Bs";
+  }
+
+  if (voicing === "SATB") {
+    if (part === "Soprano") return "S";
+    if (part === "Alto") return "A";
+    if (part === "Tenor") return "T";
+    if (part === "Bass") return "B";
+  }
+
+  if (part === "Soprano 1") return "S1";
+  if (part === "Soprano 2") return "S2";
+  if (part === "Alto 1") return "A1";
+  if (part === "Alto 2") return "A2";
+
+  return part;
+}
+
 export default function RepertoireManager() {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<RepertoireRow[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [songTitle, setSongTitle] = useState("");
   const [voicing, setVoicing] = useState<Voicing | "">("");
   const [arrangerName, setArrangerName] = useState("");
@@ -234,7 +258,19 @@ export default function RepertoireManager() {
   }
 
   const canAddSong =
-    Boolean(songTitle.trim()) && Boolean(voicing) && Boolean(confidence) && partsKnown.length > 0;
+    Boolean(songTitle.trim()) &&
+    Boolean(voicing) &&
+    Boolean(confidence) &&
+    partsKnown.length > 0;
+  const visibleItems = items
+    .filter((item) =>
+      item.song_title.toLowerCase().includes(searchQuery.trim().toLowerCase())
+    )
+    .sort((a, b) =>
+      a.song_title.localeCompare(b.song_title, undefined, {
+        sensitivity: "base",
+      })
+    );
 
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
@@ -363,9 +399,27 @@ export default function RepertoireManager() {
         </section>
 
         <section className="mt-8">
-          <h2 className="text-2xl font-semibold">Songs I know</h2>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Songs I know</h2>
+              <p className="mt-1 text-sm text-slate-400">
+                {items.length} {items.length === 1 ? "song" : "songs"} saved
+              </p>
+            </div>
 
-          <div className="mt-4 space-y-3">
+            <label className="block sm:w-72">
+              <span className="text-sm font-medium text-slate-300">
+                Search by title
+              </span>
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+              />
+            </label>
+          </div>
+
+          <div className="mt-4 space-y-2">
             {items.length === 0 && (
               <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-slate-300">
                 <p className="font-semibold text-white">No songs yet.</p>
@@ -376,13 +430,19 @@ export default function RepertoireManager() {
               </div>
             )}
 
-            {items.map((item) => (
+            {items.length > 0 && visibleItems.length === 0 && (
+              <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+                No songs match that title.
+              </div>
+            )}
+
+            {visibleItems.map((item) => (
               <div
                 key={item.id}
-                className="flex flex-col justify-between gap-4 rounded-2xl border border-white/10 bg-white/10 p-5 shadow-lg md:flex-row md:items-center"
+                className="rounded-xl border border-white/10 bg-white/10 shadow-lg"
               >
                 {editingId === item.id && editForm ? (
-                  <div className="w-full">
+                  <div className="w-full p-4">
                     <div className="grid gap-4 md:grid-cols-2">
                       <label className="block">
                         <span className="text-sm font-medium text-slate-300">
@@ -496,39 +556,52 @@ export default function RepertoireManager() {
                     </div>
                   </div>
                 ) : (
-                  <>
-                    <div>
-                      <h3 className="text-xl font-semibold">
-                        {item.song_title} — {item.voicing}
-                      </h3>
-                      <p className="mt-1 text-sm text-slate-300">
-                        {item.arranger_name
-                          ? `Arr. ${item.arranger_name}`
-                          : "Arranger unknown"}
-                      </p>
-                      <p className="mt-2 text-sm text-slate-200">
-                        Parts: {item.parts_known.join(", ")}
-                      </p>
-                      <p className="text-sm text-slate-300">
-                        Confidence: {item.confidence}
-                      </p>
+                  <div className="flex items-center gap-2 p-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="truncate text-base font-semibold text-white">
+                          {item.song_title}
+                        </h3>
+                        <span className="shrink-0 rounded-full bg-slate-900 px-2 py-0.5 text-xs font-semibold text-slate-300">
+                          {item.voicing}
+                        </span>
+                      </div>
+
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-300">
+                        {item.parts_known.map((part) => (
+                          <span
+                            key={part}
+                            className="rounded-full bg-cyan-300/10 px-2 py-0.5 font-semibold text-cyan-100 ring-1 ring-cyan-300/20"
+                          >
+                            {partAbbreviation(item.voicing, part)}
+                          </span>
+                        ))}
+                        <span className="rounded-full bg-slate-900 px-2 py-0.5 font-medium text-slate-300">
+                          {item.confidence}
+                        </span>
+                        {item.arranger_name && (
+                          <span className="truncate text-slate-400">
+                            Arr. {item.arranger_name}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="flex flex-col gap-2 sm:flex-row md:flex-col">
+                    <div className="flex shrink-0 gap-1">
                       <button
                         onClick={() => startEditing(item)}
-                        className="rounded-xl bg-cyan-300/10 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-300/20"
+                        className="rounded-lg bg-cyan-300/10 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-300/20"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => deleteItem(item.id)}
-                        className="rounded-xl bg-rose-400/10 px-4 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-400/20"
+                        className="rounded-lg bg-rose-400/10 px-3 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-400/20"
                       >
                         Delete
                       </button>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
             ))}
