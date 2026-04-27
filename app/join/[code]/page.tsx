@@ -39,6 +39,8 @@ const matchSections = [
   },
 ] as const;
 
+const MAX_QUARTET_PARTICIPANTS = 4;
+
 function leftQuartetStorageKey(code: string) {
   return `left-quartet:${code}`;
 }
@@ -108,6 +110,14 @@ export default function JoinSessionPage() {
       const existingParticipant = existingParticipants.find(
         (participant) => participant.user_id === userId
       );
+
+      if (
+        !existingParticipant &&
+        existingParticipants.length >= MAX_QUARTET_PARTICIPANTS
+      ) {
+        setMessage("This quartet already has four singers.");
+        return;
+      }
 
       const entries = await getMyEntries(name);
       const lastActivityAt = new Date().toISOString();
