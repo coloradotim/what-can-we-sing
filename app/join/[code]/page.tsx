@@ -18,17 +18,17 @@ import { getMyRepertoire } from "@/lib/repertoireStore";
 const matchSections = [
   {
     category: "ready",
-    title: "Ready",
+    title: "Ready to Sing",
     description: "All required parts are covered.",
   },
   {
     category: "possible",
-    title: "Possible",
+    title: "Possible (confirm arrangement)",
     description: "Check arranger details before singing.",
   },
   {
     category: "one_part_missing",
-    title: "One part missing",
+    title: "One Part Missing",
     description: "Close matches that need one more singer or part.",
   },
 ] as const;
@@ -266,7 +266,7 @@ export default function JoinSessionPage() {
                 <div>
                   <h2 className="text-2xl font-semibold">Matches</h2>
                   <p className="mt-1 text-sm text-slate-300">
-                    Results stay ranked within each group.
+                    Compact rows stay ranked within each group.
                   </p>
                 </div>
                 {matches.length > 0 && (
@@ -288,7 +288,7 @@ export default function JoinSessionPage() {
                     section.matches.length > 0 && (
                       <section
                         key={section.category}
-                        className="rounded-2xl border border-white/10 bg-white/5 p-3 sm:p-4"
+                        className="rounded-2xl border border-white/10 bg-white/5 p-3"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
@@ -304,7 +304,7 @@ export default function JoinSessionPage() {
                           </span>
                         </div>
 
-                        <div className="mt-3 space-y-3">
+                        <div className="mt-3 space-y-2">
                           {section.matches.map((match) => (
                             <MatchCard
                               key={match.songTitle + match.voicing}
