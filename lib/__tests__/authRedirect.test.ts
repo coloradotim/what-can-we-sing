@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { getMagicLinkRedirectUrl } from "../authRedirect";
 
 describe("getMagicLinkRedirectUrl", () => {
-  it("uses NEXT_PUBLIC_SITE_URL when it is configured", () => {
+  it("uses NEXT_PUBLIC_SITE_URL when configured", () => {
     expect(
       getMagicLinkRedirectUrl({
         siteUrl: "https://what-can-we-sing.vercel.app",
@@ -12,7 +12,7 @@ describe("getMagicLinkRedirectUrl", () => {
     ).toBe("https://what-can-we-sing.vercel.app/settings");
   });
 
-  it("keeps an existing safe redirect parameter", () => {
+  it("preserves a safe redirect parameter", () => {
     expect(
       getMagicLinkRedirectUrl({
         siteUrl: "https://what-can-we-sing.vercel.app/",
@@ -22,7 +22,7 @@ describe("getMagicLinkRedirectUrl", () => {
     ).toBe("https://what-can-we-sing.vercel.app/join/ABC123");
   });
 
-  it("falls back to the current origin for local development", () => {
+  it("falls back to the browser origin for local development", () => {
     expect(
       getMagicLinkRedirectUrl({
         siteUrl: undefined,
@@ -32,7 +32,7 @@ describe("getMagicLinkRedirectUrl", () => {
     ).toBe("http://localhost:3000/settings");
   });
 
-  it("does not fall back to a non-local origin", () => {
+  it("does not fall back to a production browser origin", () => {
     expect(
       getMagicLinkRedirectUrl({
         siteUrl: undefined,
@@ -42,7 +42,7 @@ describe("getMagicLinkRedirectUrl", () => {
     ).toBeNull();
   });
 
-  it("ignores unsafe redirect parameters", () => {
+  it("ignores unsafe absolute redirect parameters", () => {
     expect(
       getMagicLinkRedirectUrl({
         siteUrl: "https://what-can-we-sing.vercel.app",

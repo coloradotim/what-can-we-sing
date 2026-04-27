@@ -4,13 +4,14 @@ function normalizeSiteUrl(siteUrl: string | undefined): string | null {
   if (!siteUrl?.trim()) return null;
 
   try {
-    return new URL(siteUrl.trim()).origin;
+    const url = new URL(siteUrl.trim());
+    return url.origin;
   } catch {
     return null;
   }
 }
 
-function isLocalDevelopmentOrigin(origin: string): boolean {
+function isLocalOrigin(origin: string): boolean {
   try {
     const { hostname } = new URL(origin);
     return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
@@ -19,7 +20,7 @@ function isLocalDevelopmentOrigin(origin: string): boolean {
   }
 }
 
-function getSafeRedirectPath(search: string): string {
+function safeRedirectPath(search: string): string {
   const redirect = new URLSearchParams(search).get("redirect");
 
   if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//")) {
@@ -38,9 +39,10 @@ export function getMagicLinkRedirectUrl({
   origin: string;
   search: string;
 }): string | null {
-  const baseUrl = normalizeSiteUrl(siteUrl) ?? (isLocalDevelopmentOrigin(origin) ? origin : null);
+  const redirectPath = safeRedirectPath(search);
+  const baseUrl = normalizeSiteUrl(siteUrl) ?? (isLocalOrigin(origin) ? origin : null);
 
   if (!baseUrl) return null;
 
-  return new URL(getSafeRedirectPath(search), baseUrl).toString();
+  return new URL(redirectPath, baseUrl).toString();
 }
