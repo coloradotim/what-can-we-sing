@@ -28,6 +28,11 @@ http://localhost:3000/auth/callback
 
 Hosted Supabase projects configure Auth email templates in the Supabase dashboard, not in this repo. Use the recommended Magic Link template in [docs/auth-email-template.md](docs/auth-email-template.md) so login emails are clearly branded as What Can We Sing and include a button plus fallback link.
 
+For production magic link delivery, configure Supabase Auth custom SMTP with
+Resend using [docs/supabase-resend-smtp.md](docs/supabase-resend-smtp.md).
+SMTP credentials must stay in Supabase only; do not add them to frontend code,
+this repository, or Vercel environment variables.
+
 After changing auth settings or email templates, run the manual checklist in
 [docs/auth-manual-test-checklist.md](docs/auth-manual-test-checklist.md).
 
