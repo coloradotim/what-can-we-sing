@@ -32,6 +32,7 @@ type RepertoireForm = {
   arrangerName: string;
   partsKnown: Part[];
   confidence: Confidence;
+  notes: string;
 };
 
 function partAbbreviation(voicing: Voicing, part: Part): string {
@@ -72,6 +73,7 @@ export default function RepertoireManager() {
   const [songTitle, setSongTitle] = useState("");
   const [voicing, setVoicing] = useState<Voicing | "">("");
   const [arrangerName, setArrangerName] = useState("");
+  const [notes, setNotes] = useState("");
   const [partsKnown, setPartsKnown] = useState<Part[]>([]);
   const [confidence, setConfidence] = useState<Confidence | "">("");
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -140,6 +142,7 @@ export default function RepertoireManager() {
     setSongTitle("");
     setVoicing("");
     setArrangerName("");
+    setNotes("");
     setPartsKnown([]);
     setConfidence("");
     setShowArranger(false);
@@ -172,6 +175,7 @@ export default function RepertoireManager() {
       arrangerName: item.arranger_name ?? "",
       partsKnown: item.parts_known,
       confidence: item.confidence,
+      notes: item.notes ?? "",
     });
     setMessage("");
   }
@@ -226,6 +230,7 @@ export default function RepertoireManager() {
         arrangerName: arrangerName.trim() || undefined,
         partsKnown,
         confidence,
+        notes: notes.trim() || undefined,
       });
 
       resetAddForm();
@@ -275,6 +280,7 @@ export default function RepertoireManager() {
         arrangerName: editForm.arrangerName.trim() || undefined,
         partsKnown: editForm.partsKnown,
         confidence: editForm.confidence,
+        notes: editForm.notes.trim() || undefined,
       });
 
       cancelEditing();
@@ -475,6 +481,20 @@ export default function RepertoireManager() {
                           ))}
                         </select>
                       </label>
+
+                      <label className="block md:col-span-2">
+                        <span className="text-sm font-medium text-slate-300">
+                          Notes (optional)
+                        </span>
+                        <textarea
+                          value={editForm.notes}
+                          onChange={(e) =>
+                            updateEditForm({ notes: e.target.value })
+                          }
+                          rows={3}
+                          className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                        />
+                      </label>
                     </div>
 
                     <div className="mt-5">
@@ -550,6 +570,11 @@ export default function RepertoireManager() {
                           </span>
                         )}
                       </div>
+                      {item.notes && (
+                        <p className="mt-1 line-clamp-2 text-xs text-slate-400">
+                          Notes: {item.notes}
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex shrink-0 gap-1">
@@ -717,6 +742,19 @@ export default function RepertoireManager() {
                     </button>
                   )}
                 </div>
+
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-300">
+                    Notes (optional)
+                  </span>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={3}
+                    placeholder="Key, first words, or tricky spots"
+                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                  />
+                </label>
               </div>
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">

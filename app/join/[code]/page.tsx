@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/AppNav";
 import { MatchCard } from "@/components/MatchCard";
-import { findMatches, SingerEntry } from "@/lib/matching";
+import { findMatches, type MatchResult, type SingerEntry } from "@/lib/matching";
 import {
   type DbSession,
   type DbParticipant,
@@ -49,8 +49,18 @@ const matchSections = [
 
 const MAX_QUARTET_PARTICIPANTS = 4;
 
+type PersonalSongNote = {
+  songTitle: string;
+  voicing: SingerEntry["voicing"];
+  notes: string;
+};
+
 function leftQuartetStorageKey(code: string) {
   return `left-quartet:${code}`;
+}
+
+function normalizeSongTitle(title: string) {
+  return title.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
 export default function JoinSessionPage() {
@@ -65,6 +75,9 @@ export default function JoinSessionPage() {
   const [currentUserId, setCurrentUserId] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [participants, setParticipants] = useState<DbParticipant[]>([]);
+  const [personalSongNotes, setPersonalSongNotes] = useState<PersonalSongNote[]>(
+    []
+  );
   const [message, setMessage] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
   const [qrUrl, setQrUrl] = useState("");
@@ -84,6 +97,15 @@ export default function JoinSessionPage() {
 
   async function getMyEntries(name: string): Promise<SingerEntry[]> {
     const repertoire = await getMyRepertoire();
+    setPersonalSongNotes(
+      repertoire
+        .filter((item) => item.notes?.trim())
+        .map((item) => ({
+          songTitle: item.song_title,
+          voicing: item.voicing,
+          notes: item.notes?.trim() ?? "",
+        }))
+    );
 
     return repertoire.map((item) => ({
       userId: item.user_id,
@@ -356,6 +378,18 @@ export default function JoinSessionPage() {
     !quartetExpired &&
     !pendingActiveQuartet &&
     participants.length >= MAX_QUARTET_PARTICIPANTS;
+
+  function notesForMatch(match: MatchResult) {
+    const matchTitle = normalizeSongTitle(match.songTitle);
+
+    return personalSongNotes
+      .filter(
+        (note) =>
+          note.voicing === match.voicing &&
+          normalizeSongTitle(note.songTitle) === matchTitle
+      )
+      .map((note) => note.notes);
+  }
 
   if (loading) {
     return (
@@ -652,6 +686,7 @@ export default function JoinSessionPage() {
                             <MatchCard
                               key={match.songTitle + match.voicing}
                               match={match}
+                              personalNotes={notesForMatch(match)}
                             />
                           ))}
                         </div>
