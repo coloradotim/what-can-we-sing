@@ -6,6 +6,7 @@ import {
   getMyProfile,
   upsertMyProfile,
 } from "@/lib/profileStore";
+import { getMyRepertoire } from "@/lib/repertoireStore";
 import { useEffect, useState } from "react";
 
 const defaultParts = [
@@ -73,8 +74,16 @@ export default function SettingsPage() {
 
     try {
       await upsertMyProfile(displayName.trim(), defaultPart);
-      setMessage("Settings saved. Next, add a few songs you know.");
-      setShowRepertoireNextStep(true);
+      const repertoire = await getMyRepertoire();
+
+      if (repertoire.length === 0) {
+        setMessage("Settings saved. Next, add a few songs you know.");
+        setShowRepertoireNextStep(true);
+        return;
+      }
+
+      setMessage("Settings saved.");
+      setShowRepertoireNextStep(false);
     } catch (err) {
       console.error(err);
       setMessage("Could not save settings. Check your connection and try again.");
