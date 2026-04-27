@@ -38,7 +38,7 @@ export default function SessionPage() {
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-slate-950 text-white">
-        <p>Creating session...</p>
+        <p>Creating quartet...</p>
       </main>
     );
   }
@@ -53,7 +53,7 @@ export default function SessionPage() {
           <SignOutButton />
         </div>
 
-        <h1 className="mt-4 text-4xl font-bold">Start a session</h1>
+        <h1 className="mt-4 text-4xl font-bold">Start a quartet</h1>
 
         <div className="mt-8 rounded-2xl border border-white/10 bg-white/10 p-6 text-center">
           {qrUrl && (
@@ -64,7 +64,7 @@ export default function SessionPage() {
             />
           )}
 
-          <p className="mt-6 text-sm text-slate-400">Session code</p>
+          <p className="mt-6 text-sm text-slate-400">Quartet code</p>
           <p className="text-5xl font-bold tracking-widest text-cyan-300">
             {joinCode}
           </p>
@@ -73,7 +73,7 @@ export default function SessionPage() {
             href={`/join/${joinCode}`}
             className="mt-6 inline-block rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200"
           >
-            Join this session
+            Join this quartet
           </a>
         </div>
       </div>
