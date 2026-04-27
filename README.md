@@ -36,6 +36,8 @@ The Supabase project should have the current production schema applied:
 - `session_participants` stores participant repertoire snapshots and is keyed by
   `(session_id, user_id)` so one singer can refresh without creating duplicate
   rows.
+- `sung_song_events` stores each user's private "marked as sung" events for
+  recent-use indicators.
 
 One-time migration SQL is intentionally not kept in this README after it has
 been applied. Add any future schema change to the PR that introduces it, then
@@ -43,3 +45,6 @@ remove the one-time instructions after production is updated.
 
 For the private repertoire notes feature, apply the one-time SQL in
 [docs/private-repertoire-notes.md](docs/private-repertoire-notes.md).
+
+For the recently sung feature, apply the one-time SQL in
+[docs/recently-sung-events.md](docs/recently-sung-events.md).

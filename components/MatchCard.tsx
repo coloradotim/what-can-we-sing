@@ -8,6 +8,9 @@ import {
 type MatchCardProps = {
   match: MatchResult;
   personalNotes?: string[];
+  isRecentlySung?: boolean;
+  isMarkingSung?: boolean;
+  onMarkAsSung?: () => void;
 };
 
 const categoryStyles: Record<
@@ -54,13 +57,20 @@ function partAbbreviation(voicing: Voicing, part: Part): string {
   return part;
 }
 
-export function MatchCard({ match, personalNotes = [] }: MatchCardProps) {
+export function MatchCard({
+  match,
+  personalNotes = [],
+  isRecentlySung = false,
+  isMarkingSung = false,
+  onMarkAsSung,
+}: MatchCardProps) {
   const styles = categoryStyles[match.category];
   const parts = requiredPartsForVoicing(match.voicing);
   const hasDetails =
     match.warnings.length > 0 ||
     match.arrangerNames.length > 0 ||
-    personalNotes.length > 0;
+    personalNotes.length > 0 ||
+    isRecentlySung;
 
   return (
     <details
@@ -72,9 +82,16 @@ export function MatchCard({ match, personalNotes = [] }: MatchCardProps) {
             <h3 className="truncate text-base font-semibold text-white">
               {match.songTitle}
             </h3>
-            <p className="mt-0.5 text-xs font-semibold uppercase tracking-normal text-slate-400">
-              {match.voicing}
-            </p>
+            <div className="mt-0.5 flex flex-wrap items-center gap-2">
+              <p className="text-xs font-semibold uppercase tracking-normal text-slate-400">
+                {match.voicing}
+              </p>
+              {isRecentlySung && (
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-semibold text-slate-200">
+                  Sung recently
+                </span>
+              )}
+            </div>
           </div>
           <span className="shrink-0 rounded-full bg-slate-950/80 px-2 py-1 text-xs font-semibold text-slate-300 group-open:hidden">
             Details
@@ -151,6 +168,19 @@ export function MatchCard({ match, personalNotes = [] }: MatchCardProps) {
                 {note}
               </p>
             ))}
+          </div>
+        )}
+
+        {onMarkAsSung && (
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={onMarkAsSung}
+              disabled={isMarkingSung}
+              className="rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-slate-200 hover:bg-white/20 disabled:opacity-40"
+            >
+              {isMarkingSung ? "Marking..." : "Mark as sung"}
+            </button>
           </div>
         )}
 
