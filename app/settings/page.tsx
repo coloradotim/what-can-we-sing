@@ -161,6 +161,17 @@ export default function SettingsPage() {
             </a>
           )}
         </section>
+
+        <p className="mt-5 text-sm text-slate-400">
+          See what data is stored and why on the{" "}
+          <a
+            href="/privacy"
+            className="font-semibold text-cyan-300 hover:text-cyan-200"
+          >
+            privacy page
+          </a>
+          .
+        </p>
       </div>
     </main>
   );

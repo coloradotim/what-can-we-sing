@@ -81,6 +81,17 @@ export default function LoginPage() {
 
           {message && <p className="mt-4 text-sm text-slate-300">{message}</p>}
         </div>
+
+        <p className="mt-5 text-sm text-slate-400">
+          Want the quick data note?{" "}
+          <a
+            href="/privacy"
+            className="font-semibold text-cyan-300 hover:text-cyan-200"
+          >
+            Read privacy
+          </a>
+          .
+        </p>
       </div>
     </main>
   );
