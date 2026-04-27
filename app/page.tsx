@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { findMatches, SingerEntry } from "@/lib/matching";
+import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 
 type RepertoireItem = {
   id: string;
@@ -16,6 +17,22 @@ export default function Home() {
   const [entries, setEntries] = useState<SingerEntry[]>([]);
 
   useEffect(() => {
+    async function guideMissingProfile() {
+      try {
+        const user = await getCurrentUser();
+        if (!user) return;
+
+        const profile = await getMyProfile();
+        if (!profile?.display_name) {
+          window.location.href = "/settings";
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    guideMissingProfile();
+
     try {
       const saved = window.localStorage.getItem("what-can-we-sing-repertoire");
       if (!saved) return;

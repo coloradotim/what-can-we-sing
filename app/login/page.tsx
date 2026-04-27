@@ -1,5 +1,6 @@
 "use client";
 
+import { getPostLoginRedirectUrl } from "@/lib/authRedirect";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 
@@ -13,7 +14,10 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        emailRedirectTo: `${window.location.origin}/settings`,
+        emailRedirectTo: getPostLoginRedirectUrl(
+          window.location.origin,
+          window.location.search
+        ),
       },
     });
 
