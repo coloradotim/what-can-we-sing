@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 export type Profile = {
   id: string;
@@ -6,6 +7,11 @@ export type Profile = {
   created_at: string;
   updated_at: string;
 };
+
+export type ProfileDisplayName = Pick<Profile, "id" | "display_name">;
+
+export type ProfileChangePayload =
+  RealtimePostgresChangesPayload<ProfileDisplayName>;
 
 export async function getCurrentUser() {
   const { data, error } = await supabase.auth.getUser();
@@ -42,11 +48,51 @@ export async function getProfilesByIds(userIds: string[]) {
   if (error) throw error;
 
   return Object.fromEntries(
-    (data as Pick<Profile, "id" | "display_name">[]).map((profile) => [
+    (data as ProfileDisplayName[]).map((profile) => [
       profile.id,
       profile.display_name,
     ])
   );
+}
+
+export function subscribeToProfileDisplayNames(
+  userIds: string[],
+  onChange: (payload: ProfileChangePayload) => void,
+  onStatusChange?: (status: string) => void
+) {
+  const uniqueUserIds = Array.from(new Set(userIds)).filter(Boolean).sort();
+
+  if (uniqueUserIds.length === 0) {
+    return () => undefined;
+  }
+
+  const channel = supabase
+    .channel(`profiles-display-names-${uniqueUserIds.join("-")}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "profiles",
+        filter: `id=in.(${uniqueUserIds.join(",")})`,
+      },
+      (payload) => {
+        onChange(payload as ProfileChangePayload);
+      }
+    )
+    .subscribe((status) => {
+      if (
+        status === "CHANNEL_ERROR" ||
+        status === "TIMED_OUT" ||
+        status === "CLOSED"
+      ) {
+        onStatusChange?.(status);
+      }
+    });
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
 }
 
 export async function upsertMyProfile(displayName: string) {
