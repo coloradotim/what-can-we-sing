@@ -9,7 +9,7 @@ import {
   updateRepertoireItem,
   type RepertoireRow,
 } from "@/lib/repertoireStore";
-import { getCurrentUser } from "@/lib/profileStore";
+import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 
 const voicings: Voicing[] = ["TTBB", "SATB", "SSAA"];
 
@@ -62,7 +62,21 @@ export default function Home() {
   useEffect(() => {
     async function load() {
       try {
-        await loadRepertoire();
+        const user = await getCurrentUser();
+
+        if (!user) {
+          window.location.href = "/login";
+          return;
+        }
+
+        const profile = await getMyProfile();
+        if (!profile?.display_name) {
+          window.location.href = "/settings";
+          return;
+        }
+
+        const data = await getMyRepertoire();
+        setItems(data);
       } catch (err) {
         console.error(err);
         setMessage("Could not load repertoire.");

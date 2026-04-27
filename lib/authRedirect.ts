@@ -1,4 +1,4 @@
-const DEFAULT_AUTH_REDIRECT_PATH = "/settings";
+const DEFAULT_AUTH_REDIRECT_PATH = "/";
 
 function normalizeSiteUrl(siteUrl: string | undefined): string | null {
   if (!siteUrl?.trim()) return null;
@@ -20,7 +20,7 @@ function isLocalOrigin(origin: string): boolean {
   }
 }
 
-function safeRedirectPath(search: string): string {
+export function getPostLoginRedirectPath(search: string): string {
   const redirect = new URLSearchParams(search).get("redirect");
 
   if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//")) {
@@ -39,7 +39,7 @@ export function getMagicLinkRedirectUrl({
   origin: string;
   search: string;
 }): string | null {
-  const redirectPath = safeRedirectPath(search);
+  const redirectPath = getPostLoginRedirectPath(search);
   const baseUrl = normalizeSiteUrl(siteUrl) ?? (isLocalOrigin(origin) ? origin : null);
 
   if (!baseUrl) return null;
