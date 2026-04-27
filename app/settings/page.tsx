@@ -29,6 +29,7 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("");
   const [defaultPart, setDefaultPart] = useState("");
   const [message, setMessage] = useState("");
+  const [showRepertoireNextStep, setShowRepertoireNextStep] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -72,7 +73,8 @@ export default function SettingsPage() {
 
     try {
       await upsertMyProfile(displayName.trim(), defaultPart);
-      setMessage("Settings saved.");
+      setMessage("Settings saved. Next, add a few songs you know.");
+      setShowRepertoireNextStep(true);
     } catch (err) {
       console.error(err);
       setMessage("Could not save settings. Check your connection and try again.");
@@ -141,6 +143,15 @@ export default function SettingsPage() {
           </button>
 
           {message && <p className="mt-4 text-sm text-slate-300">{message}</p>}
+
+          {showRepertoireNextStep && (
+            <a
+              href="/repertoire"
+              className="mt-4 inline-block rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-white/20"
+            >
+              Add songs
+            </a>
+          )}
         </section>
       </div>
     </main>
