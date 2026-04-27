@@ -55,6 +55,37 @@ export async function addRepertoireItem(input: {
   return data as RepertoireRow;
 }
 
+export async function updateRepertoireItem(
+  id: string,
+  input: {
+    songTitle: string;
+    voicing: Voicing;
+    arrangerName?: string;
+    partsKnown: Part[];
+    confidence: Confidence;
+  }
+) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("You must be logged in.");
+
+  const { data, error } = await supabase
+    .from("user_repertoire")
+    .update({
+      song_title: input.songTitle,
+      voicing: input.voicing,
+      arranger_name: input.arrangerName || null,
+      parts_known: input.partsKnown,
+      confidence: input.confidence,
+    })
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as RepertoireRow;
+}
+
 export async function deleteRepertoireItem(id: string) {
   const { error } = await supabase.from("user_repertoire").delete().eq("id", id);
   if (error) throw error;
