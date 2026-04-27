@@ -265,7 +265,7 @@ export default function RepertoireManager() {
 
             <label className="block">
               <span className="text-sm font-medium text-slate-300">
-                Arranger optional
+                Arranger (optional)
               </span>
               <input
                 value={arrangerName}
@@ -372,7 +372,7 @@ export default function RepertoireManager() {
 
                       <label className="block">
                         <span className="text-sm font-medium text-slate-300">
-                          Arranger optional
+                          Arranger (optional)
                         </span>
                         <input
                           value={editForm.arrangerName}
