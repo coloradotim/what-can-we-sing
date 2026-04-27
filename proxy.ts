@@ -1,6 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { getLoginRedirectUrl, isPublicAuthPath } from "@/lib/authRoute";
+import {
+  allowsMissingDisplayName,
+  getLoginRedirectUrl,
+  getSettingsRedirectUrl,
+  isPublicAuthPath,
+} from "@/lib/authRoute";
 
 export async function proxy(request: NextRequest) {
   if (isPublicAuthPath(request.nextUrl.pathname)) {
@@ -50,6 +55,18 @@ export async function proxy(request: NextRequest) {
 
   if (!user) {
     return NextResponse.redirect(getLoginRedirectUrl(request.nextUrl));
+  }
+
+  if (!allowsMissingDisplayName(request.nextUrl.pathname)) {
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("display_name")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (error || !profile?.display_name?.trim()) {
+      return NextResponse.redirect(getSettingsRedirectUrl(request.nextUrl));
+    }
   }
 
   return response;

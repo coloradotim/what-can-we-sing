@@ -7,6 +7,14 @@ export function isPublicAuthPath(pathname: string): boolean {
   );
 }
 
+export function allowsMissingDisplayName(pathname: string): boolean {
+  return (
+    isPublicAuthPath(pathname) ||
+    pathname === "/settings" ||
+    pathname.startsWith("/settings/")
+  );
+}
+
 export function getLoginRedirectUrl(requestUrl: URL): URL {
   const loginUrl = new URL(requestUrl);
   const destination = `${requestUrl.pathname}${requestUrl.search}`;
@@ -19,4 +27,18 @@ export function getLoginRedirectUrl(requestUrl: URL): URL {
   }
 
   return loginUrl;
+}
+
+export function getSettingsRedirectUrl(requestUrl: URL): URL {
+  const settingsUrl = new URL(requestUrl);
+  const destination = `${requestUrl.pathname}${requestUrl.search}`;
+
+  settingsUrl.pathname = "/settings";
+  settingsUrl.search = "";
+
+  if (destination !== "/settings") {
+    settingsUrl.searchParams.set("redirect", destination);
+  }
+
+  return settingsUrl;
 }

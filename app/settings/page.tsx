@@ -30,6 +30,7 @@ export default function SettingsPage() {
   const [displayName, setDisplayName] = useState("");
   const [defaultPart, setDefaultPart] = useState("");
   const [message, setMessage] = useState("");
+  const [displayNameError, setDisplayNameError] = useState("");
   const [showRepertoireNextStep, setShowRepertoireNextStep] = useState(false);
 
   useEffect(() => {
@@ -68,11 +69,13 @@ export default function SettingsPage() {
 
   async function saveSettings() {
     if (!displayName.trim()) {
-      setMessage("Add a display name before saving settings.");
+      setDisplayNameError("Display name is required.");
+      setMessage("");
       return;
     }
 
     try {
+      setDisplayNameError("");
       await upsertMyProfile(displayName.trim(), defaultPart);
       const repertoire = await getMyRepertoire();
 
@@ -121,9 +124,25 @@ export default function SettingsPage() {
             </span>
             <input
               value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="mt-1 w-full rounded-xl bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+              onChange={(e) => {
+                setDisplayName(e.target.value);
+                if (displayNameError) setDisplayNameError("");
+              }}
+              aria-invalid={Boolean(displayNameError)}
+              aria-describedby={
+                displayNameError ? "display-name-error" : undefined
+              }
+              className={`mt-1 w-full rounded-xl bg-slate-900 px-4 py-3 text-white outline-none focus:ring-2 ${
+                displayNameError
+                  ? "ring-2 ring-rose-300"
+                  : "ring-cyan-300"
+              }`}
             />
+            {displayNameError && (
+              <p id="display-name-error" className="mt-2 text-sm text-rose-200">
+                {displayNameError}
+              </p>
+            )}
           </label>
 
           <label className="mt-5 block">
