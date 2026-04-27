@@ -324,6 +324,23 @@ export default function RepertoireManager() {
 
         {message && <p className="mt-4 text-sm text-slate-300">{message}</p>}
 
+        <section className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold">Add a song</h2>
+            <p className="mt-1 text-sm text-slate-400">
+              Save a song, voicing, confidence, and the parts you know.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={openAddModal}
+            className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200"
+          >
+            Add song
+          </button>
+        </section>
+
         <section className="mt-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -344,14 +361,6 @@ export default function RepertoireManager() {
                   className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
                 />
               </label>
-
-              <button
-                type="button"
-                onClick={openAddModal}
-                className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200"
-              >
-                Add song
-              </button>
             </div>
           </div>
 
