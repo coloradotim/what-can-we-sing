@@ -13,6 +13,11 @@ or the login/callback flow.
   - Button and fallback links use:
     `{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=email`
   - The template does not use `/login` as the link target.
+- Authentication > Email Templates > Confirm signup:
+  - Button and fallback links use:
+    `{{ .RedirectTo }}?token_hash={{ .TokenHash }}&type=signup`
+  - The template uses `?token_hash`, not `&token_hash`, immediately after
+    `/auth/callback`.
 
 ## Local flow
 
@@ -34,6 +39,8 @@ or the login/callback flow.
 ## Failure checks
 
 - Opening `/auth/callback` without `code` or `token_hash` returns to `/login`.
+- Opening `/auth/callback&token_hash=REDACTED&type=signup` normalizes to the
+  real `/auth/callback?token_hash=REDACTED&type=signup` route.
 - Opening a magic link twice should fail gracefully and not create a loop.
 - If a profile has no display name, the app redirects to `/settings`, not
   `/login`.

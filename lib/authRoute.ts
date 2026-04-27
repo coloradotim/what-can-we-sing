@@ -3,8 +3,25 @@ export function isPublicAuthPath(pathname: string): boolean {
     pathname === "/login" ||
     pathname.startsWith("/login/") ||
     pathname === "/auth/callback" ||
+    pathname.startsWith("/auth/callback&") ||
     pathname === "/privacy"
   );
+}
+
+export function getNormalizedAuthCallbackUrl(requestUrl: URL): URL | null {
+  if (!requestUrl.pathname.startsWith("/auth/callback&")) {
+    return null;
+  }
+
+  const normalizedUrl = new URL(requestUrl);
+  const malformedQuery = normalizedUrl.pathname.slice("/auth/callback&".length);
+  const existingSearch = normalizedUrl.search.replace(/^\?/, "");
+  const search = [malformedQuery, existingSearch].filter(Boolean).join("&");
+
+  normalizedUrl.pathname = "/auth/callback";
+  normalizedUrl.search = search ? `?${search}` : "";
+
+  return normalizedUrl;
 }
 
 export function allowsMissingDisplayName(pathname: string): boolean {

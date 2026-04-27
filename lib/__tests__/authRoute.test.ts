@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   allowsMissingDisplayName,
   getLoginRedirectUrl,
+  getNormalizedAuthCallbackUrl,
   getSettingsRedirectUrl,
   isPublicAuthPath,
 } from "../authRoute";
@@ -15,6 +16,12 @@ describe("isPublicAuthPath", () => {
     expect(isPublicAuthPath("/auth/callback")).toBe(true);
   });
 
+  it("allows malformed auth callback paths so proxy can normalize them", () => {
+    expect(isPublicAuthPath("/auth/callback&token_hash=abc&type=signup")).toBe(
+      true
+    );
+  });
+
   it("allows the privacy route without an auth redirect", () => {
     expect(isPublicAuthPath("/privacy")).toBe(true);
   });
@@ -22,6 +29,36 @@ describe("isPublicAuthPath", () => {
   it("protects app routes", () => {
     expect(isPublicAuthPath("/repertoire")).toBe(false);
     expect(isPublicAuthPath("/join/ABC123")).toBe(false);
+  });
+});
+
+describe("getNormalizedAuthCallbackUrl", () => {
+  it("normalizes callback links that used & before the first query parameter", () => {
+    const url = getNormalizedAuthCallbackUrl(
+      new URL("https://example.com/auth/callback&token_hash=abc&type=signup")
+    );
+
+    expect(url?.toString()).toBe(
+      "https://example.com/auth/callback?token_hash=abc&type=signup"
+    );
+  });
+
+  it("preserves any existing query string while normalizing", () => {
+    const url = getNormalizedAuthCallbackUrl(
+      new URL("https://example.com/auth/callback&token_hash=abc?type=signup")
+    );
+
+    expect(url?.toString()).toBe(
+      "https://example.com/auth/callback?token_hash=abc&type=signup"
+    );
+  });
+
+  it("ignores normal callback paths", () => {
+    expect(
+      getNormalizedAuthCallbackUrl(
+        new URL("https://example.com/auth/callback?token_hash=abc&type=signup")
+      )
+    ).toBeNull();
   });
 });
 
