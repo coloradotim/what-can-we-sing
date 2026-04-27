@@ -30,6 +30,33 @@ The app is for practical, in-the-room decision-making, not archival repertoire m
 - Missing arranger should not block matching; it should create a “possible match / confirm arrangement” warning.
 - The app should be forgiving of imperfect data and help singers decide quickly, not enforce a perfect catalog.
 
+## Part abbreviations (UI standard)
+
+Use the following abbreviations consistently in all user-facing UI:
+
+TTBB:
+- T = Tenor
+- L = Lead
+- Bari = Baritone
+- Bs = Bass
+
+SATB:
+- S = Soprano
+- A = Alto
+- T = Tenor
+- B = Bass
+
+SSAA:
+- S1 = Soprano 1
+- S2 = Soprano 2
+- A1 = Alto 1
+- A2 = Alto 2
+
+Notes:
+- Do not invent alternative abbreviations.
+- Do not spell out full part names in compact list views.
+- Always prioritize readability and scannability on mobile.
+
 ## Tech stack
 - Next.js App Router
 - TypeScript
