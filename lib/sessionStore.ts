@@ -10,6 +10,7 @@ export type DbSession = {
 export type DbParticipant = {
   id: string;
   session_id: string;
+  user_id: string;
   display_name: string;
   repertoire: SingerEntry[];
   joined_at: string;
@@ -37,33 +38,23 @@ export async function getSessionByCode(joinCode: string) {
   return data as DbSession;
 }
 
-export async function addParticipant(
+export async function upsertParticipant(
   sessionId: string,
+  userId: string,
   displayName: string,
   repertoire: SingerEntry[]
 ) {
   const { data, error } = await supabase
     .from("session_participants")
-    .insert({
-      session_id: sessionId,
-      display_name: displayName,
-      repertoire,
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data as DbParticipant;
-}
-
-export async function updateParticipantRepertoire(
-  participantId: string,
-  repertoire: SingerEntry[]
-) {
-  const { data, error } = await supabase
-    .from("session_participants")
-    .update({ repertoire })
-    .eq("id", participantId)
+    .upsert(
+      {
+        session_id: sessionId,
+        user_id: userId,
+        display_name: displayName,
+        repertoire,
+      },
+      { onConflict: "session_id,user_id" }
+    )
     .select()
     .single();
 
