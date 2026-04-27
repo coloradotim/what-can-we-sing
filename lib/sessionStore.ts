@@ -1,6 +1,5 @@
 import { supabase } from "@/lib/supabase";
 import type { SingerEntry } from "@/lib/matching";
-import { applyParticipantDisplayName } from "@/lib/sessionParticipantDisplayName";
 import type { ParticipantChangePayload } from "@/lib/sessionParticipantChanges";
 
 export type DbSession = {
@@ -40,17 +39,6 @@ async function updateSessionActivity(sessionId: string, lastActivityAt: string) 
     .eq("id", sessionId);
 
   if (error) throw error;
-}
-
-async function tryUpdateSessionActivity(
-  sessionId: string,
-  lastActivityAt: string
-) {
-  try {
-    await updateSessionActivity(sessionId, lastActivityAt);
-  } catch (err) {
-    console.warn("Could not update session activity", err);
-  }
 }
 
 export async function getSessionByCode(joinCode: string) {
@@ -93,16 +81,12 @@ export async function upsertParticipant(
 export async function updateParticipantSnapshot(
   participantId: string,
   userId: string,
-  displayName: string,
   repertoire: SingerEntry[],
   lastActivityAt = new Date().toISOString()
 ) {
   const { data, error } = await supabase
     .from("session_participants")
-    .update({
-      display_name: displayName,
-      repertoire,
-    })
+    .update({ repertoire })
     .eq("id", participantId)
     .eq("user_id", userId)
     .select()
@@ -110,43 +94,6 @@ export async function updateParticipantSnapshot(
 
   if (error) throw error;
   await updateSessionActivity(data.session_id, lastActivityAt);
-  return data as DbParticipant;
-}
-
-export async function updateParticipantDisplayName(
-  sessionId: string,
-  userId: string,
-  displayName: string,
-  lastActivityAt = new Date().toISOString()
-) {
-  const currentParticipants = await getParticipants(sessionId);
-  const currentParticipant = currentParticipants.find(
-    (participant) => participant.user_id === userId
-  );
-
-  if (!currentParticipant) {
-    throw new Error("Active quartet participant was not found.");
-  }
-
-  const updatedParticipant = applyParticipantDisplayName(
-    currentParticipant,
-    displayName
-  );
-
-  const { data, error } = await supabase
-    .from("session_participants")
-    .update({
-      display_name: updatedParticipant.display_name,
-      repertoire: updatedParticipant.repertoire,
-    })
-    .eq("id", currentParticipant.id)
-    .eq("user_id", userId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  await tryUpdateSessionActivity(sessionId, lastActivityAt);
-
   return data as DbParticipant;
 }
 
