@@ -3,11 +3,17 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   allowsMissingDisplayName,
   getLoginRedirectUrl,
+  getNormalizedAuthCallbackUrl,
   getSettingsRedirectUrl,
   isPublicAuthPath,
 } from "@/lib/authRoute";
 
 export async function proxy(request: NextRequest) {
+  const normalizedAuthCallbackUrl = getNormalizedAuthCallbackUrl(request.nextUrl);
+  if (normalizedAuthCallbackUrl) {
+    return NextResponse.redirect(normalizedAuthCallbackUrl);
+  }
+
   if (isPublicAuthPath(request.nextUrl.pathname)) {
     return NextResponse.next();
   }
