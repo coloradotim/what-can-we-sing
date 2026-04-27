@@ -53,29 +53,6 @@ async function tryUpdateSessionActivity(
   }
 }
 
-async function tryUpdateParticipantSnapshotDisplayName(
-  participant: DbParticipant,
-  userId: string,
-  displayName: string
-) {
-  const updatedParticipant = applyParticipantDisplayName(
-    participant,
-    displayName
-  );
-
-  try {
-    const { error } = await supabase
-      .from("session_participants")
-      .update({ repertoire: updatedParticipant.repertoire })
-      .eq("id", participant.id)
-      .eq("user_id", userId);
-
-    if (error) throw error;
-  } catch (err) {
-    console.warn("Could not update participant repertoire display names", err);
-  }
-}
-
 export async function getSessionByCode(joinCode: string) {
   const { data, error } = await supabase
     .from("sessions")
@@ -142,22 +119,32 @@ export async function updateParticipantDisplayName(
   displayName: string,
   lastActivityAt = new Date().toISOString()
 ) {
-  const { data, error } = await supabase
-    .from("session_participants")
-    .update({ display_name: displayName })
-    .eq("session_id", sessionId)
-    .eq("user_id", userId)
-    .select()
-    .maybeSingle();
+  const currentParticipants = await getParticipants(sessionId);
+  const currentParticipant = currentParticipants.find(
+    (participant) => participant.user_id === userId
+  );
 
-  if (error) throw error;
-  if (!data) return null;
+  if (!currentParticipant) {
+    throw new Error("Active quartet participant was not found.");
+  }
 
-  await tryUpdateParticipantSnapshotDisplayName(
-    data as DbParticipant,
-    userId,
+  const updatedParticipant = applyParticipantDisplayName(
+    currentParticipant,
     displayName
   );
+
+  const { data, error } = await supabase
+    .from("session_participants")
+    .update({
+      display_name: updatedParticipant.display_name,
+      repertoire: updatedParticipant.repertoire,
+    })
+    .eq("id", currentParticipant.id)
+    .eq("user_id", userId)
+    .select()
+    .single();
+
+  if (error) throw error;
   await tryUpdateSessionActivity(sessionId, lastActivityAt);
 
   return data as DbParticipant;
