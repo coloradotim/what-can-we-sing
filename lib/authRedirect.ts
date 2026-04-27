@@ -2,6 +2,7 @@ const DEFAULT_AUTH_REDIRECT_PATH = "/";
 const AUTH_CALLBACK_PATH = "/auth/callback";
 
 const disallowedAuthRedirectPaths = ["/login", "/auth/callback"];
+const disallowedMalformedAuthRedirectPathPrefixes = ["/auth/callback&"];
 
 function normalizeSiteUrl(siteUrl: string | undefined): string | null {
   if (!siteUrl?.trim()) return null;
@@ -47,6 +48,14 @@ export function isSafeAppRedirectPath(path: string | null): path is string {
   if (!path || !path.startsWith("/") || path.startsWith("//")) return false;
 
   const { pathname } = new URL(path, "https://example.com");
+
+  if (
+    disallowedMalformedAuthRedirectPathPrefixes.some((disallowedPrefix) =>
+      pathname.startsWith(disallowedPrefix)
+    )
+  ) {
+    return false;
+  }
 
   return !disallowedAuthRedirectPaths.some(
     (disallowedPath) =>
