@@ -3,7 +3,6 @@ import { supabase } from "@/lib/supabase";
 export type Profile = {
   id: string;
   display_name: string;
-  default_part: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -28,7 +27,7 @@ export async function getMyProfile() {
   return data as Profile | null;
 }
 
-export async function upsertMyProfile(displayName: string, defaultPart?: string) {
+export async function upsertMyProfile(displayName: string) {
   const user = await getCurrentUser();
   if (!user) throw new Error("You must be logged in.");
 
@@ -37,7 +36,6 @@ export async function upsertMyProfile(displayName: string, defaultPart?: string)
     .upsert({
       id: user.id,
       display_name: displayName,
-      default_part: defaultPart || null,
       updated_at: new Date().toISOString(),
     })
     .select()

@@ -62,3 +62,12 @@ alter table public.sessions
   alter column last_activity_at set default now(),
   alter column last_activity_at set not null;
 ```
+
+The app no longer uses a default voice part on profiles. If your `profiles`
+table still has that older column and you want to clean it up, run this in the
+Supabase SQL editor:
+
+```sql
+alter table public.profiles
+  drop column if exists default_part;
+```

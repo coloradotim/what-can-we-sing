@@ -9,26 +9,11 @@ import {
 import { getMyRepertoire } from "@/lib/repertoireStore";
 import { useEffect, useState } from "react";
 
-const defaultParts = [
-  "",
-  "Tenor",
-  "Lead",
-  "Baritone",
-  "Bass",
-  "Soprano",
-  "Alto",
-  "Soprano 1",
-  "Soprano 2",
-  "Alto 1",
-  "Alto 2",
-];
-
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [defaultPart, setDefaultPart] = useState("");
   const [message, setMessage] = useState("");
   const [displayNameError, setDisplayNameError] = useState("");
   const [showRepertoireNextStep, setShowRepertoireNextStep] = useState(false);
@@ -50,7 +35,6 @@ export default function SettingsPage() {
 
         if (profile) {
           setDisplayName(profile.display_name ?? "");
-          setDefaultPart(profile.default_part ?? "");
         } else {
           setMessage(
             "Add a display name before joining a quartet so other singers know who you are."
@@ -76,7 +60,7 @@ export default function SettingsPage() {
 
     try {
       setDisplayNameError("");
-      await upsertMyProfile(displayName.trim(), defaultPart);
+      await upsertMyProfile(displayName.trim());
       const repertoire = await getMyRepertoire();
 
       if (repertoire.length === 0) {
@@ -143,23 +127,6 @@ export default function SettingsPage() {
                 {displayNameError}
               </p>
             )}
-          </label>
-
-          <label className="mt-5 block">
-            <span className="text-sm font-medium text-slate-300">
-              Default voice part (optional)
-            </span>
-            <select
-              value={defaultPart}
-              onChange={(e) => setDefaultPart(e.target.value)}
-              className="mt-1 w-full rounded-xl bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-            >
-              {defaultParts.map((part) => (
-                <option key={part} value={part}>
-                  {part || "No default"}
-                </option>
-              ))}
-            </select>
           </label>
 
           <button
