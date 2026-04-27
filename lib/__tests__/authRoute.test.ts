@@ -10,6 +10,10 @@ describe("isPublicAuthPath", () => {
     expect(isPublicAuthPath("/auth/callback")).toBe(true);
   });
 
+  it("allows the privacy route without an auth redirect", () => {
+    expect(isPublicAuthPath("/privacy")).toBe(true);
+  });
+
   it("protects app routes", () => {
     expect(isPublicAuthPath("/repertoire")).toBe(false);
     expect(isPublicAuthPath("/join/ABC123")).toBe(false);
