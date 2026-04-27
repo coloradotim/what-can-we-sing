@@ -1,9 +1,8 @@
 import {
   requiredPartsForVoicing,
   type MatchResult,
-  type Part,
-  type Voicing,
 } from "@/lib/matching";
+import { partAbbreviation } from "@/lib/partAbbreviations";
 
 type MatchCardProps = {
   match: MatchResult;
@@ -33,29 +32,6 @@ const categoryStyles: Record<
     part: "bg-slate-900/80 text-slate-100 ring-white/10",
   },
 };
-
-function partAbbreviation(voicing: Voicing, part: Part): string {
-  if (voicing === "TTBB") {
-    if (part === "Tenor") return "T";
-    if (part === "Lead") return "L";
-    if (part === "Baritone") return "Bari";
-    if (part === "Bass") return "Bass";
-  }
-
-  if (voicing === "SATB") {
-    if (part === "Soprano") return "S";
-    if (part === "Alto") return "A";
-    if (part === "Tenor") return "T";
-    if (part === "Bass") return "Bass";
-  }
-
-  if (part === "Soprano 1") return "S1";
-  if (part === "Soprano 2") return "S2";
-  if (part === "Alto 1") return "A1";
-  if (part === "Alto 2") return "A2";
-
-  return part;
-}
 
 export function MatchCard({
   match,
