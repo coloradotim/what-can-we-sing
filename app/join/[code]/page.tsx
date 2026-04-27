@@ -6,11 +6,11 @@ import { AppNav } from "@/components/AppNav";
 import { MatchCard } from "@/components/MatchCard";
 import { findMatches, SingerEntry } from "@/lib/matching";
 import {
-  addParticipant,
+  type DbParticipant,
   getParticipants,
   getSessionByCode,
   subscribeToSessionParticipants,
-  updateParticipantRepertoire,
+  upsertParticipant,
 } from "@/lib/sessionStore";
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 import { getMyRepertoire } from "@/lib/repertoireStore";
@@ -29,8 +29,9 @@ export default function JoinSessionPage() {
 
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [participants, setParticipants] = useState<any[]>([]);
+  const [participants, setParticipants] = useState<DbParticipant[]>([]);
   const [message, setMessage] = useState("");
 
   async function refreshParticipants(id: string) {
@@ -53,27 +54,30 @@ export default function JoinSessionPage() {
     }));
   }
 
-  async function joinSession(id = sessionId, name = displayName) {
-    if (!id || !name) return;
+  async function joinSession(
+    id = sessionId,
+    name = displayName,
+    userId = currentUserId
+  ) {
+    if (!id || !name || !userId) return;
 
     try {
       const existingParticipants = await refreshParticipants(id);
 
       const existingParticipant = existingParticipants.find(
-        (participant) => participant.display_name === name
+        (participant) => participant.user_id === userId
       );
 
       const entries = await getMyEntries(name);
 
+      await upsertParticipant(id, userId, name, entries);
+      await refreshParticipants(id);
+
       if (existingParticipant) {
-        await updateParticipantRepertoire(existingParticipant.id, entries);
-        await refreshParticipants(id);
         setMessage(`Updated ${name}'s repertoire with ${entries.length} songs.`);
         return;
       }
 
-      await addParticipant(id, name, entries);
-      await refreshParticipants(id);
       setMessage(`Joined as ${name} with ${entries.length} songs.`);
     } catch (err) {
       console.error(err);
@@ -102,6 +106,7 @@ export default function JoinSessionPage() {
 
         const session = await getSessionByCode(code);
 
+        setCurrentUserId(user.id);
         setDisplayName(profile.display_name);
         setSessionId(session.id);
 
@@ -112,12 +117,12 @@ export default function JoinSessionPage() {
         });
 
         const alreadyJoined = currentParticipants.some(
-          (participant) => participant.display_name === profile.display_name
+          (participant) => participant.user_id === user.id
         );
 
         if (!alreadyJoined && !hasAutoJoined.current) {
           hasAutoJoined.current = true;
-          await joinSession(session.id, profile.display_name);
+          await joinSession(session.id, profile.display_name, user.id);
         } else {
           setMessage(`You are already in this quartet as ${profile.display_name}.`);
         }
@@ -170,7 +175,7 @@ export default function JoinSessionPage() {
 
           <button
             onClick={() => joinSession()}
-            disabled={!sessionId || !displayName}
+            disabled={!sessionId || !displayName || !currentUserId}
             className="mt-4 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
           >
             Rejoin / refresh my repertoire
