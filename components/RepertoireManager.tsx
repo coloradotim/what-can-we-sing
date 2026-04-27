@@ -66,6 +66,7 @@ export default function RepertoireManager() {
   const [arrangerName, setArrangerName] = useState("");
   const [partsKnown, setPartsKnown] = useState<Part[]>([]);
   const [confidence, setConfidence] = useState<Confidence | "">("");
+  const [isAddOpen, setIsAddOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<RepertoireForm | null>(null);
   const [message, setMessage] = useState("");
@@ -115,6 +116,25 @@ export default function RepertoireManager() {
 
     load();
   }, []);
+
+  function resetAddForm() {
+    setSongTitle("");
+    setVoicing("");
+    setArrangerName("");
+    setPartsKnown([]);
+    setConfidence("");
+  }
+
+  function openAddModal() {
+    setMessage("");
+    setIsAddOpen(true);
+  }
+
+  function closeAddModal() {
+    resetAddForm();
+    setIsAddOpen(false);
+    setMessage("");
+  }
 
   function togglePart(part: Part) {
     setPartsKnown((current) =>
@@ -188,11 +208,8 @@ export default function RepertoireManager() {
         confidence,
       });
 
-      setSongTitle("");
-      setVoicing("");
-      setArrangerName("");
-      setPartsKnown([]);
-      setConfidence("");
+      resetAddForm();
+      setIsAddOpen(false);
       setMessage("Song added.");
 
       await loadRepertoire();
@@ -307,97 +324,6 @@ export default function RepertoireManager() {
 
         {message && <p className="mt-4 text-sm text-slate-300">{message}</p>}
 
-        <section className="mt-8 rounded-2xl border border-white/10 bg-white/10 p-5 shadow-lg">
-          <h2 className="text-2xl font-semibold">Add a song</h2>
-
-          <div className="mt-5 grid gap-4 md:grid-cols-2">
-            <label className="block">
-              <span className="text-sm font-medium text-slate-300">Song title</span>
-              <input
-                value={songTitle}
-                onChange={(e) => setSongTitle(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-medium text-slate-300">
-                Arranger (optional)
-              </span>
-              <input
-                value={arrangerName}
-                onChange={(e) => setArrangerName(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-medium text-slate-300">Voicing</span>
-              <select
-                value={voicing}
-                onChange={(e) => {
-                  setVoicing(e.target.value as Voicing | "");
-                  setPartsKnown([]);
-                }}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-              >
-                <option value="">Choose voicing</option>
-                {voicings.map((v) => (
-                  <option key={v}>{v}</option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-medium text-slate-300">Confidence</span>
-              <select
-                value={confidence}
-                onChange={(e) => setConfidence(e.target.value as Confidence | "")}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-              >
-                <option value="">Choose confidence</option>
-                {confidenceLevels.map((level) => (
-                  <option key={level} value={level}>
-                    {level}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="mt-5">
-            <p className="text-sm font-medium text-slate-300">Parts you know</p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {voicing ? (
-                partsByVoicing[voicing].map((part) => (
-                  <button
-                    key={part}
-                    type="button"
-                    onClick={() => togglePart(part)}
-                    className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                      partsKnown.includes(part)
-                        ? "bg-cyan-300 text-slate-950"
-                        : "bg-slate-800 text-slate-200 hover:bg-slate-700"
-                    }`}
-                  >
-                    {part}
-                  </button>
-                ))
-              ) : (
-                <p className="text-sm text-slate-400">Choose a voicing first.</p>
-              )}
-            </div>
-          </div>
-
-          <button
-            onClick={addItem}
-            disabled={!canAddSong}
-            className="mt-6 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
-          >
-            Add to repertoire
-          </button>
-        </section>
-
         <section className="mt-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -407,16 +333,26 @@ export default function RepertoireManager() {
               </p>
             </div>
 
-            <label className="block sm:w-72">
-              <span className="text-sm font-medium text-slate-300">
-                Search by title
-              </span>
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-              />
-            </label>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+              <label className="block sm:w-72">
+                <span className="text-sm font-medium text-slate-300">
+                  Search by title
+                </span>
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={openAddModal}
+                className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200"
+              >
+                Add song
+              </button>
+            </div>
           </div>
 
           <div className="mt-4 space-y-2">
@@ -424,7 +360,7 @@ export default function RepertoireManager() {
               <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-slate-300">
                 <p className="font-semibold text-white">No songs yet.</p>
                 <p className="mt-1">
-                  Add a song above with the part or parts you know. Your
+                  Add a song with the part or parts you know. Your
                   repertoire is what powers quartet matches.
                 </p>
               </div>
@@ -607,6 +543,154 @@ export default function RepertoireManager() {
             ))}
           </div>
         </section>
+
+        {isAddOpen && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-song-title"
+            className="fixed inset-0 z-50 flex items-end bg-slate-950/80 px-0 sm:items-center sm:px-6"
+          >
+            <button
+              type="button"
+              aria-label="Close add song form"
+              onClick={closeAddModal}
+              className="absolute inset-0 cursor-default"
+            />
+            <div className="relative max-h-[90vh] w-full overflow-y-auto rounded-t-2xl border border-white/10 bg-slate-950 p-5 shadow-2xl sm:mx-auto sm:max-w-2xl sm:rounded-2xl">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 id="add-song-title" className="text-2xl font-semibold">
+                    Add a song
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Save the parts you know for this arrangement.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeAddModal}
+                  className="rounded-lg bg-slate-800 px-3 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-700"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              {message && (
+                <p className="mt-4 text-sm text-slate-300">{message}</p>
+              )}
+
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-300">
+                    Song title
+                  </span>
+                  <input
+                    value={songTitle}
+                    onChange={(e) => setSongTitle(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-300">
+                    Arranger (optional)
+                  </span>
+                  <input
+                    value={arrangerName}
+                    onChange={(e) => setArrangerName(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-300">
+                    Voicing
+                  </span>
+                  <select
+                    value={voicing}
+                    onChange={(e) => {
+                      setVoicing(e.target.value as Voicing | "");
+                      setPartsKnown([]);
+                    }}
+                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                  >
+                    <option value="">Choose voicing</option>
+                    {voicings.map((v) => (
+                      <option key={v}>{v}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-300">
+                    Confidence
+                  </span>
+                  <select
+                    value={confidence}
+                    onChange={(e) =>
+                      setConfidence(e.target.value as Confidence | "")
+                    }
+                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                  >
+                    <option value="">Choose confidence</option>
+                    {confidenceLevels.map((level) => (
+                      <option key={level} value={level}>
+                        {level}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="mt-5">
+                <p className="text-sm font-medium text-slate-300">
+                  Parts you know
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {voicing ? (
+                    partsByVoicing[voicing].map((part) => (
+                      <button
+                        key={part}
+                        type="button"
+                        onClick={() => togglePart(part)}
+                        className={`rounded-full px-4 py-2 text-sm font-semibold ${
+                          partsKnown.includes(part)
+                            ? "bg-cyan-300 text-slate-950"
+                            : "bg-slate-800 text-slate-200 hover:bg-slate-700"
+                        }`}
+                      >
+                        {part}
+                      </button>
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-400">
+                      Choose a voicing first.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={addItem}
+                  disabled={!canAddSong}
+                  className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
+                >
+                  Add to repertoire
+                </button>
+                <button
+                  type="button"
+                  onClick={closeAddModal}
+                  className="rounded-xl bg-slate-800 px-5 py-3 font-semibold text-slate-200 hover:bg-slate-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
