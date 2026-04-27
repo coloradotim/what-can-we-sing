@@ -16,9 +16,21 @@ import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 import { getMyRepertoire } from "@/lib/repertoireStore";
 
 const matchSections = [
-  { category: "ready", title: "Ready to sing" },
-  { category: "possible", title: "Possible matches — confirm arrangement" },
-  { category: "one_part_missing", title: "One part missing" },
+  {
+    category: "ready",
+    title: "Ready",
+    description: "All required parts are covered.",
+  },
+  {
+    category: "possible",
+    title: "Possible",
+    description: "Check arranger details before singing.",
+  },
+  {
+    category: "one_part_missing",
+    title: "One part missing",
+    description: "Close matches that need one more singer or part.",
+  },
 ] as const;
 
 export default function JoinSessionPage() {
@@ -250,9 +262,21 @@ export default function JoinSessionPage() {
             </div>
 
             <div className="mt-10">
-              <h2 className="text-2xl font-semibold">Matches</h2>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h2 className="text-2xl font-semibold">Matches</h2>
+                  <p className="mt-1 text-sm text-slate-300">
+                    Results stay ranked within each group.
+                  </p>
+                </div>
+                {matches.length > 0 && (
+                  <p className="text-sm font-semibold text-cyan-300">
+                    {matches.length} total
+                  </p>
+                )}
+              </div>
 
-              <div className="mt-4 space-y-6">
+              <div className="mt-4 space-y-5">
                 {matches.length === 0 && (
                   <p className="rounded-2xl border border-white/10 bg-white/5 p-5 text-slate-300">
                     No matches yet. Add more singers or repertoire.
@@ -262,12 +286,25 @@ export default function JoinSessionPage() {
                 {groupedMatches.map(
                   (section) =>
                     section.matches.length > 0 && (
-                      <section key={section.category} className="space-y-3">
-                        <h3 className="text-lg font-semibold text-slate-100">
-                          {section.title}
-                        </h3>
+                      <section
+                        key={section.category}
+                        className="rounded-2xl border border-white/10 bg-white/5 p-3 sm:p-4"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h3 className="text-lg font-semibold text-slate-100">
+                              {section.title}
+                            </h3>
+                            <p className="mt-1 text-sm text-slate-300">
+                              {section.description}
+                            </p>
+                          </div>
+                          <span className="rounded-full bg-slate-900 px-3 py-1 text-sm font-semibold text-slate-200">
+                            {section.matches.length}
+                          </span>
+                        </div>
 
-                        <div className="space-y-4">
+                        <div className="mt-3 space-y-3">
                           {section.matches.map((match) => (
                             <MatchCard
                               key={match.songTitle + match.voicing}

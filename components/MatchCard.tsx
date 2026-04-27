@@ -10,9 +10,34 @@ const categoryLabels: Record<MatchResult["category"], string> = {
   one_part_missing: "One part missing",
 };
 
+const categoryStyles: Record<
+  MatchResult["category"],
+  {
+    article: string;
+    badge: string;
+  }
+> = {
+  ready: {
+    article: "border-emerald-300/30 bg-emerald-300/10",
+    badge: "bg-emerald-300 text-slate-950",
+  },
+  possible: {
+    article: "border-amber-300/30 bg-amber-300/10",
+    badge: "bg-amber-300 text-slate-950",
+  },
+  one_part_missing: {
+    article: "border-rose-300/30 bg-rose-400/10",
+    badge: "bg-rose-200 text-slate-950",
+  },
+};
+
 export function MatchCard({ match }: MatchCardProps) {
+  const styles = categoryStyles[match.category];
+
   return (
-    <article className="rounded-2xl border border-white/10 bg-white/10 p-4 shadow-lg sm:p-5">
+    <article
+      className={`rounded-2xl border p-4 shadow-lg sm:p-5 ${styles.article}`}
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h3 className="break-words text-xl font-bold sm:text-2xl">
@@ -28,7 +53,9 @@ export function MatchCard({ match }: MatchCardProps) {
           </p>
         </div>
 
-        <span className="w-fit rounded-full bg-cyan-300 px-3 py-1 text-sm font-semibold text-slate-950">
+        <span
+          className={`w-fit rounded-full px-3 py-1 text-sm font-semibold ${styles.badge}`}
+        >
           {categoryLabels[match.category]}
         </span>
       </div>
