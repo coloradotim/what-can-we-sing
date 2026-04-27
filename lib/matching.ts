@@ -13,11 +13,9 @@ export type Part =
   | "Alto 2";
 
 export type Confidence =
-  | "Performance ready"
-  | "Solid"
-  | "Needs review"
-  | "Rusty"
-  | "Learning";
+  | "Good to Go"
+  | "A Little Rusty"
+  | "Music Required";
 
 export type SingerEntry = {
   userId: string;
@@ -46,28 +44,50 @@ export function requiredPartsForVoicing(voicing: Voicing): Part[] {
   return ["Soprano 1", "Soprano 2", "Alto 1", "Alto 2"];
 }
 
+export function normalizeConfidence(confidence?: string | null): Confidence | null {
+  if (confidence === "Good to Go") return "Good to Go";
+  if (confidence === "A Little Rusty") return "A Little Rusty";
+  if (confidence === "Music Required") return "Music Required";
+
+  if (confidence === "Performance ready" || confidence === "Solid") {
+    return "Good to Go";
+  }
+
+  if (confidence === "Needs review" || confidence === "Rusty") {
+    return "A Little Rusty";
+  }
+
+  if (confidence === "Learning") return "Music Required";
+
+  return null;
+}
+
 function normalizeTitle(title: string): string {
   return title.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-function confidenceValue(confidence?: Confidence | null): number {
-  if (confidence === "Performance ready") return 5;
-  if (confidence === "Solid") return 4;
-  if (confidence === "Needs review") return 2;
-  if (confidence === "Rusty") return 1;
-  if (confidence === "Learning") return 0;
+function confidenceValue(confidence?: string | null): number {
+  const normalizedConfidence = normalizeConfidence(confidence);
+
+  if (normalizedConfidence === "Good to Go") return 5;
+  if (normalizedConfidence === "A Little Rusty") return 2;
+  if (normalizedConfidence === "Music Required") return 0;
   return 3;
 }
 
 function confidenceWarning(entries: SingerEntry[]): string | null {
-  const weak = entries.filter((e) =>
-    ["Needs review", "Rusty", "Learning"].includes(e.confidence ?? "")
-  );
+  const weak = entries.filter((e) => {
+    const normalizedConfidence = normalizeConfidence(e.confidence);
+    return (
+      normalizedConfidence === "A Little Rusty" ||
+      normalizedConfidence === "Music Required"
+    );
+  });
 
   if (!weak.length) return null;
 
   return `Confidence warning: ${weak
-    .map((e) => `${e.displayName} marked ${e.confidence}`)
+    .map((e) => `${e.displayName} marked ${normalizeConfidence(e.confidence)}`)
     .join(", ")}`;
 }
 

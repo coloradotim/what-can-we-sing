@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { findMatches, SingerEntry } from "../matching";
+import { findMatches, normalizeConfidence, SingerEntry } from "../matching";
 
 describe("findMatches", () => {
+  it("maps legacy confidence values to the new scale", () => {
+    expect(normalizeConfidence("Performance ready")).toBe("Good to Go");
+    expect(normalizeConfidence("Solid")).toBe("Good to Go");
+    expect(normalizeConfidence("Needs review")).toBe("A Little Rusty");
+    expect(normalizeConfidence("Rusty")).toBe("A Little Rusty");
+    expect(normalizeConfidence("Learning")).toBe("Music Required");
+  });
+
   it("does not let one singer cover multiple quartet parts", () => {
     const entries: SingerEntry[] = [
       {
@@ -10,7 +18,7 @@ describe("findMatches", () => {
         songTitle: "Why Try to Change Me Now",
         voicing: "TTBB",
         partsKnown: ["Tenor", "Lead", "Baritone", "Bass"],
-        confidence: "Solid",
+        confidence: "Good to Go",
       },
     ];
 
@@ -153,14 +161,14 @@ describe("findMatches", () => {
 
   it("ranks complete matches above one-part-missing matches", () => {
     const entries: SingerEntry[] = [
-      { userId: "1", displayName: "A", songTitle: "Complete Song", voicing: "TTBB", partsKnown: ["Tenor"], confidence: "Solid" },
-      { userId: "2", displayName: "B", songTitle: "Complete Song", voicing: "TTBB", partsKnown: ["Lead"], confidence: "Solid" },
-      { userId: "3", displayName: "C", songTitle: "Complete Song", voicing: "TTBB", partsKnown: ["Baritone"], confidence: "Solid" },
-      { userId: "4", displayName: "D", songTitle: "Complete Song", voicing: "TTBB", partsKnown: ["Bass"], confidence: "Solid" },
+      { userId: "1", displayName: "A", songTitle: "Complete Song", voicing: "TTBB", partsKnown: ["Tenor"], confidence: "Good to Go" },
+      { userId: "2", displayName: "B", songTitle: "Complete Song", voicing: "TTBB", partsKnown: ["Lead"], confidence: "Good to Go" },
+      { userId: "3", displayName: "C", songTitle: "Complete Song", voicing: "TTBB", partsKnown: ["Baritone"], confidence: "Good to Go" },
+      { userId: "4", displayName: "D", songTitle: "Complete Song", voicing: "TTBB", partsKnown: ["Bass"], confidence: "Good to Go" },
 
-      { userId: "1", displayName: "A", songTitle: "Almost Song", voicing: "TTBB", partsKnown: ["Tenor"], confidence: "Performance ready" },
-      { userId: "2", displayName: "B", songTitle: "Almost Song", voicing: "TTBB", partsKnown: ["Lead"], confidence: "Performance ready" },
-      { userId: "3", displayName: "C", songTitle: "Almost Song", voicing: "TTBB", partsKnown: ["Baritone"], confidence: "Performance ready" },
+      { userId: "1", displayName: "A", songTitle: "Almost Song", voicing: "TTBB", partsKnown: ["Tenor"], confidence: "Good to Go" },
+      { userId: "2", displayName: "B", songTitle: "Almost Song", voicing: "TTBB", partsKnown: ["Lead"], confidence: "Good to Go" },
+      { userId: "3", displayName: "C", songTitle: "Almost Song", voicing: "TTBB", partsKnown: ["Baritone"], confidence: "Good to Go" },
     ];
 
     const matches = findMatches(entries);
@@ -170,15 +178,15 @@ describe("findMatches", () => {
 
   it("prefers stronger confidence when ranking within the same category", () => {
     const entries: SingerEntry[] = [
-      { userId: "1", displayName: "A", songTitle: "Rusty Song", voicing: "TTBB", partsKnown: ["Tenor"], confidence: "Rusty" },
-      { userId: "2", displayName: "B", songTitle: "Rusty Song", voicing: "TTBB", partsKnown: ["Lead"], confidence: "Rusty" },
-      { userId: "3", displayName: "C", songTitle: "Rusty Song", voicing: "TTBB", partsKnown: ["Baritone"], confidence: "Rusty" },
-      { userId: "4", displayName: "D", songTitle: "Rusty Song", voicing: "TTBB", partsKnown: ["Bass"], confidence: "Rusty" },
+      { userId: "1", displayName: "A", songTitle: "Rusty Song", voicing: "TTBB", partsKnown: ["Tenor"], confidence: "A Little Rusty" },
+      { userId: "2", displayName: "B", songTitle: "Rusty Song", voicing: "TTBB", partsKnown: ["Lead"], confidence: "A Little Rusty" },
+      { userId: "3", displayName: "C", songTitle: "Rusty Song", voicing: "TTBB", partsKnown: ["Baritone"], confidence: "A Little Rusty" },
+      { userId: "4", displayName: "D", songTitle: "Rusty Song", voicing: "TTBB", partsKnown: ["Bass"], confidence: "A Little Rusty" },
 
-      { userId: "1", displayName: "A", songTitle: "Strong Song", voicing: "TTBB", partsKnown: ["Tenor"], confidence: "Performance ready" },
-      { userId: "2", displayName: "B", songTitle: "Strong Song", voicing: "TTBB", partsKnown: ["Lead"], confidence: "Performance ready" },
-      { userId: "3", displayName: "C", songTitle: "Strong Song", voicing: "TTBB", partsKnown: ["Baritone"], confidence: "Performance ready" },
-      { userId: "4", displayName: "D", songTitle: "Strong Song", voicing: "TTBB", partsKnown: ["Bass"], confidence: "Performance ready" },
+      { userId: "1", displayName: "A", songTitle: "Strong Song", voicing: "TTBB", partsKnown: ["Tenor"], confidence: "Good to Go" },
+      { userId: "2", displayName: "B", songTitle: "Strong Song", voicing: "TTBB", partsKnown: ["Lead"], confidence: "Good to Go" },
+      { userId: "3", displayName: "C", songTitle: "Strong Song", voicing: "TTBB", partsKnown: ["Baritone"], confidence: "Good to Go" },
+      { userId: "4", displayName: "D", songTitle: "Strong Song", voicing: "TTBB", partsKnown: ["Bass"], confidence: "Good to Go" },
     ];
 
     const matches = findMatches(entries);

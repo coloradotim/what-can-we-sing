@@ -21,11 +21,9 @@ const partsByVoicing: Record<Voicing, Part[]> = {
 };
 
 const confidenceLevels: Confidence[] = [
-  "Performance ready",
-  "Solid",
-  "Needs review",
-  "Rusty",
-  "Learning",
+  "Good to Go",
+  "A Little Rusty",
+  "Music Required",
 ];
 
 type RepertoireForm = {
@@ -40,10 +38,10 @@ export default function RepertoireManager() {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<RepertoireRow[]>([]);
   const [songTitle, setSongTitle] = useState("");
-  const [voicing, setVoicing] = useState<Voicing>("TTBB");
+  const [voicing, setVoicing] = useState<Voicing | "">("");
   const [arrangerName, setArrangerName] = useState("");
   const [partsKnown, setPartsKnown] = useState<Part[]>([]);
-  const [confidence, setConfidence] = useState<Confidence>("Solid");
+  const [confidence, setConfidence] = useState<Confidence | "">("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<RepertoireForm | null>(null);
   const [message, setMessage] = useState("");
@@ -142,6 +140,16 @@ export default function RepertoireManager() {
       return;
     }
 
+    if (!voicing) {
+      setMessage("Choose a voicing before saving.");
+      return;
+    }
+
+    if (!confidence) {
+      setMessage("Choose a confidence level before saving.");
+      return;
+    }
+
     if (partsKnown.length === 0) {
       setMessage("Choose at least one part you know before saving.");
       return;
@@ -157,9 +165,10 @@ export default function RepertoireManager() {
       });
 
       setSongTitle("");
+      setVoicing("");
       setArrangerName("");
       setPartsKnown([]);
-      setConfidence("Solid");
+      setConfidence("");
       setMessage("Song added.");
 
       await loadRepertoire();
@@ -224,6 +233,9 @@ export default function RepertoireManager() {
     );
   }
 
+  const canAddSong =
+    Boolean(songTitle.trim()) && Boolean(voicing) && Boolean(confidence) && partsKnown.length > 0;
+
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-5xl">
@@ -278,11 +290,12 @@ export default function RepertoireManager() {
               <select
                 value={voicing}
                 onChange={(e) => {
-                  setVoicing(e.target.value as Voicing);
+                  setVoicing(e.target.value as Voicing | "");
                   setPartsKnown([]);
                 }}
                 className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
               >
+                <option value="">Choose voicing</option>
                 {voicings.map((v) => (
                   <option key={v}>{v}</option>
                 ))}
@@ -293,9 +306,10 @@ export default function RepertoireManager() {
               <span className="text-sm font-medium text-slate-300">Confidence</span>
               <select
                 value={confidence}
-                onChange={(e) => setConfidence(e.target.value as Confidence)}
+                onChange={(e) => setConfidence(e.target.value as Confidence | "")}
                 className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
               >
+                <option value="">Choose confidence</option>
                 {confidenceLevels.map((level) => (
                   <option key={level} value={level}>
                     {level}
@@ -308,25 +322,30 @@ export default function RepertoireManager() {
           <div className="mt-5">
             <p className="text-sm font-medium text-slate-300">Parts you know</p>
             <div className="mt-2 flex flex-wrap gap-2">
-              {partsByVoicing[voicing].map((part) => (
-                <button
-                  key={part}
-                  type="button"
-                  onClick={() => togglePart(part)}
-                  className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                    partsKnown.includes(part)
-                      ? "bg-cyan-300 text-slate-950"
-                      : "bg-slate-800 text-slate-200 hover:bg-slate-700"
-                  }`}
-                >
-                  {part}
-                </button>
-              ))}
+              {voicing ? (
+                partsByVoicing[voicing].map((part) => (
+                  <button
+                    key={part}
+                    type="button"
+                    onClick={() => togglePart(part)}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold ${
+                      partsKnown.includes(part)
+                        ? "bg-cyan-300 text-slate-950"
+                        : "bg-slate-800 text-slate-200 hover:bg-slate-700"
+                    }`}
+                  >
+                    {part}
+                  </button>
+                ))
+              ) : (
+                <p className="text-sm text-slate-400">Choose a voicing first.</p>
+              )}
             </div>
           </div>
 
           <button
             onClick={addItem}
+            disabled={!canAddSong}
             className="mt-6 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
           >
             Add to repertoire
