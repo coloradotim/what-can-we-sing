@@ -15,7 +15,7 @@ const navItems = [
     isActive: (pathname: string) => pathname === "/session",
   },
   {
-    href: "/#join-quartet",
+    href: "/join",
     label: "Join a quartet",
     isActive: (pathname: string) => pathname.startsWith("/join"),
   },
@@ -42,13 +42,11 @@ export function AppNav() {
       <div className="flex flex-wrap items-center gap-2">
         {navItems.map((item) => {
           const active = item.isActive(pathname);
-          const href =
-            active && pathname.startsWith("/join") ? pathname : item.href;
 
           return (
             <a
               key={item.label}
-              href={href}
+              href={item.href}
               aria-current={active ? "page" : undefined}
               className={`rounded-xl px-3 py-2 text-sm font-semibold ${
                 active
