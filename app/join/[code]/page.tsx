@@ -185,7 +185,7 @@ export default function JoinSessionPage() {
           </a>
 
           <a
-            href="/repertoire"
+            href="/"
             className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200"
           >
             Edit repertoire
