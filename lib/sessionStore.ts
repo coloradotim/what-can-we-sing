@@ -5,6 +5,7 @@ export type DbSession = {
   id: string;
   join_code: string;
   created_at: string;
+  last_activity_at?: string | null;
 };
 
 export type DbParticipant = {
@@ -19,12 +20,24 @@ export type DbParticipant = {
 export async function createSession(joinCode: string) {
   const { data, error } = await supabase
     .from("sessions")
-    .insert({ join_code: joinCode })
+    .insert({
+      join_code: joinCode,
+      last_activity_at: new Date().toISOString(),
+    })
     .select()
     .single();
 
   if (error) throw error;
   return data as DbSession;
+}
+
+async function updateSessionActivity(sessionId: string, lastActivityAt: string) {
+  const { error } = await supabase
+    .from("sessions")
+    .update({ last_activity_at: lastActivityAt })
+    .eq("id", sessionId);
+
+  if (error) throw error;
 }
 
 export async function getSessionByCode(joinCode: string) {
@@ -42,7 +55,8 @@ export async function upsertParticipant(
   sessionId: string,
   userId: string,
   displayName: string,
-  repertoire: SingerEntry[]
+  repertoire: SingerEntry[],
+  lastActivityAt = new Date().toISOString()
 ) {
   const { data, error } = await supabase
     .from("session_participants")
@@ -59,6 +73,7 @@ export async function upsertParticipant(
     .single();
 
   if (error) throw error;
+  await updateSessionActivity(sessionId, lastActivityAt);
   return data as DbParticipant;
 }
 

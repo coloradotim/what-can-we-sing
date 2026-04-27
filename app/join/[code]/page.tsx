@@ -6,12 +6,17 @@ import { AppNav } from "@/components/AppNav";
 import { MatchCard } from "@/components/MatchCard";
 import { findMatches, SingerEntry } from "@/lib/matching";
 import {
+  type DbSession,
   type DbParticipant,
   getParticipants,
   getSessionByCode,
   subscribeToSessionParticipants,
   upsertParticipant,
 } from "@/lib/sessionStore";
+import {
+  isSessionExpired,
+  sessionExpirationLabel,
+} from "@/lib/sessionExpiration";
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 import { getMyRepertoire } from "@/lib/repertoireStore";
 
@@ -41,11 +46,13 @@ export default function JoinSessionPage() {
 
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [session, setSession] = useState<DbSession | null>(null);
   const [currentUserId, setCurrentUserId] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [participants, setParticipants] = useState<DbParticipant[]>([]);
   const [message, setMessage] = useState("");
   const [loadError, setLoadError] = useState("");
+  const [now, setNow] = useState(() => new Date());
 
   async function refreshParticipants(id: string) {
     const data = await getParticipants(id);
@@ -72,6 +79,11 @@ export default function JoinSessionPage() {
     name = displayName,
     userId = currentUserId
   ) {
+    if (session && isSessionExpired(session)) {
+      setLoadError("This quartet has expired.");
+      return;
+    }
+
     if (!id || !name || !userId) {
       setMessage("Could not refresh yet. Wait for the quartet to finish loading.");
       return;
@@ -85,8 +97,12 @@ export default function JoinSessionPage() {
       );
 
       const entries = await getMyEntries(name);
+      const lastActivityAt = new Date().toISOString();
 
-      await upsertParticipant(id, userId, name, entries);
+      await upsertParticipant(id, userId, name, entries, lastActivityAt);
+      setSession((current) =>
+        current ? { ...current, last_activity_at: lastActivityAt } : current
+      );
       await refreshParticipants(id);
 
       if (existingParticipant) {
@@ -103,6 +119,9 @@ export default function JoinSessionPage() {
 
   useEffect(() => {
     let unsubscribe: undefined | (() => void);
+    const timer = window.setInterval(() => {
+      setNow(new Date());
+    }, 60 * 1000);
 
     async function load() {
       try {
@@ -129,9 +148,16 @@ export default function JoinSessionPage() {
           return;
         }
 
+        if (isSessionExpired(session)) {
+          setSession(session);
+          setLoadError("This quartet has expired.");
+          return;
+        }
+
         setCurrentUserId(user.id);
         setDisplayName(profile.display_name);
         setSessionId(session.id);
+        setSession(session);
 
         const currentParticipants = await refreshParticipants(session.id);
 
@@ -162,6 +188,7 @@ export default function JoinSessionPage() {
     load();
 
     return () => {
+      window.clearInterval(timer);
       if (unsubscribe) unsubscribe();
     };
   }, [code]);
@@ -172,6 +199,8 @@ export default function JoinSessionPage() {
     ...section,
     matches: matches.filter((match) => match.category === section.category),
   }));
+  const quartetExpired = session ? isSessionExpired(session, now) : false;
+  const expirationLabel = session ? sessionExpirationLabel(session, now) : "";
 
   if (loading) {
     return (
@@ -186,27 +215,41 @@ export default function JoinSessionPage() {
       <div className="mx-auto max-w-5xl">
         <AppNav />
 
-        <h1 className="mt-4 text-4xl font-bold">Quartet {code}</h1>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-4xl font-bold">Quartet {code}</h1>
+          {expirationLabel && (
+            <p className="w-fit rounded-full border border-white/10 bg-white/10 px-3 py-1 text-sm font-semibold text-slate-300">
+              {expirationLabel}
+            </p>
+          )}
+        </div>
 
-        {loadError && (
+        {(loadError || quartetExpired) && (
           <div className="mt-8 rounded-2xl border border-rose-300/20 bg-rose-400/10 p-6">
-            <p className="font-semibold text-rose-100">{loadError}</p>
+            <p className="font-semibold text-rose-100">
+              {quartetExpired ? "This quartet has expired." : loadError}
+            </p>
+            {quartetExpired && (
+              <p className="mt-2 text-sm text-rose-100">
+                Start a new quartet to make a fresh code.
+              </p>
+            )}
             <a
-              href="/join"
+              href={quartetExpired ? "/session" : "/join"}
               className="mt-4 inline-block rounded-xl bg-rose-100 px-5 py-3 font-semibold text-slate-950 hover:bg-white"
             >
-              Enter a different code
+              {quartetExpired ? "Start a new quartet" : "Enter a different code"}
             </a>
           </div>
         )}
 
-        {!loadError && message && (
+        {!loadError && !quartetExpired && message && (
           <p className="mt-4 rounded-xl bg-white/10 p-4 text-slate-200">
             {message}
           </p>
         )}
 
-        {!loadError && (
+        {!loadError && !quartetExpired && (
           <>
             <div className="mt-6 rounded-2xl border border-white/10 bg-white/10 p-6">
               <p className="text-slate-300">You are in this quartet as:</p>
@@ -216,7 +259,7 @@ export default function JoinSessionPage() {
 
               <button
                 onClick={() => joinSession()}
-                disabled={!sessionId || !displayName || !currentUserId}
+                disabled={!sessionId || !displayName || !currentUserId || quartetExpired}
                 className="mt-4 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
               >
                 Rejoin / refresh my repertoire
