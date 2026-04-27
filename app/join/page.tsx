@@ -8,6 +8,7 @@ import {
 } from "@/lib/activeQuartet";
 import { parseJoinCode } from "@/lib/joinCode";
 import { getCurrentUser } from "@/lib/profileStore";
+import { trackEvent } from "@/lib/analytics";
 import { removeParticipant } from "@/lib/sessionStore";
 import { useEffect, useRef, useState } from "react";
 
@@ -70,6 +71,9 @@ export default function JoinPage() {
       const user = await getCurrentUser();
       if (user) {
         await removeParticipant(activeQuartet.sessionId, user.id);
+        trackEvent("quartet_left", {
+          session_id: activeQuartet.sessionId,
+        });
       }
       clearActiveQuartet();
       window.location.href = `/join/${encodeURIComponent(pendingCode)}`;

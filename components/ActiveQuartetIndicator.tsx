@@ -9,6 +9,7 @@ import {
   type ActiveQuartet,
 } from "@/lib/activeQuartet";
 import { getCurrentUser } from "@/lib/profileStore";
+import { trackEvent } from "@/lib/analytics";
 import { removeParticipant } from "@/lib/sessionStore";
 
 function isViewingActiveQuartet(pathname: string, code: string) {
@@ -48,6 +49,9 @@ export function ActiveQuartetIndicator() {
 
       if (user) {
         await removeParticipant(activeQuartet.sessionId, user.id);
+        trackEvent("quartet_left", {
+          session_id: activeQuartet.sessionId,
+        });
       }
 
       clearActiveQuartet();

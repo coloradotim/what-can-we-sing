@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/AppNav";
 import type { Confidence, Part, Voicing } from "@/lib/matching";
 import { partAbbreviation, partButtonLabel } from "@/lib/partAbbreviations";
+import { trackEvent } from "@/lib/analytics";
 import {
   addRepertoireItem,
   deleteRepertoireItem,
@@ -207,6 +208,10 @@ export default function RepertoireManager() {
       resetAddForm();
       setIsAddOpen(false);
       setMessage("Song added.");
+      trackEvent("repertoire_song_added", {
+        song_count: items.length + 1,
+        parts_known_count: partsKnown.length,
+      });
 
       await loadRepertoire();
     } catch (err) {
@@ -222,6 +227,9 @@ export default function RepertoireManager() {
         cancelEditing();
       }
       setMessage("Song deleted.");
+      trackEvent("repertoire_song_deleted", {
+        song_count: Math.max(0, items.length - 1),
+      });
       await loadRepertoire();
     } catch (err) {
       console.error(err);
@@ -256,6 +264,10 @@ export default function RepertoireManager() {
 
       cancelEditing();
       setMessage("Song updated.");
+      trackEvent("repertoire_song_edited", {
+        song_count: items.length,
+        parts_known_count: editForm.partsKnown.length,
+      });
       await loadRepertoire();
     } catch (err) {
       console.error(err);
