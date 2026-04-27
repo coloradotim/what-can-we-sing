@@ -1,4 +1,5 @@
 const DEFAULT_AUTH_REDIRECT_PATH = "/";
+const AUTH_CALLBACK_PATH = "/auth/callback";
 
 function normalizeSiteUrl(siteUrl: string | undefined): string | null {
   if (!siteUrl?.trim()) return null;
@@ -30,6 +31,16 @@ export function getPostLoginRedirectPath(search: string): string {
   return redirect;
 }
 
+export function getAuthCallbackNextPath(search: string): string {
+  const next = new URLSearchParams(search).get("next");
+
+  if (!next || !next.startsWith("/") || next.startsWith("//")) {
+    return DEFAULT_AUTH_REDIRECT_PATH;
+  }
+
+  return next;
+}
+
 export function getMagicLinkRedirectUrl({
   siteUrl,
   origin,
@@ -44,5 +55,11 @@ export function getMagicLinkRedirectUrl({
 
   if (!baseUrl) return null;
 
-  return new URL(redirectPath, baseUrl).toString();
+  const callbackUrl = new URL(AUTH_CALLBACK_PATH, baseUrl);
+
+  if (redirectPath !== DEFAULT_AUTH_REDIRECT_PATH) {
+    callbackUrl.searchParams.set("next", redirectPath);
+  }
+
+  return callbackUrl.toString();
 }

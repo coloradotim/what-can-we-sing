@@ -1,5 +1,9 @@
 export function isPublicAuthPath(pathname: string): boolean {
-  return pathname === "/login" || pathname.startsWith("/login/");
+  return (
+    pathname === "/login" ||
+    pathname.startsWith("/login/") ||
+    pathname === "/auth/callback"
+  );
 }
 
 export function getLoginRedirectUrl(requestUrl: URL): URL {

@@ -13,7 +13,12 @@ NEXT_PUBLIC_SITE_URL=https://your-production-app-url
 
 `NEXT_PUBLIC_SITE_URL` is used for Supabase magic-link redirects in production. Set it to the deployed Vercel app URL, without a trailing path. If it is blank during local development, login links fall back to the current localhost origin.
 
-In Supabase Auth URL configuration, add the production URL and any required local development URL, such as `http://localhost:3000`, to the allowed redirect URLs.
+Magic links redirect through `/auth/callback`, where the app exchanges the Supabase code for a session before sending the user to the intended page. In Supabase Auth URL configuration, add the production callback URL and any required local development callback URL to the allowed redirect URLs, such as:
+
+```text
+https://your-production-app-url/auth/callback
+http://localhost:3000/auth/callback
+```
 
 ## Supabase auth email
 
