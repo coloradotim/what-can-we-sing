@@ -38,13 +38,13 @@ TTBB:
 - T = Tenor
 - L = Lead
 - Bari = Baritone
-- Bs = Bass
+- Bass = Bass
 
 SATB:
 - S = Soprano
 - A = Alto
 - T = Tenor
-- B = Bass
+- Bass = Bass
 
 SSAA:
 - S1 = Soprano 1
