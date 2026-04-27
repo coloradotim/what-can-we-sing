@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SignOutButton } from "@/components/SignOutButton";
 import { findMatches, SingerEntry } from "@/lib/matching";
 
 type RepertoireItem = {
@@ -43,7 +44,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-4xl">
-        <div className="flex gap-4">
+        <div className="flex flex-wrap items-center gap-4">
           <a href="/repertoire" className="text-sm text-cyan-300 hover:text-cyan-200">
             → Manage my repertoire
           </a>
@@ -56,6 +57,7 @@ export default function Home() {
           <a href="/login" className="text-sm text-cyan-300 hover:text-cyan-200">
             → Log in
           </a>
+          <SignOutButton />
         </div>
 
         <p className="mt-4 text-sm font-semibold uppercase tracking-wide text-cyan-300">

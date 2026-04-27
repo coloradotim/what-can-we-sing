@@ -1,9 +1,9 @@
 "use client";
 
+import { SignOutButton } from "@/components/SignOutButton";
 import {
   getCurrentUser,
   getMyProfile,
-  signOut,
   upsertMyProfile,
 } from "@/lib/profileStore";
 import { useEffect, useState } from "react";
@@ -36,8 +36,7 @@ export default function SettingsPage() {
         const user = await getCurrentUser();
 
         if (!user) {
-          setIsLoggedIn(false);
-          setLoading(false);
+          window.location.href = "/login";
           return;
         }
 
@@ -73,11 +72,6 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleSignOut() {
-    await signOut();
-    window.location.href = "/login";
-  }
-
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
@@ -88,27 +82,8 @@ export default function SettingsPage() {
 
   if (!isLoggedIn) {
     return (
-      <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
-        <div className="mx-auto max-w-2xl">
-          <a href="/" className="text-sm text-cyan-300 hover:text-cyan-200">
-            ← Back home
-          </a>
-
-          <h1 className="mt-4 text-4xl font-bold">Settings</h1>
-
-          <div className="mt-8 rounded-2xl border border-white/10 bg-white/10 p-6">
-            <p className="text-slate-300">
-              You need to log in before setting your display name.
-            </p>
-
-            <a
-              href="/login"
-              className="mt-5 inline-block rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200"
-            >
-              Log in
-            </a>
-          </div>
-        </div>
+      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+        Redirecting to login...
       </main>
     );
   }
@@ -116,9 +91,12 @@ export default function SettingsPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-2xl">
-        <a href="/" className="text-sm text-cyan-300 hover:text-cyan-200">
-          ← Back home
-        </a>
+        <div className="flex flex-wrap items-center gap-4">
+          <a href="/" className="text-sm text-cyan-300 hover:text-cyan-200">
+            ← Back home
+          </a>
+          {isLoggedIn && <SignOutButton />}
+        </div>
 
         <h1 className="mt-4 text-4xl font-bold">Settings</h1>
         <p className="mt-2 text-slate-300">{email}</p>
@@ -159,13 +137,6 @@ export default function SettingsPage() {
             className="mt-6 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
           >
             Save settings
-          </button>
-
-          <button
-            onClick={handleSignOut}
-            className="ml-3 mt-6 rounded-xl bg-white/10 px-5 py-3 font-semibold text-white hover:bg-white/20"
-          >
-            Sign out
           </button>
 
           {message && <p className="mt-4 text-sm text-slate-300">{message}</p>}
