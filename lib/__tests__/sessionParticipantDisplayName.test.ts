@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyProfileDisplayNameChange,
   getCurrentParticipantDisplayName,
   getParticipantDisplayName,
   getParticipantEntriesWithProfileNames,
@@ -90,5 +91,35 @@ describe("session participant display name sync", () => {
       partsKnown: ["Lead"],
       confidence: "Good to Go",
     });
+  });
+
+  it("applies realtime profile display name changes for relevant participants", () => {
+    expect(
+      applyProfileDisplayNameChange(
+        { "user-1": "Old Name" },
+        {
+          eventType: "UPDATE",
+          new: { id: "user-1", display_name: "New Name" },
+          old: { id: "user-1" },
+        },
+        ["user-1"]
+      )
+    ).toEqual({ "user-1": "New Name" });
+  });
+
+  it("ignores realtime profile changes for users outside the quartet", () => {
+    const currentNames = { "user-1": "Singer One" };
+
+    expect(
+      applyProfileDisplayNameChange(
+        currentNames,
+        {
+          eventType: "UPDATE",
+          new: { id: "user-2", display_name: "Singer Two" },
+          old: { id: "user-2" },
+        },
+        ["user-1"]
+      )
+    ).toBe(currentNames);
   });
 });

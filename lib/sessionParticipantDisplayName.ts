@@ -1,5 +1,6 @@
 import type { DbParticipant } from "@/lib/sessionStore";
 import type { SingerEntry } from "@/lib/matching";
+import type { ProfileChangePayload } from "@/lib/profileStore";
 
 export type ProfileDisplayNamesByUserId = Record<string, string>;
 
@@ -48,4 +49,36 @@ export function getParticipantEntriesWithProfileNames(
       displayName,
     }));
   });
+}
+
+export function applyProfileDisplayNameChange(
+  profileDisplayNamesByUserId: ProfileDisplayNamesByUserId,
+  payload: ProfileChangePayload,
+  relevantUserIds: string[]
+): ProfileDisplayNamesByUserId {
+  if (payload.eventType === "DELETE") {
+    const deletedProfileId = payload.old.id;
+
+    if (!deletedProfileId || !relevantUserIds.includes(deletedProfileId)) {
+      return profileDisplayNamesByUserId;
+    }
+
+    const { [deletedProfileId]: _deleted, ...remainingProfiles } =
+      profileDisplayNamesByUserId;
+    return remainingProfiles;
+  }
+
+  const changedProfile = payload.new;
+
+  if (
+    !changedProfile?.id ||
+    !relevantUserIds.includes(changedProfile.id)
+  ) {
+    return profileDisplayNamesByUserId;
+  }
+
+  return {
+    ...profileDisplayNamesByUserId,
+    [changedProfile.id]: changedProfile.display_name,
+  };
 }

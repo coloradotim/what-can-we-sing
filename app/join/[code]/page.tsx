@@ -23,6 +23,7 @@ import {
   upsertParticipant,
 } from "@/lib/sessionStore";
 import {
+  applyProfileDisplayNameChange,
   getCurrentParticipantDisplayName,
   getParticipantDisplayName,
   getParticipantEntriesWithProfileNames,
@@ -43,6 +44,7 @@ import {
   getCurrentUser,
   getMyProfile,
   getProfilesByIds,
+  subscribeToProfileDisplayNames,
 } from "@/lib/profileStore";
 import { getMyRepertoire } from "@/lib/repertoireStore";
 import {
@@ -451,6 +453,30 @@ export default function JoinSessionPage() {
       );
     });
   }, [sessionId]);
+
+  const participantUserIds = Array.from(
+    new Set(participants.map((participant) => participant.user_id))
+  ).sort();
+  const participantUserIdsKey = participantUserIds.join(":");
+
+  useEffect(() => {
+    if (!participantUserIdsKey) return;
+
+    return subscribeToProfileDisplayNames(participantUserIds, (payload) => {
+      setRealtimeMessage("");
+      setProfileDisplayNamesByUserId((currentProfileDisplayNames) =>
+        applyProfileDisplayNameChange(
+          currentProfileDisplayNames,
+          payload,
+          participantUserIds
+        )
+      );
+    }, () => {
+      setRealtimeMessage(
+        "Live profile updates are having trouble. You can still refresh singers."
+      );
+    });
+  }, [participantUserIdsKey]);
 
   useEffect(() => {
     const timer = window.setInterval(() => {
