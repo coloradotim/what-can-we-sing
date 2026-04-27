@@ -83,12 +83,12 @@ export default function LoginPage() {
         </div>
 
         <p className="mt-5 text-sm text-slate-400">
-          Want the quick data note?{" "}
+          See what data is stored and why on the{" "}
           <a
             href="/privacy"
             className="font-semibold text-cyan-300 hover:text-cyan-200"
           >
-            Read privacy
+            privacy page
           </a>
           .
         </p>
