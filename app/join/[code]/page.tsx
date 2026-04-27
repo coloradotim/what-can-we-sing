@@ -100,7 +100,7 @@ export default function JoinSessionPage() {
     id = sessionId,
     name = displayName,
     userId = currentUserId,
-    options: { clearLeftFlag?: boolean } = {}
+    options: { clearLeftFlag?: boolean; successMessage?: string } = {}
   ) {
     if (session && isSessionExpired(session)) {
       setLoadError("This quartet has expired.");
@@ -143,7 +143,10 @@ export default function JoinSessionPage() {
       await refreshParticipants(id);
 
       if (existingParticipant) {
-        setMessage(`Updated ${name}'s repertoire with ${entries.length} songs.`);
+        setMessage(
+          options.successMessage ??
+            `Updated ${name}'s repertoire with ${entries.length} songs.`
+        );
         return;
       }
 
@@ -309,12 +312,9 @@ export default function JoinSessionPage() {
           clearActiveQuartetIfMatches(session.id);
           setMessage("You left this quartet.");
         } else {
-          setActiveQuartet({
-            sessionId: session.id,
-            code,
-            joinedAt: new Date().toISOString(),
+          await joinSession(session.id, profile.display_name, user.id, {
+            successMessage: `You are in this quartet as ${profile.display_name}. Matches use your latest repertoire.`,
           });
-          setMessage(`You are already in this quartet as ${profile.display_name}.`);
         }
       } catch (err) {
         console.error(err);
@@ -551,43 +551,33 @@ export default function JoinSessionPage() {
                     {displayName}
                   </p>
 
-                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-                    <button
-                      onClick={() => joinSession()}
-                      disabled={
-                        !sessionId ||
-                        !displayName ||
-                        !currentUserId ||
-                        quartetExpired
-                      }
-                      className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
-                    >
-                      Rejoin / refresh my repertoire
-                    </button>
+                  <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                     <button
                       onClick={leaveQuartet}
                       disabled={leaving || !sessionId || !currentUserId}
-                      className="rounded-xl bg-rose-400/10 px-5 py-3 font-semibold text-rose-200 hover:bg-rose-400/20 disabled:opacity-40"
+                      className="rounded-xl bg-rose-200 px-5 py-3 font-semibold text-slate-950 hover:bg-rose-100 disabled:opacity-40"
                     >
                       {leaving ? "Leaving..." : "Leave quartet"}
                     </button>
+
+                    <div className="flex flex-wrap gap-x-4 gap-y-2">
+                      <a
+                        href="/settings"
+                        className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
+                      >
+                        Change display name
+                      </a>
+
+                      <a
+                        href="/repertoire"
+                        className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
+                      >
+                        Edit repertoire
+                      </a>
+                    </div>
                   </div>
                 </>
               )}
-
-              <a
-                href="/settings"
-                className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200"
-              >
-                Change settings
-              </a>
-
-              <a
-                href="/repertoire"
-                className="ml-4 inline-block text-sm text-cyan-300 hover:text-cyan-200"
-              >
-                Edit repertoire
-              </a>
             </div>
 
             <div className="mt-8">
