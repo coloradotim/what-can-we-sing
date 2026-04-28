@@ -235,16 +235,23 @@ export default function RepertoireManager() {
         song_count: items.length + 1,
         parts_known_count: partsKnown.length,
       });
+      let snapshotUpdated = true;
       try {
         await refreshActiveQuartetSnapshot();
       } catch (err) {
-        console.error("Could not refresh active quartet snapshot", err);
+        snapshotUpdated = false;
+        console.error("Could not update active quartet snapshot", err);
+        setMessage("Song added, but quartet matches could not be updated yet.");
       }
 
       try {
         await loadRepertoire();
       } catch {
-        setMessage("Song added. Could not refresh the list yet.");
+        setMessage(
+          snapshotUpdated
+            ? "Song added. Could not refresh the list yet."
+            : "Song added, but quartet matches could not be updated yet."
+        );
       }
     } catch (err) {
       console.error(err);
@@ -267,15 +274,22 @@ export default function RepertoireManager() {
       trackEvent("repertoire_song_deleted", {
         song_count: Math.max(0, items.length - 1),
       });
+      let snapshotUpdated = true;
       try {
         await refreshActiveQuartetSnapshot();
       } catch (err) {
-        console.error("Could not refresh active quartet snapshot", err);
+        snapshotUpdated = false;
+        console.error("Could not update active quartet snapshot", err);
+        setMessage("Song deleted, but quartet matches could not be updated yet.");
       }
       try {
         await loadRepertoire();
       } catch {
-        setMessage("Song deleted. Could not refresh the list yet.");
+        setMessage(
+          snapshotUpdated
+            ? "Song deleted. Could not refresh the list yet."
+            : "Song deleted, but quartet matches could not be updated yet."
+        );
       }
     } catch (err) {
       console.error(err);
@@ -319,15 +333,22 @@ export default function RepertoireManager() {
         song_count: items.length,
         parts_known_count: editForm.partsKnown.length,
       });
+      let snapshotUpdated = true;
       try {
         await refreshActiveQuartetSnapshot();
       } catch (err) {
-        console.error("Could not refresh active quartet snapshot", err);
+        snapshotUpdated = false;
+        console.error("Could not update active quartet snapshot", err);
+        setMessage("Song saved, but quartet matches could not be updated yet.");
       }
       try {
         await loadRepertoire();
       } catch {
-        setMessage("Song updated. Could not refresh the list yet.");
+        setMessage(
+          snapshotUpdated
+            ? "Song updated. Could not refresh the list yet."
+            : "Song saved, but quartet matches could not be updated yet."
+        );
       }
     } catch (err) {
       console.error(err);
