@@ -84,6 +84,12 @@ GitHub issue `#X` using the standard issue workflow:
 10. Commit changes to the feature branch.
 11. Push the branch.
 12. Open a PR that links the issue.
+13. If the repository allows auto-merge, enable auto-merge on the PR.
+14. If all required checks pass and branch protection allows it, allow the PR to
+    merge through the protected-branch/auto-merge path.
+15. If auto-merge or merge is blocked, report the exact blocker, such as a
+    failing check, pending required check, branch protection rule, merge
+    conflict, review requirement, or permissions issue.
 
 Before finishing any change:
 - run `npm run test:run`
@@ -93,6 +99,8 @@ Before finishing any change:
 - preserve existing tests and add tests for matching logic changes
 - when adding or changing Supabase operations, update migrations/RLS,
   `docs/supabase-contract.md`, and related tests or test notes
+- enable auto-merge where branch protection and repository settings allow it
+- if the PR cannot be merged or auto-merged, clearly report the blocker
 
 Every PR should explicitly consider docs and tests. Update docs when a change
 affects user-visible behavior, setup, deployment, environment variables,
@@ -118,6 +126,8 @@ Guardrails:
 - do not commit secrets
 - do not use service-role keys in browser code
 - do not bypass failing tests or builds
+- do not bypass branch protection or required checks
+- do not force-merge blocked PRs
 - do not deploy production Supabase changes outside the approved migration
   deployment workflow
 
