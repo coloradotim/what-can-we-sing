@@ -83,6 +83,8 @@ type PersonalSongNote = {
   notes: string;
 };
 
+type QuartetStatusMessageKind = "transient" | "persistent" | "error";
+
 function leftQuartetStorageKey(code: string) {
   return `left-quartet:${code}`;
 }
@@ -103,6 +105,7 @@ export default function JoinSessionPage() {
   const isRefreshingCurrentParticipant = useRef(false);
   const lastTrackedMatchesKey = useRef("");
   const participantsRef = useRef<DbParticipant[]>([]);
+  const messageTimeoutRef = useRef<number | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -119,6 +122,8 @@ export default function JoinSessionPage() {
   const [markingSungKey, setMarkingSungKey] = useState("");
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [messageKind, setMessageKind] =
+    useState<QuartetStatusMessageKind>("persistent");
   const [copyMessage, setCopyMessage] = useState("");
   const [qrUrl, setQrUrl] = useState("");
   const [loadError, setLoadError] = useState("");
@@ -136,6 +141,38 @@ export default function JoinSessionPage() {
     setParticipants(data);
   }
 
+  function clearStatusMessage() {
+    if (messageTimeoutRef.current) {
+      window.clearTimeout(messageTimeoutRef.current);
+      messageTimeoutRef.current = null;
+    }
+
+    setMessage("");
+  }
+
+  function showStatusMessage(
+    text: string,
+    kind: QuartetStatusMessageKind = "persistent",
+    durationMs = 5000
+  ) {
+    if (messageTimeoutRef.current) {
+      window.clearTimeout(messageTimeoutRef.current);
+      messageTimeoutRef.current = null;
+    }
+
+    setMessage(text);
+    setMessageKind(kind);
+
+    if (kind === "transient") {
+      messageTimeoutRef.current = window.setTimeout(() => {
+        setMessage((currentMessage) =>
+          currentMessage === text ? "" : currentMessage
+        );
+        messageTimeoutRef.current = null;
+      }, durationMs);
+    }
+  }
+
   function markCurrentUserRemovedFromQuartet(id: string) {
     if (
       window.sessionStorage.getItem(leftQuartetStorageKey(code)) === "true"
@@ -147,7 +184,7 @@ export default function JoinSessionPage() {
     clearActiveQuartetIfMatches(id);
     setLeftQuartet(true);
     setPendingActiveQuartet(null);
-    setMessage("You were removed from this quartet.");
+    showStatusMessage("You were removed from this quartet.");
   }
 
   async function refreshParticipantProfileNames(data: DbParticipant[]) {
@@ -187,7 +224,7 @@ export default function JoinSessionPage() {
     } catch (err) {
       console.error(err);
       if (options.showErrorMessage ?? true) {
-        setMessage("Could not refresh singers. Please try again.");
+        showStatusMessage("Could not refresh singers. Please try again.", "error");
       }
       throw err;
     }
@@ -240,7 +277,10 @@ export default function JoinSessionPage() {
     }
 
     if (!id || !name || !userId) {
-      setMessage("Could not refresh yet. Wait for the quartet to finish loading.");
+      showStatusMessage(
+        "Could not refresh yet. Wait for the quartet to finish loading.",
+        "error"
+      );
       return;
     }
 
@@ -260,7 +300,7 @@ export default function JoinSessionPage() {
       );
 
       if (participantResolution.status === "full") {
-        setMessage("This quartet already has four singers.");
+        showStatusMessage("This quartet already has four singers.");
         return;
       }
 
@@ -276,9 +316,10 @@ export default function JoinSessionPage() {
       const updatedParticipants = await refreshParticipants(id);
 
       if (participantResolution.status === "existing") {
-        setMessage(
+        showStatusMessage(
           options.successMessage ??
-            `Updated ${name}'s repertoire with ${entries.length} songs.`
+            `Updated ${name}'s repertoire with ${entries.length} songs.`,
+          "transient"
         );
         return;
       }
@@ -288,10 +329,13 @@ export default function JoinSessionPage() {
         participant_count: updatedParticipants.length,
         song_count: entries.length,
       });
-      setMessage(`Joined as ${name} with ${entries.length} songs.`);
+      showStatusMessage(
+        `Joined as ${name} with ${entries.length} songs.`,
+        "transient"
+      );
     } catch (err) {
       console.error(err);
-      setMessage("Could not join quartet. Please try again.");
+      showStatusMessage("Could not join quartet. Please try again.", "error");
     } finally {
       setJoiningQuartet(false);
     }
@@ -344,12 +388,15 @@ export default function JoinSessionPage() {
 
   async function leaveQuartet() {
     if (!sessionId) {
-      setMessage("Could not leave yet. Wait for the quartet to finish loading.");
+      showStatusMessage(
+        "Could not leave yet. Wait for the quartet to finish loading.",
+        "error"
+      );
       return;
     }
 
     setLeaving(true);
-    setMessage("");
+    clearStatusMessage();
 
     try {
       const userId = currentUserId || (await getCurrentUser())?.id;
@@ -368,7 +415,10 @@ export default function JoinSessionPage() {
       window.location.href = "/?leftQuartet=1";
     } catch (err) {
       console.error(err);
-      setMessage("Could not leave quartet. Check your connection and try again.");
+      showStatusMessage(
+        "Could not leave quartet. Check your connection and try again.",
+        "error"
+      );
       setLeaving(false);
     }
   }
@@ -382,7 +432,10 @@ export default function JoinSessionPage() {
 
   async function removeQuartetParticipant(participant: DbParticipant) {
     if (!sessionId || !currentUserId) {
-      setMessage("Could not remove that singer yet. Wait for the quartet to finish loading.");
+      showStatusMessage(
+        "Could not remove that singer yet. Wait for the quartet to finish loading.",
+        "error"
+      );
       return;
     }
 
@@ -402,7 +455,7 @@ export default function JoinSessionPage() {
     if (!confirmed) return;
 
     setRemovingParticipantId(participant.id);
-    setMessage("");
+    clearStatusMessage();
 
     try {
       await removeParticipantById(sessionId, participant.id);
@@ -413,16 +466,16 @@ export default function JoinSessionPage() {
         session_id: sessionId,
         participant_count: updatedParticipants.length,
       });
-      const removedMessage = `${participantName} was removed from the quartet.`;
-      setMessage(removedMessage);
-      window.setTimeout(() => {
-        setMessage((currentMessage) =>
-          currentMessage === removedMessage ? "" : currentMessage
-        );
-      }, 5000);
+      showStatusMessage(
+        `${participantName} was removed from the quartet.`,
+        "transient"
+      );
     } catch (err) {
       console.error(err);
-      setMessage("Could not remove that singer. Check your connection and try again.");
+      showStatusMessage(
+        "Could not remove that singer. Check your connection and try again.",
+        "error"
+      );
     } finally {
       setRemovingParticipantId("");
     }
@@ -458,12 +511,15 @@ export default function JoinSessionPage() {
 
   async function leaveCurrentAndJoinThisQuartet() {
     if (!pendingActiveQuartet || !sessionId) {
-      setMessage("Could not continue yet. Wait for this quartet to finish loading.");
+      showStatusMessage(
+        "Could not continue yet. Wait for this quartet to finish loading.",
+        "error"
+      );
       return;
     }
 
     setLeavingCurrentQuartet(true);
-    setMessage("");
+    clearStatusMessage();
 
     try {
       const userId = currentUserId || (await getCurrentUser())?.id;
@@ -483,8 +539,9 @@ export default function JoinSessionPage() {
       });
     } catch (err) {
       console.error(err);
-      setMessage(
-        "Could not leave your current quartet. Check your connection and try again."
+      showStatusMessage(
+        "Could not leave your current quartet. Check your connection and try again.",
+        "error"
       );
     } finally {
       setLeavingCurrentQuartet(false);
@@ -497,7 +554,10 @@ export default function JoinSessionPage() {
       setRecentSungSongs(events);
     } catch (err) {
       console.error(err);
-      setMessage("Could not refresh recent songs. Matches still work.");
+      showStatusMessage(
+        "Could not refresh recent songs. Matches still work.",
+        "transient"
+      );
     }
   }
 
@@ -513,13 +573,16 @@ export default function JoinSessionPage() {
 
   async function markMatchAsSung(match: MatchResult) {
     if (!sessionId) {
-      setMessage("Could not mark that yet. Wait for the quartet to finish loading.");
+      showStatusMessage(
+        "Could not mark that yet. Wait for the quartet to finish loading.",
+        "error"
+      );
       return;
     }
 
     const key = matchKey(match);
     setMarkingSungKey(key);
-    setMessage("");
+    clearStatusMessage();
 
     try {
       const resolution = resolveCurrentUserRepertoireForMarkAsSung(
@@ -528,18 +591,25 @@ export default function JoinSessionPage() {
       );
 
       if (resolution.status === "no_matching_entry") {
-        setMessage("This match does not include one of your assigned song parts.");
+        showStatusMessage(
+          "This match does not include one of your assigned song parts.",
+          "error"
+        );
         return;
       }
 
       if (resolution.status === "missing_repertoire_id") {
-        setMessage("Refresh your quartet songs before marking this as sung.");
+        showStatusMessage(
+          "Refresh your quartet songs before marking this as sung.",
+          "error"
+        );
         return;
       }
 
       if (resolution.status === "ambiguous") {
-        setMessage(
-          "This match includes more than one of your repertoire entries. Update the exact song from your repertoire."
+        showStatusMessage(
+          "This match includes more than one of your repertoire entries. Update the exact song from your repertoire.",
+          "error"
         );
         return;
       }
@@ -551,7 +621,10 @@ export default function JoinSessionPage() {
         voicing: match.voicing,
       });
       await refreshRecentSungSongs();
-      setMessage(`Marked "${resolution.entry.songTitle}" as sung.`);
+      showStatusMessage(
+        `Marked "${resolution.entry.songTitle}" as sung.`,
+        "transient"
+      );
     } catch (err) {
       console.error(err);
       trackEvent("song_mark_sung_failed", {
@@ -559,7 +632,10 @@ export default function JoinSessionPage() {
         match_category: match.category,
         voicing: match.voicing,
       });
-      setMessage("Could not mark that song as sung. Check your connection and try again.");
+      showStatusMessage(
+        "Could not mark that song as sung. Check your connection and try again.",
+        "error"
+      );
     } finally {
       setMarkingSungKey("");
     }
@@ -691,7 +767,7 @@ export default function JoinSessionPage() {
           !hasLeftQuartet
         ) {
           setPendingActiveQuartet(activeQuartet);
-          setMessage("");
+          clearStatusMessage();
           return;
         }
 
@@ -703,7 +779,7 @@ export default function JoinSessionPage() {
           window.sessionStorage.setItem(leftQuartetStorageKey(code), "true");
           clearActiveQuartetIfMatches(session.id);
           setLeftQuartet(true);
-          setMessage("You were removed from this quartet.");
+          showStatusMessage("You were removed from this quartet.");
           return;
         }
 
@@ -726,15 +802,18 @@ export default function JoinSessionPage() {
             code,
             joinedAt: lastActivityAt,
           });
-          setMessage((current) =>
-            current || `You are in this quartet as ${profile.display_name}.`
-          );
+          if (!message) {
+            showStatusMessage(
+              `You are in this quartet as ${profile.display_name}.`,
+              "transient"
+            );
+          }
         } else if (!hasAutoJoined.current && !hasLeftQuartet) {
           hasAutoJoined.current = true;
           await joinSession(session.id, profile.display_name, user.id);
         } else if (hasLeftQuartet) {
           clearActiveQuartetIfMatches(session.id);
-          setMessage("You left this quartet.");
+          showStatusMessage("You left this quartet.");
         }
       } catch (err) {
         console.error(err);
@@ -793,6 +872,20 @@ export default function JoinSessionPage() {
     !pendingActiveQuartet &&
     !isQuartetFull;
   const canManageParticipants = isCurrentUserParticipant && !leftQuartet;
+
+  useEffect(() => {
+    if (isQuartetFull && messageKind === "transient") {
+      clearStatusMessage();
+    }
+  }, [isQuartetFull, messageKind]);
+
+  useEffect(() => {
+    return () => {
+      if (messageTimeoutRef.current) {
+        window.clearTimeout(messageTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!sessionId || loading || loadError || quartetExpired) return;
@@ -1021,9 +1114,22 @@ export default function JoinSessionPage() {
         )}
 
         {!loadError && !quartetExpired && message && (
-          <p className="mt-4 rounded-xl bg-white/10 p-4 text-slate-200">
-            {message}
-          </p>
+          <div
+            className={`mt-4 flex items-start justify-between gap-3 rounded-xl p-4 text-sm ${
+              messageKind === "error"
+                ? "border border-rose-300/20 bg-rose-400/10 text-rose-100"
+                : "bg-white/10 text-slate-200"
+            }`}
+          >
+            <p>{message}</p>
+            <button
+              type="button"
+              onClick={clearStatusMessage}
+              className="shrink-0 rounded-lg bg-white/10 px-2 py-1 text-xs font-semibold text-slate-100 hover:bg-white/20"
+            >
+              Dismiss
+            </button>
+          </div>
         )}
 
         {!loadError && !quartetExpired && pendingActiveQuartet && (
