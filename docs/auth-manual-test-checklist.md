@@ -5,6 +5,14 @@ or the login/callback flow.
 
 ## Supabase dashboard setup
 
+- Authentication > Email/Emails > SMTP Settings:
+  - Custom SMTP is enabled.
+  - Host is `smtp.resend.com`.
+  - Port is `465`.
+  - Username is `resend`.
+  - Password is the Resend API key.
+  - Sender name is `What Can We Sing`.
+  - Sender email is on the verified Resend domain.
 - Authentication > URL Configuration:
   - Site URL is the production app URL.
   - Redirect URLs include `https://your-production-app-url/auth/callback`.
