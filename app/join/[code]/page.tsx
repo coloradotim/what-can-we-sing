@@ -1066,9 +1066,13 @@ export default function JoinSessionPage() {
                 }
                 className="w-fit rounded-lg bg-rose-400/10 px-3 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-400/20 disabled:opacity-40"
               >
-                {leaving || removingParticipantId === participant.id
-                  ? "Removing..."
-                  : "Remove from quartet"}
+                {isCurrentParticipant
+                  ? leaving
+                    ? "Leaving..."
+                    : "Leave quartet"
+                  : removingParticipantId === participant.id
+                    ? "Removing..."
+                    : "Remove from quartet"}
               </button>
             </div>
           )}
@@ -1261,6 +1265,12 @@ export default function JoinSessionPage() {
                       >
                         Edit repertoire
                       </a>
+                      <a
+                        href="/settings"
+                        className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-white/10"
+                      >
+                        Change my display name
+                      </a>
                       <button
                         onClick={confirmLeaveQuartet}
                         disabled={leaving || !sessionId}
@@ -1345,9 +1355,6 @@ export default function JoinSessionPage() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h2 className="text-2xl font-semibold">Matches</h2>
-                  <p className="mt-1 text-sm text-slate-300">
-                    Compact rows stay ranked within each group.
-                  </p>
                 </div>
                 {matches.length > 0 && (
                   <p className="text-sm font-semibold text-cyan-300">
@@ -1411,38 +1418,11 @@ export default function JoinSessionPage() {
             {isQuartetFull && (
               <details className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
                 <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">
-                  Quartet details
+                  Quartet members
                 </summary>
 
                 <div className="mt-4 border-t border-white/10 pt-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-slate-400">
-                      Code {code} is still available if someone needs the link.
-                    </p>
-
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      <button
-                        type="button"
-                        onClick={copyJoinCode}
-                        className="rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-white/10"
-                      >
-                        Copy code
-                      </button>
-                      <button
-                        type="button"
-                        onClick={copyJoinLink}
-                        className="rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-white/10"
-                      >
-                        Copy link
-                      </button>
-                    </div>
-                  </div>
-
-                  {copyMessage && (
-                    <p className="mt-2 text-sm text-slate-300">{copyMessage}</p>
-                  )}
-
-                  <div className="mt-6">
+                  <div>
                     <h2 className="text-lg font-semibold">Participants</h2>
 
                     <div className="mt-4 space-y-3">
