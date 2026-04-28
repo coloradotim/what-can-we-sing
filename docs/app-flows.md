@@ -77,7 +77,8 @@ shown as confirmation warnings so singers can decide quickly in the room.
 The home page is an action hub. It offers Start Quartet, Join Quartet, Return to
 Quartet when local state exists, and Repertoire. Manual code entry belongs on
 `/join`, while QR and shared links use `/join/[code]`. Help and feedback live at
-`/help`; `/feedback` redirects there for older links.
+`/help`; `/feedback` redirects there for older links. Help is public so new or
+logged-out users can read it before signing in.
 
 ## Auth
 
