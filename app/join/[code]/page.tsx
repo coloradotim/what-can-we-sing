@@ -655,20 +655,19 @@ export default function JoinSessionPage() {
     profileDisplayNamesByUserId,
     displayName
   );
+  const isCurrentUserParticipant = Boolean(
+    findParticipantByUserId(participants, currentUserId)
+  );
   const openSingerSlots = Math.max(
     0,
     MAX_QUARTET_PARTICIPANTS - participants.length
   );
+  const isQuartetFull = participants.length >= MAX_QUARTET_PARTICIPANTS;
   const showJoinInfo =
     Boolean(session) &&
     !quartetExpired &&
     !pendingActiveQuartet &&
-    participants.length < MAX_QUARTET_PARTICIPANTS;
-  const showCompactJoinInfo =
-    Boolean(session) &&
-    !quartetExpired &&
-    !pendingActiveQuartet &&
-    participants.length >= MAX_QUARTET_PARTICIPANTS;
+    !isQuartetFull;
 
   useEffect(() => {
     if (
@@ -940,128 +939,139 @@ export default function JoinSessionPage() {
               </section>
             )}
 
-            {showCompactJoinInfo && (
-              <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+            {isQuartetFull && (
+              <section className="mt-5 rounded-2xl border border-white/10 bg-white/10 p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm font-semibold text-slate-200">
                       Quartet is full
                     </p>
-                    <p className="mt-1 text-sm text-slate-400">
-                      Code {code} is still available if someone needs the link.
-                    </p>
+                    {isCurrentUserParticipant ? (
+                      <p className="mt-1 text-sm text-slate-400">
+                        You are singing as{" "}
+                        <span className="font-semibold text-cyan-200">
+                          {currentParticipantDisplayName}
+                        </span>
+                        .
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-sm text-slate-400">
+                        This quartet already has four singers.
+                      </p>
+                    )}
                   </div>
 
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <button
-                      type="button"
-                      onClick={copyJoinCode}
-                      className="rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-white/10"
-                    >
-                      Copy code
-                    </button>
-                    <button
-                      type="button"
-                      onClick={copyJoinLink}
-                      className="rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-white/10"
-                    >
-                      Copy link
-                    </button>
-                  </div>
-                </div>
-
-                {copyMessage && (
-                  <p className="mt-2 text-sm text-slate-300">{copyMessage}</p>
-                )}
-              </section>
-            )}
-
-            <div className="mt-6 rounded-2xl border border-white/10 bg-white/10 p-6">
-              {leftQuartet ? (
-                <>
-                  <p className="text-slate-300">
-                    You are not currently in this quartet.
-                  </p>
-                  <button
-                    onClick={rejoinQuartet}
-                    disabled={
-                      joiningQuartet ||
-                      !sessionId ||
-                      !currentParticipantDisplayName ||
-                      !currentUserId ||
-                      quartetExpired
-                    }
-                    className="mt-4 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
-                  >
-                    {joiningQuartet ? "Joining..." : "Join this quartet again"}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <p className="text-slate-300">You are in this quartet as:</p>
-                  <p className="mt-1 text-2xl font-bold text-cyan-300">
-                    {currentParticipantDisplayName}
-                  </p>
-
-                  <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <button
-                      onClick={leaveQuartet}
-                      disabled={leaving || !sessionId || !currentUserId}
-                      className="rounded-xl bg-rose-200 px-5 py-3 font-semibold text-slate-950 hover:bg-rose-100 disabled:opacity-40"
-                    >
-                      {leaving ? "Leaving..." : "Leave quartet"}
-                    </button>
-
-                    <div className="flex flex-wrap gap-x-4 gap-y-2">
-                      <a
-                        href="/settings"
-                        className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
-                      >
-                        Change display name
-                      </a>
-
+                  {isCurrentUserParticipant && (
+                    <div className="flex flex-wrap gap-2">
                       <a
                         href="/repertoire"
-                        className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
+                        className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-white/10"
                       >
                         Edit repertoire
                       </a>
+                      <button
+                        onClick={leaveQuartet}
+                        disabled={leaving || !sessionId || !currentUserId}
+                        className="rounded-xl bg-rose-200 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-rose-100 disabled:opacity-40"
+                      >
+                        {leaving ? "Leaving..." : "Leave quartet"}
+                      </button>
                     </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {!isQuartetFull && (
+              <>
+                <div className="mt-6 rounded-2xl border border-white/10 bg-white/10 p-6">
+                  {leftQuartet ? (
+                    <>
+                      <p className="text-slate-300">
+                        You are not currently in this quartet.
+                      </p>
+                      <button
+                        onClick={rejoinQuartet}
+                        disabled={
+                          joiningQuartet ||
+                          !sessionId ||
+                          !currentParticipantDisplayName ||
+                          !currentUserId ||
+                          quartetExpired
+                        }
+                        className="mt-4 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
+                      >
+                        {joiningQuartet ? "Joining..." : "Join this quartet again"}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-slate-300">You are in this quartet as:</p>
+                      <p className="mt-1 text-2xl font-bold text-cyan-300">
+                        {currentParticipantDisplayName}
+                      </p>
+
+                      <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <button
+                          onClick={leaveQuartet}
+                          disabled={leaving || !sessionId || !currentUserId}
+                          className="rounded-xl bg-rose-200 px-5 py-3 font-semibold text-slate-950 hover:bg-rose-100 disabled:opacity-40"
+                        >
+                          {leaving ? "Leaving..." : "Leave quartet"}
+                        </button>
+
+                        <div className="flex flex-wrap gap-x-4 gap-y-2">
+                          <a
+                            href="/settings"
+                            className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
+                          >
+                            Change display name
+                          </a>
+
+                          <a
+                            href="/repertoire"
+                            className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
+                          >
+                            Edit repertoire
+                          </a>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="mt-8">
+                  <h2 className="text-2xl font-semibold">Participants</h2>
+
+                  <div className="mt-4 space-y-3">
+                    {participants.length === 0 && (
+                      <p className="rounded-2xl border border-white/10 bg-white/5 p-5 text-slate-300">
+                        No singers have joined yet.
+                      </p>
+                    )}
+
+                    {participants.map((p) => (
+                      <div
+                        key={p.id}
+                        className="rounded-xl border border-white/10 bg-white/10 p-4"
+                      >
+                        <p className="font-semibold">
+                          {getParticipantDisplayName(
+                            p,
+                            profileDisplayNamesByUserId
+                          )}
+                        </p>
+                        <p className="text-sm text-slate-300">
+                          {p.repertoire.length} songs loaded
+                        </p>
+                      </div>
+                    ))}
                   </div>
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
 
-            <div className="mt-8">
-              <h2 className="text-2xl font-semibold">Participants</h2>
-
-              <div className="mt-4 space-y-3">
-                {participants.length === 0 && (
-                  <p className="rounded-2xl border border-white/10 bg-white/5 p-5 text-slate-300">
-                    No singers have joined yet.
-                  </p>
-                )}
-
-                {participants.map((p) => (
-                  <div
-                    key={p.id}
-                    className="rounded-xl border border-white/10 bg-white/10 p-4"
-                  >
-                    <p className="font-semibold">
-                      {getParticipantDisplayName(
-                        p,
-                        profileDisplayNamesByUserId
-                      )}
-                    </p>
-                    <p className="text-sm text-slate-300">
-                      {p.repertoire.length} songs loaded
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-10">
+            <div className={isQuartetFull ? "mt-6" : "mt-10"}>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h2 className="text-2xl font-semibold">Matches</h2>
@@ -1127,6 +1137,75 @@ export default function JoinSessionPage() {
                 )}
               </div>
             </div>
+
+            {isQuartetFull && (
+              <details className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+                <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">
+                  Quartet details
+                </summary>
+
+                <div className="mt-4 border-t border-white/10 pt-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-slate-400">
+                      Code {code} is still available if someone needs the link.
+                    </p>
+
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <button
+                        type="button"
+                        onClick={copyJoinCode}
+                        className="rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-white/10"
+                      >
+                        Copy code
+                      </button>
+                      <button
+                        type="button"
+                        onClick={copyJoinLink}
+                        className="rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-white/10"
+                      >
+                        Copy link
+                      </button>
+                    </div>
+                  </div>
+
+                  {copyMessage && (
+                    <p className="mt-2 text-sm text-slate-300">{copyMessage}</p>
+                  )}
+
+                  <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2">
+                    <a
+                      href="/settings"
+                      className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
+                    >
+                      Change display name
+                    </a>
+                  </div>
+
+                  <div className="mt-6">
+                    <h2 className="text-lg font-semibold">Participants</h2>
+
+                    <div className="mt-4 space-y-3">
+                      {participants.map((p) => (
+                        <div
+                          key={p.id}
+                          className="rounded-xl border border-white/10 bg-white/10 p-4"
+                        >
+                          <p className="font-semibold">
+                            {getParticipantDisplayName(
+                              p,
+                              profileDisplayNamesByUserId
+                            )}
+                          </p>
+                          <p className="text-sm text-slate-300">
+                            {p.repertoire.length} songs loaded
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </details>
+            )}
           </>
         )}
       </div>
