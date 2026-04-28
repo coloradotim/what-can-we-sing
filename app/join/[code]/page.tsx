@@ -96,6 +96,7 @@ export default function JoinSessionPage() {
   const code = params.code;
 
   const hasAutoJoined = useRef(false);
+  const isRefreshingCurrentParticipant = useRef(false);
   const lastTrackedMatchesKey = useRef("");
 
   const [loading, setLoading] = useState(true);
@@ -119,7 +120,6 @@ export default function JoinSessionPage() {
   const [now, setNow] = useState(() => new Date());
   const [leftQuartet, setLeftQuartet] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const [refreshingSongs, setRefreshingSongs] = useState(false);
   const [joiningQuartet, setJoiningQuartet] = useState(false);
   const [realtimeMessage, setRealtimeMessage] = useState("");
   const [pendingActiveQuartet, setPendingActiveQuartet] =
@@ -262,51 +262,65 @@ export default function JoinSessionPage() {
     }
   }
 
-  async function refreshMySongs() {
-    const name = currentParticipantDisplayName;
+  async function refreshCurrentParticipantSongs({
+    id = sessionId,
+    name = currentParticipantDisplayName,
+    userId = currentUserId,
+    participantsToUse,
+  }: {
+    id?: string | null;
+    name?: string;
+    userId?: string;
+    participantsToUse?: DbParticipant[];
+  } = {}) {
+    if (isRefreshingCurrentParticipant.current) return;
 
-    if (!sessionId || !currentUserId || !name) {
-      setMessage("Could not refresh yet. Wait for the quartet to finish loading.");
+    if (!id || !userId || !name) {
+      setMessage(
+        "Could not update your songs yet. Wait for the quartet to finish loading."
+      );
       return;
     }
 
-    setRefreshingSongs(true);
-    setMessage("");
-
     try {
-      const currentParticipants = await refreshParticipants(sessionId);
+      isRefreshingCurrentParticipant.current = true;
+
+      const currentParticipants =
+        participantsToUse ?? (await refreshParticipants(id));
       const existingParticipant = findParticipantByUserId(
         currentParticipants,
-        currentUserId
+        userId
       );
 
-      if (!existingParticipant) {
-        await joinSession(sessionId, name, currentUserId);
-        return;
-      }
+      if (!existingParticipant) return;
 
       const entries = await getMyEntries(name);
       const lastActivityAt = new Date().toISOString();
-
-      await updateParticipantSnapshot(
+      const updatedParticipant = await updateParticipantSnapshot(
         existingParticipant.id,
-        currentUserId,
+        userId,
         entries,
         lastActivityAt
       );
-      setActiveQuartet({ sessionId, code, joinedAt: lastActivityAt });
+
+      setParticipants((currentParticipants) =>
+        currentParticipants.map((participant) =>
+          participant.id === updatedParticipant.id
+            ? updatedParticipant
+            : participant
+        )
+      );
+      setActiveQuartet({ sessionId: id, code, joinedAt: lastActivityAt });
       setSession((current) =>
         current ? { ...current, last_activity_at: lastActivityAt } : current
       );
-      await refreshParticipants(sessionId);
-      setMessage(`Updated ${name}'s repertoire with ${entries.length} songs.`);
     } catch (err) {
-      console.error(err);
+      console.error("Could not update returning participant repertoire", err);
       setMessage(
-        "Could not refresh your songs. Check your connection and try again."
+        "Could not update your songs. Check your connection and come back to this quartet again."
       );
     } finally {
-      setRefreshingSongs(false);
+      isRefreshingCurrentParticipant.current = false;
     }
   }
 
@@ -576,24 +590,12 @@ export default function JoinSessionPage() {
           }
 
           const lastActivityAt = new Date().toISOString();
-
-          if (existingParticipant) {
-            try {
-              const entries = await getMyEntries(profile.display_name);
-              await updateParticipantSnapshot(
-                existingParticipant.id,
-                user.id,
-                entries,
-                lastActivityAt
-              );
-              await refreshParticipants(session.id);
-            } catch (err) {
-              console.error("Could not refresh returning participant", err);
-              setMessage(
-                "You are in this quartet. Refresh my songs if your latest changes do not appear."
-              );
-            }
-          }
+          await refreshCurrentParticipantSongs({
+            id: session.id,
+            name: profile.display_name,
+            userId: user.id,
+            participantsToUse: currentParticipants,
+          });
 
           setActiveQuartet({
             sessionId: session.id,
@@ -667,6 +669,45 @@ export default function JoinSessionPage() {
     !quartetExpired &&
     !pendingActiveQuartet &&
     participants.length >= MAX_QUARTET_PARTICIPANTS;
+
+  useEffect(() => {
+    if (
+      loading ||
+      !sessionId ||
+      !currentUserId ||
+      !currentParticipantDisplayName ||
+      loadError ||
+      quartetExpired ||
+      pendingActiveQuartet ||
+      leftQuartet
+    ) {
+      return;
+    }
+
+    function refreshOnReturn() {
+      if (document.visibilityState === "hidden") return;
+      void refreshCurrentParticipantSongs();
+    }
+
+    window.addEventListener("focus", refreshOnReturn);
+    window.addEventListener("pageshow", refreshOnReturn);
+    document.addEventListener("visibilitychange", refreshOnReturn);
+
+    return () => {
+      window.removeEventListener("focus", refreshOnReturn);
+      window.removeEventListener("pageshow", refreshOnReturn);
+      document.removeEventListener("visibilitychange", refreshOnReturn);
+    };
+  }, [
+    currentParticipantDisplayName,
+    currentUserId,
+    leftQuartet,
+    loadError,
+    loading,
+    pendingActiveQuartet,
+    quartetExpired,
+    sessionId,
+  ]);
 
   useEffect(() => {
     if (
@@ -972,20 +1013,6 @@ export default function JoinSessionPage() {
                     </button>
 
                     <div className="flex flex-wrap gap-x-4 gap-y-2">
-                      <button
-                        type="button"
-                        onClick={refreshMySongs}
-                        disabled={
-                          refreshingSongs ||
-                          !sessionId ||
-                          !currentParticipantDisplayName ||
-                          !currentUserId
-                        }
-                        className="text-sm font-semibold text-cyan-300 hover:text-cyan-200 disabled:opacity-40"
-                      >
-                        {refreshingSongs ? "Refreshing songs..." : "Refresh my songs"}
-                      </button>
-
                       <a
                         href="/settings"
                         className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
