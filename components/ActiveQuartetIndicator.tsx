@@ -11,6 +11,7 @@ import {
 import { getCurrentUser } from "@/lib/profileStore";
 import { trackEvent } from "@/lib/analytics";
 import { removeParticipant } from "@/lib/sessionStore";
+import { QuartetActionConfirmation } from "@/components/QuartetActionConfirmation";
 
 function isViewingActiveQuartet(pathname: string, code: string) {
   return pathname.toUpperCase() === `/JOIN/${code.toUpperCase()}`;
@@ -20,6 +21,7 @@ export function ActiveQuartetIndicator() {
   const pathname = usePathname();
   const [activeQuartet, setActiveQuartet] = useState<ActiveQuartet | null>(null);
   const [leaving, setLeaving] = useState(false);
+  const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -58,12 +60,14 @@ export function ActiveQuartetIndicator() {
 
       clearActiveQuartet();
       setActiveQuartet(null);
+      setShowLeaveConfirmation(false);
 
       if (window.location.pathname === `/join/${activeQuartet.code}`) {
         window.location.href = "/?leftQuartet=1";
       }
     } catch (err) {
       console.error("Failed to leave active quartet", err);
+      setShowLeaveConfirmation(false);
       setMessage("Could not leave quartet. Try again.");
     } finally {
       setLeaving(false);
@@ -78,6 +82,16 @@ export function ActiveQuartetIndicator() {
 
   return (
     <div className="mt-3 rounded-xl border border-cyan-300/30 bg-cyan-300/10 p-3">
+      <QuartetActionConfirmation
+        open={showLeaveConfirmation}
+        busy={leaving}
+        title="Leave quartet?"
+        description="You'll be removed from this quartet. You can rejoin later with the code if there is still room."
+        confirmLabel="Leave quartet"
+        busyLabel="Leaving..."
+        onCancel={() => setShowLeaveConfirmation(false)}
+        onConfirm={leaveQuartet}
+      />
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-semibold text-slate-100">
           In quartet{" "}
@@ -93,7 +107,10 @@ export function ActiveQuartetIndicator() {
           </a>
           <button
             type="button"
-            onClick={leaveQuartet}
+            onClick={() => {
+              setMessage("");
+              setShowLeaveConfirmation(true);
+            }}
             disabled={leaving}
             className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 hover:bg-slate-700 disabled:opacity-40"
           >

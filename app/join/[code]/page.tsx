@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/AppNav";
 import { MatchCard } from "@/components/MatchCard";
+import { QuartetActionConfirmation } from "@/components/QuartetActionConfirmation";
 import { trackEvent } from "@/lib/analytics";
 import { intentionalJoinStorageKey } from "@/lib/joinIntent";
 import { resolveCurrentUserRepertoireForMarkAsSung } from "@/lib/markAsSung";
@@ -132,8 +133,11 @@ export default function JoinSessionPage() {
   const [now, setNow] = useState(() => new Date());
   const [leftQuartet, setLeftQuartet] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
   const [joiningQuartet, setJoiningQuartet] = useState(false);
   const [removingParticipantId, setRemovingParticipantId] = useState("");
+  const [participantToRemove, setParticipantToRemove] =
+    useState<DbParticipant | null>(null);
   const [pendingActiveQuartet, setPendingActiveQuartet] =
     useState<ActiveQuartet | null>(null);
   const [leavingCurrentQuartet, setLeavingCurrentQuartet] = useState(false);
@@ -382,7 +386,7 @@ export default function JoinSessionPage() {
         "Could not leave yet. Wait for the quartet to finish loading.",
         "error"
       );
-      return;
+      return false;
     }
 
     setLeaving(true);
@@ -403,6 +407,7 @@ export default function JoinSessionPage() {
         participant_count: Math.max(0, participants.length - 1),
       });
       window.location.href = "/?leftQuartet=1";
+      return true;
     } catch (err) {
       console.error(err);
       showStatusMessage(
@@ -410,14 +415,20 @@ export default function JoinSessionPage() {
         "error"
       );
       setLeaving(false);
+      return false;
     }
   }
 
-  async function confirmLeaveQuartet() {
-    const confirmed = window.confirm("Remove yourself from this quartet?");
-    if (!confirmed) return;
+  function requestLeaveQuartet() {
+    clearStatusMessage();
+    setShowLeaveConfirmation(true);
+  }
 
-    await leaveQuartet();
+  async function confirmLeaveQuartet() {
+    const didLeave = await leaveQuartet();
+    if (!didLeave) {
+      setShowLeaveConfirmation(false);
+    }
   }
 
   async function removeQuartetParticipant(participant: DbParticipant) {
@@ -430,20 +441,22 @@ export default function JoinSessionPage() {
     }
 
     if (participant.user_id === currentUserId) {
-      await confirmLeaveQuartet();
+      requestLeaveQuartet();
       return;
     }
 
+    clearStatusMessage();
+    setParticipantToRemove(participant);
+  }
+
+  async function confirmRemoveQuartetParticipant() {
+    if (!sessionId || !participantToRemove) return;
+
+    const participant = participantToRemove;
     const participantName = getParticipantDisplayName(
       participant,
       profileDisplayNamesByUserId
     );
-    const confirmed = window.confirm(
-      `Remove ${participantName} from this quartet?`
-    );
-
-    if (!confirmed) return;
-
     setRemovingParticipantId(participant.id);
     clearStatusMessage();
 
@@ -460,12 +473,14 @@ export default function JoinSessionPage() {
         `${participantName} was removed from the quartet.`,
         "transient"
       );
+      setParticipantToRemove(null);
     } catch (err) {
       console.error(err);
       showStatusMessage(
         "Could not remove that singer. Check your connection and try again.",
         "error"
       );
+      setParticipantToRemove(null);
     } finally {
       setRemovingParticipantId("");
     }
@@ -1081,6 +1096,33 @@ export default function JoinSessionPage() {
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-5xl">
         <AppNav />
+        <QuartetActionConfirmation
+          open={showLeaveConfirmation}
+          busy={leaving}
+          title="Leave quartet?"
+          description="You'll be removed from this quartet. You can rejoin later with the code if there is still room."
+          confirmLabel="Leave quartet"
+          busyLabel="Leaving..."
+          onCancel={() => setShowLeaveConfirmation(false)}
+          onConfirm={confirmLeaveQuartet}
+        />
+        <QuartetActionConfirmation
+          open={Boolean(participantToRemove)}
+          busy={Boolean(removingParticipantId)}
+          title="Remove singer?"
+          description={`${
+            participantToRemove
+              ? getParticipantDisplayName(
+                  participantToRemove,
+                  profileDisplayNamesByUserId
+                )
+              : "This singer"
+          } will be removed from this quartet. They can rejoin later with the code if there is still room.`}
+          confirmLabel="Remove from quartet"
+          busyLabel="Removing..."
+          onCancel={() => setParticipantToRemove(null)}
+          onConfirm={confirmRemoveQuartetParticipant}
+        />
 
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-4xl font-bold">Quartet {code}</h1>
@@ -1260,7 +1302,7 @@ export default function JoinSessionPage() {
                         Change my display name
                       </a>
                       <button
-                        onClick={confirmLeaveQuartet}
+                        onClick={requestLeaveQuartet}
                         disabled={leaving || !sessionId}
                         className="rounded-xl bg-rose-200 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-rose-100 disabled:opacity-40"
                       >
@@ -1303,7 +1345,7 @@ export default function JoinSessionPage() {
 
                       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <button
-                          onClick={confirmLeaveQuartet}
+                          onClick={requestLeaveQuartet}
                           disabled={leaving || !sessionId}
                           className="rounded-xl bg-rose-200 px-5 py-3 font-semibold text-slate-950 hover:bg-rose-100 disabled:opacity-40"
                         >
