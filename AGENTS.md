@@ -72,6 +72,8 @@ Before finishing any change:
 - do not change app behavior unless requested
 - prefer small PRs
 - preserve existing tests and add tests for matching logic changes
+- when adding or changing Supabase operations, update migrations/RLS,
+  `docs/supabase-contract.md`, and related tests or test notes
 
 ## Important files
 - `lib/matching.ts`: core matching/ranking logic
