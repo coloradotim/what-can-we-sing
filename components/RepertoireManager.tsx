@@ -13,6 +13,11 @@ import {
   type FuzzySongTitleSuggestion,
 } from "@/lib/fuzzySongTitles";
 import { partAbbreviation, partButtonLabel } from "@/lib/partAbbreviations";
+import {
+  filterAndSortRepertoire,
+  hasActiveRepertoireFilters,
+  type RepertoireSortOption,
+} from "@/lib/repertoireView";
 import { trackEvent } from "@/lib/analytics";
 import {
   addRepertoireItem,
@@ -61,6 +66,11 @@ export default function RepertoireManager() {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<RepertoireRow[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortOption, setSortOption] =
+    useState<RepertoireSortOption>("title_asc");
+  const [voicingFilter, setVoicingFilter] = useState<Voicing | "">("");
+  const [partFilter, setPartFilter] = useState<Part | "">("");
+  const [neverSungOnly, setNeverSungOnly] = useState(false);
   const [songTitle, setSongTitle] = useState("");
   const [voicing, setVoicing] = useState<Voicing | "">("");
   const [arrangerName, setArrangerName] = useState("");
@@ -213,6 +223,21 @@ export default function RepertoireManager() {
   function cancelEditing() {
     setEditingId(null);
     setEditForm(null);
+  }
+
+  function updateVoicingFilter(nextVoicing: Voicing | "") {
+    setVoicingFilter(nextVoicing);
+    setPartFilter((currentPart) => {
+      if (!nextVoicing || !currentPart) return currentPart;
+      return partsByVoicing[nextVoicing].includes(currentPart) ? currentPart : "";
+    });
+  }
+
+  function clearRepertoireFilters() {
+    setSearchQuery("");
+    setVoicingFilter("");
+    setPartFilter("");
+    setNeverSungOnly(false);
   }
 
   function updateEditForm(patch: Partial<RepertoireForm>) {
@@ -507,15 +532,29 @@ export default function RepertoireManager() {
     Boolean(voicing) &&
     !rowHasMissingPartOrConfidence(partRows) &&
     !hasDuplicateParts(partRows);
-  const visibleItems = items
-    .filter((item) =>
-      item.song_title.toLowerCase().includes(searchQuery.trim().toLowerCase())
-    )
-    .sort((a, b) =>
-      a.song_title.localeCompare(b.song_title, undefined, {
-        sensitivity: "base",
-      })
-    );
+  const repertoireFilters = {
+    searchQuery,
+    voicing: voicingFilter,
+    part: partFilter,
+    neverSungOnly,
+    sort: sortOption,
+  };
+  const visibleItems = filterAndSortRepertoire(items, repertoireFilters);
+  const hasActiveFilters = hasActiveRepertoireFilters(repertoireFilters);
+  const partFilterOptions = voicingFilter
+    ? partsByVoicing[voicingFilter]
+    : Array.from(new Set(voicings.flatMap((v) => partsByVoicing[v])));
+  const filteredEmptyDescription = [
+    voicingFilter,
+    partFilter
+      ? voicingFilter
+        ? partButtonLabel(voicingFilter, partFilter)
+        : partFilter
+      : "",
+    neverSungOnly ? "never sung" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   const titleSuggestions = findFuzzySongTitleSuggestions(
     items.map((item) => ({
       id: item.id,
@@ -639,12 +678,14 @@ export default function RepertoireManager() {
             <div>
               <h2 className="text-2xl font-semibold">Songs I know</h2>
               <p className="mt-1 text-sm text-slate-400">
-                {items.length} {items.length === 1 ? "song" : "songs"} saved
+                {visibleItems.length === items.length
+                  ? `${items.length} ${items.length === 1 ? "song" : "songs"} saved`
+                  : `${visibleItems.length} of ${items.length} songs shown`}
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              <label className="block sm:w-72">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(12rem,18rem)_11rem_11rem_11rem]">
+              <label className="block">
                 <span className="text-sm font-medium text-slate-300">
                   Search by title
                 </span>
@@ -654,7 +695,109 @@ export default function RepertoireManager() {
                   className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
                 />
               </label>
+              <label className="block">
+                <span className="text-sm font-medium text-slate-300">
+                  Sort
+                </span>
+                <select
+                  value={sortOption}
+                  onChange={(e) =>
+                    setSortOption(e.target.value as RepertoireSortOption)
+                  }
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                >
+                  <option value="title_asc">Title A-Z</option>
+                  <option value="created_desc">Added newest</option>
+                  <option value="created_asc">Added oldest</option>
+                  <option value="last_sung_desc">Sung recently</option>
+                  <option value="last_sung_asc">Least recently sung</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium text-slate-300">
+                  Voicing
+                </span>
+                <select
+                  value={voicingFilter}
+                  onChange={(e) =>
+                    updateVoicingFilter(e.target.value as Voicing | "")
+                  }
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                >
+                  <option value="">All voicings</option>
+                  {voicings.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium text-slate-300">
+                  Part
+                </span>
+                <select
+                  value={partFilter}
+                  onChange={(e) => setPartFilter(e.target.value as Part | "")}
+                  className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                >
+                  <option value="">All parts</option>
+                  {partFilterOptions.map((part) => (
+                    <option key={part} value={part}>
+                      {voicingFilter ? partButtonLabel(voicingFilter, part) : part}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
+          </div>
+
+          <div className="mt-3 flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <label className="flex items-center gap-3 text-sm font-semibold text-slate-200">
+              <input
+                type="checkbox"
+                checked={neverSungOnly}
+                onChange={(e) => setNeverSungOnly(e.target.checked)}
+                className="h-4 w-4 rounded border-white/20 bg-slate-900 text-cyan-300"
+              />
+              Never sung
+            </label>
+
+            {hasActiveFilters ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {searchQuery.trim() && (
+                  <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
+                    Title: {searchQuery.trim()}
+                  </span>
+                )}
+                {voicingFilter && (
+                  <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
+                    {voicingFilter}
+                  </span>
+                )}
+                {partFilter && (
+                  <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
+                    {voicingFilter
+                      ? partButtonLabel(voicingFilter, partFilter)
+                      : partFilter}
+                  </span>
+                )}
+                {neverSungOnly && (
+                  <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
+                    Never sung
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={clearRepertoireFilters}
+                  className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-200 hover:bg-slate-700"
+                >
+                  Clear filters
+                </button>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-400">No filters active</p>
+            )}
           </div>
 
           <div className="mt-4 space-y-2">
@@ -670,7 +813,9 @@ export default function RepertoireManager() {
 
             {items.length > 0 && visibleItems.length === 0 && (
               <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-                No songs match that title.
+                {filteredEmptyDescription
+                  ? `No ${filteredEmptyDescription} songs match these filters.`
+                  : "No songs match these filters."}
               </div>
             )}
 
