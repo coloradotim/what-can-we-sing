@@ -1,5 +1,28 @@
 # what-can-we-sing
+
 An app to allow a pick-up barbershop quartet to quickly find songs they can sing together
+
+## Product model
+
+What Can We Sing is optimized for in-the-room pickup quartet decisions. The
+important question is "what can these singers sing right now?"
+
+Current source-of-truth model:
+
+- `profiles` stores the singer display name.
+- `user_repertoire` stores each singer's saved songs, voicing, parts,
+  per-part confidence values, optional arranger, private notes, and personal
+  sung metadata.
+- `sessions` stores quartet join codes and activity.
+- `session_participants` stores active quartet membership and each singer's
+  repertoire snapshot.
+
+The quartet screen derives participants and matches from
+`session_participants`. Local active-quartet state is only a navigation
+shortcut, not the source of truth.
+
+See [docs/app-flows.md](docs/app-flows.md) for the current start, join, rejoin,
+leave, remove, repertoire refresh, and matching flow.
 
 ## Environment variables
 
@@ -21,6 +44,9 @@ FEEDBACK_TO_EMAIL=feedback destination address
 settings for the in-app feedback form. Configure them in Vercel, not as
 `NEXT_PUBLIC_*` variables. For the current deployment, set
 `FEEDBACK_TO_EMAIL` to the app owner address.
+
+The feedback destination email must never be rendered in the client or returned
+from an API response.
 
 ## Supabase auth email
 
@@ -71,3 +97,21 @@ supabase db push
 
 If the project is not linked locally, run `supabase link --project-ref <project-ref>`
 first, then `supabase db push`.
+
+## Analytics
+
+PostHog setup and event rules are documented in
+[docs/analytics.md](docs/analytics.md). Analytics is optional and must never
+block core app behavior.
+
+## Testing
+
+Run the normal local checks before finishing a change:
+
+```bash
+npm run test:run
+npm run build
+```
+
+Matching logic lives in `lib/matching.ts` and should be covered with focused
+unit tests whenever matching behavior changes.

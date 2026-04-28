@@ -49,6 +49,11 @@ describe("deployment automation guardrails", () => {
     expect(deploymentDocs).toContain("Require a pull request before merging");
     expect(deploymentDocs).toContain("Auto-Merge Guidance");
     expect(deploymentDocs).toContain("Failure Recovery");
+    expect(deploymentDocs).toContain("CI / test-and-build (pull_request)");
+    expect(deploymentDocs).toContain("CI / guardrails (pull_request)");
+    expect(deploymentDocs).toContain(
+      "Do not require the `Supabase Migrations` workflow as a pre-merge PR check"
+    );
     expect(deploymentDocs).toContain(
       "Supabase migrations are not deployed from unmerged PR branches"
     );

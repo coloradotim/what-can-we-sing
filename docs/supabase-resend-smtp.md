@@ -64,7 +64,7 @@ In Supabase, go to **Authentication > URL Configuration**.
 Set:
 
 ```text
-Site URL: https://what-can-we-sing.vercel.app
+Site URL: your production app URL, for example https://www.whatcanwesing.com
 ```
 
 The OTP login flow does not use magic-link redirects or `/auth/callback`.

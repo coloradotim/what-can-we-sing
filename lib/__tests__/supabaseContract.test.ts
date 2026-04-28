@@ -7,6 +7,8 @@ const contract = readFileSync(
   join(repoRoot, "docs/supabase-contract.md"),
   "utf8"
 );
+const appFlows = readFileSync(join(repoRoot, "docs/app-flows.md"), "utf8");
+const analyticsDocs = readFileSync(join(repoRoot, "docs/analytics.md"), "utf8");
 const migration = readFileSync(
   join(
     repoRoot,
@@ -75,6 +77,19 @@ describe("Supabase contract guardrails", () => {
     expect(contract).toContain("leave");
     expect(contract).toContain("repertoire snapshot");
     expect(contract).toContain("Match calculation source");
+    expect(contract).toContain("App Flow Contract");
+    expect(contract).toContain("Local active-quartet state is a shortcut");
+    expect(appFlows).toContain("Source Of Truth");
+    expect(appFlows).toContain("Rejoin Quartet");
+    expect(appFlows).toContain("Remove Singer");
+  });
+
+  it("documents the analytics privacy contract", () => {
+    expect(analyticsDocs).toContain("Autocapture is disabled");
+    expect(analyticsDocs).toContain("Do not send free-text user content");
+    expect(analyticsDocs).toContain("feedback text");
+    expect(analyticsDocs).toContain("song titles");
+    expect(analyticsDocs).toContain("quartet_member_removed");
   });
 
   it("documents and migrates participant removal by quartet members", () => {
