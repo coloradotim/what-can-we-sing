@@ -111,6 +111,7 @@ export default function JoinSessionPage() {
   );
   const [recentSungSongs, setRecentSungSongs] = useState<SungSongEvent[]>([]);
   const [markingSungKey, setMarkingSungKey] = useState("");
+  const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [copyMessage, setCopyMessage] = useState("");
   const [qrUrl, setQrUrl] = useState("");
@@ -404,6 +405,12 @@ export default function JoinSessionPage() {
 
   function matchKey(match: MatchResult) {
     return `${normalizeSongTitle(match.songTitle)}:${match.voicing}`;
+  }
+
+  function toggleExpandedMatch(matchId: string) {
+    setExpandedMatchId((currentMatchId) =>
+      currentMatchId === matchId ? null : matchId
+    );
   }
 
   async function markMatchAsSung(match: MatchResult) {
@@ -1071,16 +1078,22 @@ export default function JoinSessionPage() {
                         </div>
 
                         <div className="mt-3 space-y-2">
-                          {section.matches.map((match) => (
-                            <MatchCard
-                              key={match.songTitle + match.voicing}
-                              match={match}
-                              personalNotes={notesForMatch(match)}
-                              isRecentlySung={wasRecentlySung(match)}
-                              isMarkingSung={markingSungKey === matchKey(match)}
-                              onMarkAsSung={() => markMatchAsSung(match)}
-                            />
-                          ))}
+                          {section.matches.map((match) => {
+                            const id = matchKey(match);
+
+                            return (
+                              <MatchCard
+                                key={id}
+                                match={match}
+                                personalNotes={notesForMatch(match)}
+                                isExpanded={expandedMatchId === id}
+                                isRecentlySung={wasRecentlySung(match)}
+                                isMarkingSung={markingSungKey === id}
+                                onToggle={() => toggleExpandedMatch(id)}
+                                onMarkAsSung={() => markMatchAsSung(match)}
+                              />
+                            );
+                          })}
                         </div>
                       </section>
                     )
