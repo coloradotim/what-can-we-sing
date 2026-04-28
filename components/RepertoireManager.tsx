@@ -23,6 +23,10 @@ import {
   updateRepertoireItem,
   type RepertoireRow,
 } from "@/lib/repertoireStore";
+import {
+  getSongSuggestions,
+  type SongSuggestion,
+} from "@/lib/songSuggestions";
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 import { refreshActiveQuartetSnapshot } from "@/lib/activeQuartetSnapshot";
 
@@ -199,6 +203,15 @@ export default function RepertoireManager() {
   function closeAddModal() {
     resetAddForm();
     setIsAddOpen(false);
+    setMessage("");
+  }
+
+  function selectSongSuggestion(suggestion: SongSuggestion) {
+    setSongTitle(suggestion.songTitle);
+    setVoicing(suggestion.voicing);
+    setArrangerName(suggestion.arrangerName);
+    setShowArranger(Boolean(suggestion.arrangerName));
+    setPartRows([emptyPartRow()]);
     setMessage("");
   }
 
@@ -526,6 +539,7 @@ export default function RepertoireManager() {
     sort: sortOption,
   };
   const visibleItems = filterAndSortRepertoire(items, repertoireFilters);
+  const songSuggestions = getSongSuggestions(items, songTitle);
   const hasActiveFilters = hasActiveRepertoireFilters(repertoireFilters);
   const partFilterOptions = voicingFilter
     ? partsByVoicing[voicingFilter]
@@ -1030,8 +1044,36 @@ export default function RepertoireManager() {
                     ref={songTitleInputRef}
                     value={songTitle}
                     onChange={(e) => setSongTitle(e.target.value)}
+                    autoComplete="off"
                     className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
                   />
+                  {songSuggestions.length > 0 && (
+                    <div className="mt-2 overflow-hidden rounded-xl border border-cyan-300/20 bg-slate-900">
+                      <p className="px-3 py-2 text-xs font-semibold uppercase tracking-normal text-slate-400">
+                        Existing songs
+                      </p>
+                      <div className="divide-y divide-white/10">
+                        {songSuggestions.map((suggestion) => (
+                          <button
+                            key={`${suggestion.songTitle}:${suggestion.voicing}:${suggestion.arrangerName}`}
+                            type="button"
+                            onClick={() => selectSongSuggestion(suggestion)}
+                            className="w-full px-3 py-3 text-left hover:bg-cyan-300/10 focus:bg-cyan-300/10 focus:outline-none"
+                          >
+                            <span className="block font-semibold text-white">
+                              {suggestion.songTitle}
+                            </span>
+                            <span className="mt-1 block text-xs text-slate-300">
+                              {suggestion.voicing}
+                              {suggestion.arrangerName
+                                ? ` · ${suggestion.arrangerName}`
+                                : " · Arranger unknown"}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </label>
 
                 <div>
