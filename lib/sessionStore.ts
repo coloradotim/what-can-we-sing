@@ -172,27 +172,30 @@ export async function removeParticipantById(
   sessionId: string,
   participantId: string
 ) {
-  const participant = await getParticipantForDelete({
-    sessionId,
-    participantId,
-  });
+  const { data, error } = await supabase.rpc(
+    "remove_session_participant_by_id",
+    {
+      p_session_id: sessionId,
+      p_participant_id: participantId,
+    }
+  );
 
-  if (!participant) {
+  if (error) throw error;
+  const participant = Array.isArray(data) ? data[0] : data;
+
+  if (
+    !participant ||
+    participant.session_id !== sessionId ||
+    participant.id !== participantId
+  ) {
     throw new SessionParticipantWriteError(
-      "Could not find the selected quartet participant row to delete."
+      "Could not verify that the selected quartet participant row was deleted."
     );
   }
 
-  const { error } = await supabase
-    .from("session_participants")
-    .delete()
-    .eq("session_id", sessionId)
-    .eq("id", participantId);
-
-  if (error) throw error;
   await verifyParticipantDeleted({ sessionId, participantId });
 
-  return participant;
+  return participant as Pick<DbParticipant, "id" | "session_id" | "user_id">;
 }
 
 export function subscribeToSessionParticipants(

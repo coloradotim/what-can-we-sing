@@ -341,13 +341,23 @@ export default function JoinSessionPage() {
     }
   }
 
+  async function confirmLeaveQuartet() {
+    const confirmed = window.confirm("Remove yourself from this quartet?");
+    if (!confirmed) return;
+
+    await leaveQuartet();
+  }
+
   async function removeQuartetParticipant(participant: DbParticipant) {
     if (!sessionId || !currentUserId) {
       setMessage("Could not remove that singer yet. Wait for the quartet to finish loading.");
       return;
     }
 
-    if (participant.user_id === currentUserId) return;
+    if (participant.user_id === currentUserId) {
+      await confirmLeaveQuartet();
+      return;
+    }
 
     const participantName = getParticipantDisplayName(
       participant,
@@ -364,11 +374,14 @@ export default function JoinSessionPage() {
 
     try {
       await removeParticipantById(sessionId, participant.id);
-      await refreshParticipants(sessionId, { showErrorMessage: false });
+      const updatedParticipants = await refreshParticipants(sessionId, {
+        showErrorMessage: false,
+      });
       trackEvent("quartet_member_removed", {
         session_id: sessionId,
-        participant_count: Math.max(0, participants.length - 1),
+        participant_count: updatedParticipants.length,
       });
+      setMessage(`${participantName} was removed from the quartet.`);
     } catch (err) {
       console.error(err);
       setMessage("Could not remove that singer. Check your connection and try again.");
@@ -869,25 +882,30 @@ export default function JoinSessionPage() {
           </div>
 
           {canManageParticipants && (
-            isCurrentParticipant ? (
-              <a
-                href="/settings"
-                className="w-fit rounded-lg border border-cyan-300/30 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-300/10"
-              >
-                Change my display name
-              </a>
-            ) : (
+            <div className="flex flex-wrap gap-2">
+              {isCurrentParticipant && (
+                <a
+                  href="/settings"
+                  className="w-fit rounded-lg border border-cyan-300/30 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-300/10"
+                >
+                  Change my display name
+                </a>
+              )}
               <button
                 type="button"
                 onClick={() => removeQuartetParticipant(participant)}
-                disabled={Boolean(removingParticipantId)}
+                disabled={
+                  leaving ||
+                  !sessionId ||
+                  Boolean(removingParticipantId)
+                }
                 className="w-fit rounded-lg bg-rose-400/10 px-3 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-400/20 disabled:opacity-40"
               >
-                {removingParticipantId === participant.id
+                {leaving || removingParticipantId === participant.id
                   ? "Removing..."
                   : "Remove from quartet"}
               </button>
-            )
+            </div>
           )}
         </div>
       </div>
@@ -1066,7 +1084,7 @@ export default function JoinSessionPage() {
                         Edit repertoire
                       </a>
                       <button
-                        onClick={leaveQuartet}
+                        onClick={confirmLeaveQuartet}
                         disabled={leaving || !sessionId}
                         className="rounded-xl bg-rose-200 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-rose-100 disabled:opacity-40"
                       >
@@ -1109,7 +1127,7 @@ export default function JoinSessionPage() {
 
                       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <button
-                          onClick={leaveQuartet}
+                          onClick={confirmLeaveQuartet}
                           disabled={leaving || !sessionId}
                           className="rounded-xl bg-rose-200 px-5 py-3 font-semibold text-slate-950 hover:bg-rose-100 disabled:opacity-40"
                         >

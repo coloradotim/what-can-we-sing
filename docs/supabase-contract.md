@@ -127,7 +127,8 @@ Code:
 - Read participants: `lib/sessionStore.ts#getParticipants`
 - Insert/update own snapshot: `lib/sessionStore.ts#upsertParticipant`
 - Delete own row: `lib/sessionStore.ts#removeParticipant`
-- Remove selected row by id: `lib/sessionStore.ts#removeParticipantById`
+- Remove selected row by id: `lib/sessionStore.ts#removeParticipantById`,
+  through `public.remove_session_participant_by_id`
 - Realtime participant subscription:
   `lib/sessionStore.ts#subscribeToSessionParticipants`
 - Repertoire snapshot refresh:
@@ -152,11 +153,15 @@ Required database contract:
 - Authenticated users can select session participants.
 - Authenticated users can insert/update/delete only their own row where
   `user_id = auth.uid()`.
+- Authenticated users who are current participants in a session can call
+  `public.remove_session_participant_by_id(p_session_id, p_participant_id)` to
+  remove another participant from that same session.
 - Table is in the Supabase Realtime publication.
 
 Established by migrations:
 - `20260428051000_fix_session_participants_rls.sql`
 - `20260428060000_supabase_contract_alignment.sql`
+- `20260428151000_add_participant_removal_function.sql`
 
 ### `sung_song_events`
 
