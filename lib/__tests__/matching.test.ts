@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { findMatches, normalizeConfidence, SingerEntry } from "../matching";
+import {
+  arrangementCheckNote,
+  findMatches,
+  normalizeConfidence,
+  SingerEntry,
+} from "../matching";
 
 describe("findMatches", () => {
   it("maps legacy confidence values to the new scale", () => {
@@ -73,7 +78,7 @@ describe("findMatches", () => {
     expect(findMatches(entries)).toEqual([]);
   });
 
-  it("marks a complete match as possible when arrangers conflict", () => {
+  it("keeps a complete match ready when arrangers differ", () => {
     const entries: SingerEntry[] = [
       { userId: "1", displayName: "A", songTitle: "Conflict Song", voicing: "TTBB", arrangerName: "Arranger One", partsKnown: ["Tenor"] },
       { userId: "2", displayName: "B", songTitle: "Conflict Song", voicing: "TTBB", arrangerName: "Arranger Two", partsKnown: ["Lead"] },
@@ -83,11 +88,11 @@ describe("findMatches", () => {
 
     const matches = findMatches(entries);
 
-    expect(matches[0].category).toBe("possible");
-    expect(matches[0].warnings).toContain("Possible arranger conflict.");
+    expect(matches[0].category).toBe("ready");
+    expect(matches[0].warnings).toContain(arrangementCheckNote);
   });
 
-  it("marks a complete match as possible when an arranger is missing", () => {
+  it("keeps a complete match ready when some arrangers are missing", () => {
     const entries: SingerEntry[] = [
       { userId: "1", displayName: "A", songTitle: "Unknown Arranger Song", voicing: "TTBB", arrangerName: "Known Arranger", partsKnown: ["Tenor"] },
       { userId: "2", displayName: "B", songTitle: "Unknown Arranger Song", voicing: "TTBB", arrangerName: null, partsKnown: ["Lead"] },
@@ -97,8 +102,8 @@ describe("findMatches", () => {
 
     const matches = findMatches(entries);
 
-    expect(matches[0].category).toBe("possible");
-    expect(matches[0].warnings).toContain("Arranger missing for at least one singer.");
+    expect(matches[0].category).toBe("ready");
+    expect(matches[0].warnings).toContain(arrangementCheckNote);
   });
 
   it("uses SATB required parts", () => {
@@ -199,27 +204,29 @@ describe("findMatches", () => {
     expect(matches[0].songTitle).toBe("Complete Song");
   });
 
-  it("ranks ready matches above possible matches even when confidence is weaker", () => {
+  it("does not downgrade or outrank matches based on arranger differences", () => {
     const entries: SingerEntry[] = [
-      { userId: "1", displayName: "A", songTitle: "Ready Song", voicing: "TTBB", arrangerName: "Same Arranger", partsKnown: ["Tenor"], confidence: "Music Required" },
-      { userId: "2", displayName: "B", songTitle: "Ready Song", voicing: "TTBB", arrangerName: "Same Arranger", partsKnown: ["Lead"], confidence: "Music Required" },
-      { userId: "3", displayName: "C", songTitle: "Ready Song", voicing: "TTBB", arrangerName: "Same Arranger", partsKnown: ["Baritone"], confidence: "Music Required" },
-      { userId: "4", displayName: "D", songTitle: "Ready Song", voicing: "TTBB", arrangerName: "Same Arranger", partsKnown: ["Bass"], confidence: "Music Required" },
+      { userId: "1", displayName: "A", songTitle: "Clean Arranger Song", voicing: "TTBB", arrangerName: "Same Arranger", partsKnown: ["Tenor"], confidence: "Good to Go" },
+      { userId: "2", displayName: "B", songTitle: "Clean Arranger Song", voicing: "TTBB", arrangerName: "Same Arranger", partsKnown: ["Lead"], confidence: "Good to Go" },
+      { userId: "3", displayName: "C", songTitle: "Clean Arranger Song", voicing: "TTBB", arrangerName: "Same Arranger", partsKnown: ["Baritone"], confidence: "Good to Go" },
+      { userId: "4", displayName: "D", songTitle: "Clean Arranger Song", voicing: "TTBB", arrangerName: "Same Arranger", partsKnown: ["Bass"], confidence: "Good to Go" },
 
-      { userId: "1", displayName: "A", songTitle: "Possible Song", voicing: "TTBB", arrangerName: "One", partsKnown: ["Tenor"], confidence: "Good to Go" },
-      { userId: "2", displayName: "B", songTitle: "Possible Song", voicing: "TTBB", arrangerName: "Two", partsKnown: ["Lead"], confidence: "Good to Go" },
-      { userId: "3", displayName: "C", songTitle: "Possible Song", voicing: "TTBB", arrangerName: "One", partsKnown: ["Baritone"], confidence: "Good to Go" },
-      { userId: "4", displayName: "D", songTitle: "Possible Song", voicing: "TTBB", arrangerName: "One", partsKnown: ["Bass"], confidence: "Good to Go" },
+      { userId: "1", displayName: "A", songTitle: "Different Arranger Song", voicing: "TTBB", arrangerName: "One", partsKnown: ["Tenor"], confidence: "Good to Go" },
+      { userId: "2", displayName: "B", songTitle: "Different Arranger Song", voicing: "TTBB", arrangerName: "Two", partsKnown: ["Lead"], confidence: "Good to Go" },
+      { userId: "3", displayName: "C", songTitle: "Different Arranger Song", voicing: "TTBB", arrangerName: "One", partsKnown: ["Baritone"], confidence: "Good to Go" },
+      { userId: "4", displayName: "D", songTitle: "Different Arranger Song", voicing: "TTBB", arrangerName: "One", partsKnown: ["Bass"], confidence: "Good to Go" },
     ];
 
     const matches = findMatches(entries);
 
-    expect(matches[0].songTitle).toBe("Ready Song");
+    expect(matches[0].songTitle).toBe("Clean Arranger Song");
     expect(matches[0].category).toBe("ready");
-    expect(matches[1].category).toBe("possible");
+    expect(matches[0].score).toBe(matches[1].score);
+    expect(matches[1].category).toBe("ready");
+    expect(matches[1].warnings).toContain(arrangementCheckNote);
   });
 
-  it("ranks possible matches above one-part-missing matches", () => {
+  it("ranks ready matches with arranger differences above one-part-missing matches", () => {
     const entries: SingerEntry[] = [
       { userId: "1", displayName: "A", songTitle: "Possible Song", voicing: "TTBB", arrangerName: "One", partsKnown: ["Tenor"], confidence: "Music Required" },
       { userId: "2", displayName: "B", songTitle: "Possible Song", voicing: "TTBB", arrangerName: "Two", partsKnown: ["Lead"], confidence: "Music Required" },
@@ -234,7 +241,7 @@ describe("findMatches", () => {
     const matches = findMatches(entries);
 
     expect(matches[0].songTitle).toBe("Possible Song");
-    expect(matches[0].category).toBe("possible");
+    expect(matches[0].category).toBe("ready");
     expect(matches[1].category).toBe("one_part_missing");
   });
 
@@ -309,24 +316,25 @@ describe("findMatches", () => {
     expect(matches[0].score - matches[1].score).toBeLessThan(10);
   });
 
-  it("penalizes warnings when ranking otherwise similar matches", () => {
+  it("penalizes confidence warnings but not arrangement notes when ranking", () => {
     const entries: SingerEntry[] = [
-      { userId: "1", displayName: "A", songTitle: "Missing Arranger Song", voicing: "TTBB", partsKnown: ["Tenor"], confidence: "Good to Go" },
-      { userId: "2", displayName: "B", songTitle: "Missing Arranger Song", voicing: "TTBB", partsKnown: ["Lead"], confidence: "Good to Go" },
-      { userId: "3", displayName: "C", songTitle: "Missing Arranger Song", voicing: "TTBB", partsKnown: ["Baritone"], confidence: "Good to Go" },
-      { userId: "4", displayName: "D", songTitle: "Missing Arranger Song", voicing: "TTBB", partsKnown: ["Bass"], confidence: "Good to Go" },
-
       { userId: "1", displayName: "A", songTitle: "Conflict Song", voicing: "TTBB", arrangerName: "One", partsKnown: ["Tenor"], confidence: "Good to Go" },
       { userId: "2", displayName: "B", songTitle: "Conflict Song", voicing: "TTBB", arrangerName: "Two", partsKnown: ["Lead"], confidence: "Good to Go" },
       { userId: "3", displayName: "C", songTitle: "Conflict Song", voicing: "TTBB", arrangerName: "One", partsKnown: ["Baritone"], confidence: "Good to Go" },
       { userId: "4", displayName: "D", songTitle: "Conflict Song", voicing: "TTBB", arrangerName: "One", partsKnown: ["Bass"], confidence: "Good to Go" },
+
+      { userId: "1", displayName: "A", songTitle: "Confidence Song", voicing: "TTBB", partsKnown: ["Tenor"], confidence: "Good to Go" },
+      { userId: "2", displayName: "B", songTitle: "Confidence Song", voicing: "TTBB", partsKnown: ["Lead"], confidence: "Good to Go" },
+      { userId: "3", displayName: "C", songTitle: "Confidence Song", voicing: "TTBB", partsKnown: ["Baritone"], confidence: "Good to Go" },
+      { userId: "4", displayName: "D", songTitle: "Confidence Song", voicing: "TTBB", partsKnown: ["Bass"], confidence: "A Little Rusty" },
     ];
 
     const matches = findMatches(entries);
 
-    expect(matches[0].songTitle).toBe("Missing Arranger Song");
-    expect(matches[0].category).toBe("possible");
-    expect(matches[1].category).toBe("possible");
+    expect(matches[0].songTitle).toBe("Conflict Song");
+    expect(matches[0].category).toBe("ready");
+    expect(matches[0].warnings).toContain(arrangementCheckNote);
+    expect(matches[1].warnings[0]).toMatch(/^Confidence warning:/);
     expect(matches[0].score).toBeGreaterThan(matches[1].score);
   });
 });
