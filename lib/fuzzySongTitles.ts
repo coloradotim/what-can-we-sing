@@ -74,7 +74,7 @@ function isTokenSubset(shorterTokens: string[], longerTokens: string[]) {
   return shorterTokens.every((token) => longer.has(token));
 }
 
-function isLikelySameSongTitle(a: string, b: string) {
+export function isLikelySameSongTitle(a: string, b: string) {
   const aCompact = normalizeTitleForExactMatch(a);
   const bCompact = normalizeTitleForExactMatch(b);
 

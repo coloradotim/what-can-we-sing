@@ -3,6 +3,7 @@ import {
   arrangementCheckNote,
   findMatches,
   normalizeConfidence,
+  possibleSameSongNote,
   SingerEntry,
 } from "../matching";
 
@@ -148,6 +149,60 @@ describe("findMatches", () => {
 
     expect(matches.length).toBe(1);
     expect(matches[0].songTitle).toBe("Hello, Mary Lou!");
+  });
+
+  it("suggests a possible match for conservative near-duplicate titles", () => {
+    const entries: SingerEntry[] = [
+      { userId: "1", displayName: "T", songTitle: "Why Try to Change Me", voicing: "TTBB", partsKnown: ["Tenor"] },
+      { userId: "2", displayName: "L", songTitle: "Why Try to Change Me", voicing: "TTBB", partsKnown: ["Lead"] },
+      { userId: "3", displayName: "Bari", songTitle: "Why Try to Change Me", voicing: "TTBB", partsKnown: ["Baritone"] },
+      { userId: "4", displayName: "Bass", songTitle: "Why Try To Change Me Now", voicing: "TTBB", partsKnown: ["Bass"] },
+    ];
+
+    const matches = findMatches(entries);
+
+    expect(matches).toHaveLength(2);
+    expect(matches[0]).toMatchObject({
+      songTitle: "Why Try To Change Me Now",
+      category: "possible",
+      missingParts: [],
+    });
+    expect(matches[0].warnings).toContain(
+      possibleSameSongNote("Why Try to Change Me", "Why Try To Change Me Now")
+    );
+    expect(matches[1]).toMatchObject({
+      songTitle: "Why Try to Change Me",
+      category: "one_part_missing",
+      missingParts: ["Bass"],
+    });
+  });
+
+  it("does not make fuzzy title suggestions ready-to-sing matches", () => {
+    const entries: SingerEntry[] = [
+      { userId: "1", displayName: "T", songTitle: "Hello Mary Lu", voicing: "TTBB", partsKnown: ["Tenor"] },
+      { userId: "2", displayName: "L", songTitle: "Hello Mary Lu", voicing: "TTBB", partsKnown: ["Lead"] },
+      { userId: "3", displayName: "Bari", songTitle: "Hello Mary Lu", voicing: "TTBB", partsKnown: ["Baritone"] },
+      { userId: "4", displayName: "Bass", songTitle: "Hello, Mary Lou!", voicing: "TTBB", partsKnown: ["Bass"] },
+    ];
+
+    const matches = findMatches(entries);
+
+    expect(matches.some((match) => match.category === "ready")).toBe(false);
+    expect(matches[0].category).toBe("possible");
+  });
+
+  it("does not suggest fuzzy title matches across different voicings", () => {
+    const entries: SingerEntry[] = [
+      { userId: "1", displayName: "T", songTitle: "Why Try to Change Me", voicing: "TTBB", partsKnown: ["Tenor"] },
+      { userId: "2", displayName: "L", songTitle: "Why Try to Change Me", voicing: "TTBB", partsKnown: ["Lead"] },
+      { userId: "3", displayName: "Bari", songTitle: "Why Try to Change Me", voicing: "TTBB", partsKnown: ["Baritone"] },
+      { userId: "4", displayName: "Bass", songTitle: "Why Try To Change Me Now", voicing: "SATB", partsKnown: ["Bass"] },
+    ];
+
+    const matches = findMatches(entries);
+
+    expect(matches).toHaveLength(1);
+    expect(matches[0].category).toBe("one_part_missing");
   });
 
   it("returns one_part_missing when three distinct singers cover three TTBB parts", () => {

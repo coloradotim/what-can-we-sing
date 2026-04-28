@@ -1,3 +1,5 @@
+import { isLikelySameSongTitle } from "./fuzzySongTitles";
+
 export type Voicing = "TTBB" | "SATB" | "SSAA";
 
 export type Part =
@@ -40,6 +42,10 @@ export type MatchResult = {
 
 export const arrangementCheckNote =
   "Consider double-checking that everyone is singing the same arrangement.";
+
+export function possibleSameSongNote(firstTitle: string, secondTitle: string) {
+  return `Possible same song: Is "${firstTitle}" the same as "${secondTitle}"?`;
+}
 
 export function requiredPartsForVoicing(voicing: Voicing): Part[] {
   if (voicing === "TTBB") return ["Tenor", "Lead", "Baritone", "Bass"];
@@ -179,6 +185,40 @@ function scoreMatch(
   return categoryBase + assignedConfidence * 20 + flexibility * 2 - warningPenalty;
 }
 
+function knownArrangersForGroup(group: SingerEntry[]) {
+  return Array.from(
+    new Set(
+      group
+        .map((e) => e.arrangerName?.trim())
+        .filter((name): name is string => Boolean(name))
+    )
+  );
+}
+
+function arrangementWarningsForGroup(
+  group: SingerEntry[],
+  knownArrangers: string[]
+) {
+  const hasSomeMissingArranger =
+    knownArrangers.length > 0 && group.some((e) => !e.arrangerName?.trim());
+  const hasMultipleArrangers = knownArrangers.length > 1;
+
+  return hasSomeMissingArranger || hasMultipleArrangers
+    ? [arrangementCheckNote]
+    : [];
+}
+
+function preferredSuggestionTitle(firstTitle: string, secondTitle: string) {
+  if (secondTitle.length > firstTitle.length) return secondTitle;
+  if (firstTitle.length > secondTitle.length) return firstTitle;
+
+  return firstTitle.localeCompare(secondTitle, undefined, {
+    sensitivity: "base",
+  }) <= 0
+    ? firstTitle
+    : secondTitle;
+}
+
 export function findMatches(entries: SingerEntry[]): MatchResult[] {
   const groups = new Map<string, SingerEntry[]>();
 
@@ -194,24 +234,8 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
     const requiredParts = requiredPartsForVoicing(voicing);
 
     const fullAssignment = findDistinctAssignment(requiredParts, group);
-
-    const knownArrangers = Array.from(
-      new Set(
-        group
-          .map((e) => e.arrangerName?.trim())
-          .filter((name): name is string => Boolean(name))
-      )
-    );
-
-    const hasSomeMissingArranger =
-      knownArrangers.length > 0 && group.some((e) => !e.arrangerName?.trim());
-    const hasMultipleArrangers = knownArrangers.length > 1;
-
-    const warnings: string[] = [];
-
-    if (hasSomeMissingArranger || hasMultipleArrangers) {
-      warnings.push(arrangementCheckNote);
-    }
+    const knownArrangers = knownArrangersForGroup(group);
+    const warnings = arrangementWarningsForGroup(group, knownArrangers);
 
     const confidence = confidenceWarning(group);
     if (confidence) warnings.push(confidence);
@@ -267,6 +291,57 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
           requiredParts,
           warnings
         ),
+      });
+    }
+  }
+
+  const exactGroups = Array.from(groups.values());
+  const possibleSuggestionKeys = new Set<string>();
+
+  for (let i = 0; i < exactGroups.length; i += 1) {
+    for (let j = i + 1; j < exactGroups.length; j += 1) {
+      const firstGroup = exactGroups[i];
+      const secondGroup = exactGroups[j];
+      const first = firstGroup[0];
+      const second = secondGroup[0];
+
+      if (first.voicing !== second.voicing) continue;
+      if (!isLikelySameSongTitle(first.songTitle, second.songTitle)) continue;
+
+      const group = [...firstGroup, ...secondGroup];
+      const requiredParts = requiredPartsForVoicing(first.voicing);
+      const fullAssignment = findDistinctAssignment(requiredParts, group);
+
+      if (!fullAssignment) continue;
+
+      const suggestionKey = [
+        first.voicing,
+        normalizeTitle(first.songTitle),
+        normalizeTitle(second.songTitle),
+      ]
+        .sort()
+        .join(":");
+
+      if (possibleSuggestionKeys.has(suggestionKey)) continue;
+      possibleSuggestionKeys.add(suggestionKey);
+
+      const knownArrangers = knownArrangersForGroup(group);
+      const warnings = [
+        possibleSameSongNote(first.songTitle, second.songTitle),
+        ...arrangementWarningsForGroup(group, knownArrangers),
+      ];
+      const confidence = confidenceWarning(group);
+      if (confidence) warnings.push(confidence);
+
+      results.push({
+        songTitle: preferredSuggestionTitle(first.songTitle, second.songTitle),
+        voicing: first.voicing,
+        arrangerNames: knownArrangers,
+        category: "possible",
+        missingParts: [],
+        assignments: buildAssignments(fullAssignment),
+        warnings,
+        score: scoreMatch("possible", fullAssignment, group, requiredParts, warnings),
       });
     }
   }
