@@ -15,6 +15,12 @@ describe("isPublicAuthPath", () => {
     expect(isPublicAuthPath("/privacy")).toBe(true);
   });
 
+  it("allows help and legacy feedback routes without an auth redirect", () => {
+    expect(isPublicAuthPath("/help")).toBe(true);
+    expect(isPublicAuthPath("/help/getting-started")).toBe(true);
+    expect(isPublicAuthPath("/feedback")).toBe(true);
+  });
+
   it("protects app routes", () => {
     expect(isPublicAuthPath("/repertoire")).toBe(false);
     expect(isPublicAuthPath("/join/ABC123")).toBe(false);
