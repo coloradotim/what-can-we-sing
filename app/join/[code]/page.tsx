@@ -13,6 +13,7 @@ import {
   resolveParticipantForJoin,
 } from "@/lib/sessionParticipantResolution";
 import { applyParticipantChange } from "@/lib/sessionParticipantChanges";
+import { didCurrentParticipantGetRemoved } from "@/lib/sessionParticipantRemoval";
 import {
   type DbSession,
   type DbParticipant,
@@ -101,6 +102,7 @@ export default function JoinSessionPage() {
   const hasAutoJoined = useRef(false);
   const isRefreshingCurrentParticipant = useRef(false);
   const lastTrackedMatchesKey = useRef("");
+  const participantsRef = useRef<DbParticipant[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -129,6 +131,25 @@ export default function JoinSessionPage() {
     useState<ActiveQuartet | null>(null);
   const [leavingCurrentQuartet, setLeavingCurrentQuartet] = useState(false);
 
+  function setTrackedParticipants(data: DbParticipant[]) {
+    participantsRef.current = data;
+    setParticipants(data);
+  }
+
+  function markCurrentUserRemovedFromQuartet(id: string) {
+    if (
+      window.sessionStorage.getItem(leftQuartetStorageKey(code)) === "true"
+    ) {
+      return;
+    }
+
+    window.sessionStorage.setItem(leftQuartetStorageKey(code), "true");
+    clearActiveQuartetIfMatches(id);
+    setLeftQuartet(true);
+    setPendingActiveQuartet(null);
+    setMessage("You were removed from this quartet.");
+  }
+
   async function refreshParticipantProfileNames(data: DbParticipant[]) {
     try {
       const profileDisplayNames = await getProfilesByIds(
@@ -149,7 +170,18 @@ export default function JoinSessionPage() {
   ) {
     try {
       const data = await getParticipants(id);
-      setParticipants(data);
+      const previousParticipants = participantsRef.current;
+      setTrackedParticipants(data);
+      if (
+        id === sessionId &&
+        didCurrentParticipantGetRemoved(
+          previousParticipants,
+          data,
+          currentUserId
+        )
+      ) {
+        markCurrentUserRemovedFromQuartet(id);
+      }
       await refreshParticipantProfileNames(data);
       return data;
     } catch (err) {
@@ -381,7 +413,13 @@ export default function JoinSessionPage() {
         session_id: sessionId,
         participant_count: updatedParticipants.length,
       });
-      setMessage(`${participantName} was removed from the quartet.`);
+      const removedMessage = `${participantName} was removed from the quartet.`;
+      setMessage(removedMessage);
+      window.setTimeout(() => {
+        setMessage((currentMessage) =>
+          currentMessage === removedMessage ? "" : currentMessage
+        );
+      }, 5000);
     } catch (err) {
       console.error(err);
       setMessage("Could not remove that singer. Check your connection and try again.");
@@ -531,20 +569,28 @@ export default function JoinSessionPage() {
     if (!sessionId) return;
 
     return subscribeToSessionParticipants(sessionId, (payload) => {
-      setParticipants((currentParticipants) => {
-        const updatedParticipants = applyParticipantChange(
-          currentParticipants,
-          payload,
-          sessionId
-        );
-        void refreshParticipantProfileNames(updatedParticipants);
-        return updatedParticipants;
-      });
+      const previousParticipants = participantsRef.current;
+      const updatedParticipants = applyParticipantChange(
+        previousParticipants,
+        payload,
+        sessionId
+      );
+      setTrackedParticipants(updatedParticipants);
+      if (
+        didCurrentParticipantGetRemoved(
+          previousParticipants,
+          updatedParticipants,
+          currentUserId
+        )
+      ) {
+        markCurrentUserRemovedFromQuartet(sessionId);
+      }
+      void refreshParticipantProfileNames(updatedParticipants);
       void refreshParticipants(sessionId, { showErrorMessage: false }).catch(
         () => undefined
       );
     });
-  }, [sessionId]);
+  }, [currentUserId, sessionId]);
 
   const participantUserIds = Array.from(
     new Set(participants.map((participant) => participant.user_id))
@@ -646,6 +692,18 @@ export default function JoinSessionPage() {
         ) {
           setPendingActiveQuartet(activeQuartet);
           setMessage("");
+          return;
+        }
+
+        if (
+          !alreadyJoined &&
+          activeQuartet?.sessionId === session.id &&
+          !hasLeftQuartet
+        ) {
+          window.sessionStorage.setItem(leftQuartetStorageKey(code), "true");
+          clearActiveQuartetIfMatches(session.id);
+          setLeftQuartet(true);
+          setMessage("You were removed from this quartet.");
           return;
         }
 
