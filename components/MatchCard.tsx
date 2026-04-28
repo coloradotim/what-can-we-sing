@@ -174,7 +174,7 @@ export function MatchCard({
 
         {!hasDetails && (
           <p className="mt-3 text-xs font-semibold uppercase tracking-normal text-slate-500">
-            No arrangement warnings
+            No extra details
           </p>
         )}
       </div>

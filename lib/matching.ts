@@ -38,6 +38,9 @@ export type MatchResult = {
   score: number;
 };
 
+export const arrangementCheckNote =
+  "Consider double-checking that everyone is singing the same arrangement.";
+
 export function requiredPartsForVoicing(voicing: Voicing): Part[] {
   if (voicing === "TTBB") return ["Tenor", "Lead", "Baritone", "Bass"];
   if (voicing === "SATB") return ["Soprano", "Alto", "Tenor", "Bass"];
@@ -169,9 +172,8 @@ function scoreMatch(
   }, 0);
 
   const warningPenalty = warnings.reduce((sum, warning) => {
-    if (warning === "Possible arranger conflict.") return sum + 50;
     if (warning.startsWith("Confidence warning:")) return sum + 30;
-    return sum + 20;
+    return sum;
   }, 0);
 
   return categoryBase + assignedConfidence * 20 + flexibility * 2 - warningPenalty;
@@ -201,30 +203,29 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
       )
     );
 
-    const hasMissingArranger = group.some((e) => !e.arrangerName);
-    const hasArrangerConflict = knownArrangers.length > 1;
+    const hasSomeMissingArranger =
+      knownArrangers.length > 0 && group.some((e) => !e.arrangerName?.trim());
+    const hasMultipleArrangers = knownArrangers.length > 1;
 
     const warnings: string[] = [];
 
-    if (hasMissingArranger) warnings.push("Arranger missing for at least one singer.");
-    if (hasArrangerConflict) warnings.push("Possible arranger conflict.");
+    if (hasSomeMissingArranger || hasMultipleArrangers) {
+      warnings.push(arrangementCheckNote);
+    }
 
     const confidence = confidenceWarning(group);
     if (confidence) warnings.push(confidence);
 
     if (fullAssignment) {
-      const category: MatchResult["category"] =
-        hasMissingArranger || hasArrangerConflict ? "possible" : "ready";
-
       results.push({
         songTitle,
         voicing,
         arrangerNames: knownArrangers,
-        category,
+        category: "ready",
         missingParts: [],
         assignments: buildAssignments(fullAssignment),
         warnings,
-        score: scoreMatch(category, fullAssignment, group, requiredParts, warnings),
+        score: scoreMatch("ready", fullAssignment, group, requiredParts, warnings),
       });
 
       continue;

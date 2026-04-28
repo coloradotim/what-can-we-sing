@@ -61,8 +61,8 @@ const matchSections = [
   },
   {
     category: "possible",
-    title: "Possible (confirm arrangement)",
-    description: "Check arranger details before singing.",
+    title: "Possible",
+    description: "Check details together before singing.",
   },
   {
     category: "one_part_missing",
