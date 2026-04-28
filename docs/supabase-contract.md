@@ -53,6 +53,9 @@ Code:
 - Insert own song: `lib/repertoireStore.ts#addRepertoireItem`
 - Update own song: `lib/repertoireStore.ts#updateRepertoireItem`
 - Delete own song: `lib/repertoireStore.ts#deleteRepertoireItem`
+- Mark own song as sung:
+  `lib/repertoireStore.ts#markRepertoireItemAsSung`, through
+  `public.mark_repertoire_sung`
 - Used by `lib/activeQuartetSnapshot.ts` to refresh the current user's
   `session_participants.repertoire` snapshot.
 
@@ -71,14 +74,22 @@ Required database contract:
   per-part confidence in `part_confidences` and keeps this set to the first
   row's confidence.
 - `notes text`
+- `last_sung_at timestamptz`
+- `times_sung_count integer not null default 0`
 - RLS enabled.
 - Authenticated users can select/insert/update/delete only rows where
   `user_id = auth.uid()`.
 - Index on `(user_id, song_title)` for repertoire listing.
+- Index on `(user_id, last_sung_at desc)` for future sung-history sorting.
+- `public.mark_repertoire_sung(p_repertoire_id uuid, p_session_id uuid)`
+  updates only the authenticated user's matching `user_repertoire` row,
+  increments `times_sung_count`, sets `last_sung_at`, and records the matching
+  private `sung_song_events` row in one database operation.
 
 Established by migrations:
 - `20260428060000_supabase_contract_alignment.sql`
 - `20260428142000_add_part_confidences_to_repertoire.sql`
+- `20260428145000_add_repertoire_sung_metadata.sql`
 
 ### `sessions`
 
@@ -153,7 +164,8 @@ Purpose: private per-user log for songs marked as recently sung.
 
 Code:
 - Read recent events: `lib/sungSongStore.ts#getRecentSungSongs`
-- Insert event: `lib/sungSongStore.ts#markSongAsSung`
+- Insert event as part of marking repertoire metadata:
+  `public.mark_repertoire_sung`
 
 Expected context:
 - Browser authenticated user.

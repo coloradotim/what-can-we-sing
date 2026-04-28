@@ -43,7 +43,7 @@ The Supabase project should have the current production schema applied:
 
 - `profiles` stores each user's required `display_name`.
 - `user_repertoire` stores each user's songs, voicing, part/confidence pairs,
-  optional arranger name, and private notes.
+  optional arranger name, private notes, and personal sung-count metadata.
 - `sessions` stores quartet codes and `last_activity_at` for 24-hour inactivity
   expiration.
 - `session_participants` stores participant repertoire snapshots and is keyed by
@@ -51,7 +51,9 @@ The Supabase project should have the current production schema applied:
   rows. Supabase Realtime must be enabled for this table so joined clients see
   participant insert, update, and delete changes immediately.
 - `sung_song_events` stores each user's private "marked as sung" events for
-  recent-use indicators.
+  recent-use indicators. Marking a song as sung is performed through the
+  `mark_repertoire_sung` database function so repertoire metadata and the event
+  log stay in sync.
 
 The app/database contract is documented in
 [docs/supabase-contract.md](docs/supabase-contract.md). Any PR that changes

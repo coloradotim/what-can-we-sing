@@ -33,28 +33,3 @@ export async function getRecentSungSongs(days = 30) {
   if (error) throw error;
   return data as RawSungSongEvent[] as SungSongEvent[];
 }
-
-export async function markSongAsSung(input: {
-  sessionId: string;
-  songTitle: string;
-  voicing: Voicing;
-  arrangerName?: string;
-}) {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("You must be logged in.");
-
-  const { data, error } = await supabase
-    .from("sung_song_events")
-    .insert({
-      user_id: user.id,
-      session_id: input.sessionId,
-      song_title: input.songTitle,
-      voicing: input.voicing,
-      arranger_name: input.arrangerName || null,
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data as RawSungSongEvent as SungSongEvent;
-}

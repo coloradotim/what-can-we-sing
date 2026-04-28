@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/AppNav";
 import { MatchCard } from "@/components/MatchCard";
 import { trackEvent } from "@/lib/analytics";
+import { resolveCurrentUserRepertoireForMarkAsSung } from "@/lib/markAsSung";
 import { findMatches, type MatchResult, type SingerEntry } from "@/lib/matching";
 import {
   findParticipantByUserId,
@@ -46,10 +47,12 @@ import {
   getProfilesByIds,
   subscribeToProfileDisplayNames,
 } from "@/lib/profileStore";
-import { getMyRepertoire } from "@/lib/repertoireStore";
+import {
+  getMyRepertoire,
+  markRepertoireItemAsSung,
+} from "@/lib/repertoireStore";
 import {
   getRecentSungSongs,
-  markSongAsSung,
   type SungSongEvent,
 } from "@/lib/sungSongStore";
 
@@ -177,6 +180,7 @@ export default function JoinSessionPage() {
     const repertoire = await loadMyRepertoire();
 
     return repertoire.map((item) => ({
+      repertoireId: item.id,
       userId: item.user_id,
       displayName: name,
       songTitle: item.song_title,
@@ -467,16 +471,43 @@ export default function JoinSessionPage() {
     setMessage("");
 
     try {
-      await markSongAsSung({
-        sessionId,
-        songTitle: match.songTitle,
+      const resolution = resolveCurrentUserRepertoireForMarkAsSung(
+        match,
+        currentUserId
+      );
+
+      if (resolution.status === "no_matching_entry") {
+        setMessage("This match does not include one of your assigned song parts.");
+        return;
+      }
+
+      if (resolution.status === "missing_repertoire_id") {
+        setMessage("Refresh your quartet songs before marking this as sung.");
+        return;
+      }
+
+      if (resolution.status === "ambiguous") {
+        setMessage(
+          "This match includes more than one of your repertoire entries. Update the exact song from your repertoire."
+        );
+        return;
+      }
+
+      await markRepertoireItemAsSung(resolution.repertoireId, sessionId);
+      trackEvent("song_marked_sung", {
+        session_id: sessionId,
+        match_category: match.category,
         voicing: match.voicing,
-        arrangerName: match.arrangerNames.join(", ") || undefined,
       });
       await refreshRecentSungSongs();
-      setMessage(`Marked "${match.songTitle}" as sung.`);
+      setMessage(`Marked "${resolution.entry.songTitle}" as sung.`);
     } catch (err) {
       console.error(err);
+      trackEvent("song_mark_sung_failed", {
+        session_id: sessionId,
+        match_category: match.category,
+        voicing: match.voicing,
+      });
       setMessage("Could not mark that song as sung. Check your connection and try again.");
     } finally {
       setMarkingSungKey("");

@@ -27,6 +27,7 @@ export type PartConfidence = {
 export type PartConfidenceMap = Partial<Record<Part, Confidence>>;
 
 export type SingerEntry = {
+  repertoireId?: string;
   userId: string;
   displayName: string;
   songTitle: string;

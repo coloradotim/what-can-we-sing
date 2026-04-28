@@ -18,6 +18,8 @@ export type RepertoireRow = {
   part_confidences: PartConfidence[];
   confidence: Confidence;
   notes: string | null;
+  last_sung_at: string | null;
+  times_sung_count: number;
   created_at: string;
   updated_at: string;
 };
@@ -83,6 +85,8 @@ function normalizeRepertoireRow(row: RawRepertoireRow): RepertoireRow {
     parts_known: partConfidences.map((item) => item.part),
     part_confidences: partConfidences,
     confidence: partConfidences[0]?.confidence ?? "Music Required",
+    last_sung_at: row.last_sung_at ?? null,
+    times_sung_count: row.times_sung_count ?? 0,
   };
 }
 
@@ -98,6 +102,25 @@ export async function getMyRepertoire() {
 
   if (error) throw error;
   return (data as RawRepertoireRow[]).map(normalizeRepertoireRow);
+}
+
+export async function markRepertoireItemAsSung(id: string, sessionId: string) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("You must be logged in.");
+
+  const { data, error } = await supabase.rpc("mark_repertoire_sung", {
+    p_repertoire_id: id,
+    p_session_id: sessionId,
+  });
+
+  if (error) throw error;
+
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row || row.user_id !== user.id || row.id !== id) {
+    throw new Error("Could not verify that your repertoire row was marked as sung.");
+  }
+
+  return normalizeRepertoireRow(row as RawRepertoireRow);
 }
 
 export async function addRepertoireItem(input: {
