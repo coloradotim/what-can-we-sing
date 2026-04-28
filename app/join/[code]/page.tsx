@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/AppNav";
 import { MatchCard } from "@/components/MatchCard";
 import { trackEvent } from "@/lib/analytics";
+import { intentionalJoinStorageKey } from "@/lib/joinIntent";
 import { resolveCurrentUserRepertoireForMarkAsSung } from "@/lib/markAsSung";
 import { findMatches, type MatchResult, type SingerEntry } from "@/lib/matching";
 import {
@@ -181,10 +182,11 @@ export default function JoinSessionPage() {
     }
 
     window.sessionStorage.setItem(leftQuartetStorageKey(code), "true");
+    window.sessionStorage.removeItem(intentionalJoinStorageKey(code));
     clearActiveQuartetIfMatches(id);
     setLeftQuartet(true);
     setPendingActiveQuartet(null);
-    showStatusMessage("You were removed from this quartet.");
+    window.location.href = "/join?removed=1";
   }
 
   async function refreshParticipantProfileNames(data: DbParticipant[]) {
@@ -488,7 +490,7 @@ export default function JoinSessionPage() {
   }
 
   async function copyJoinLink() {
-    const joinUrl = `${window.location.origin}/join/${code}`;
+    const joinUrl = `${window.location.origin}/join/${code}?intent=join`;
 
     try {
       await window.navigator.clipboard.writeText(joinUrl);
@@ -738,7 +740,7 @@ export default function JoinSessionPage() {
           // refreshRecentSungSongs handles its own message.
         }
 
-        const joinUrl = `${window.location.origin}/join/${code}`;
+        const joinUrl = `${window.location.origin}/join/${code}?intent=join`;
         try {
           const qr = await QRCode.toDataURL(joinUrl);
           setQrUrl(qr);
@@ -749,7 +751,21 @@ export default function JoinSessionPage() {
 
         const hasLeftQuartet =
           window.sessionStorage.getItem(leftQuartetStorageKey(code)) === "true";
-        setLeftQuartet(hasLeftQuartet);
+        const pageIntent = new URLSearchParams(window.location.search).get(
+          "intent"
+        );
+        const hasIntentionalJoin =
+          window.sessionStorage.getItem(intentionalJoinStorageKey(code)) ===
+            "true" || pageIntent === "join";
+
+        if (hasIntentionalJoin) {
+          window.sessionStorage.removeItem(intentionalJoinStorageKey(code));
+          window.sessionStorage.removeItem(leftQuartetStorageKey(code));
+          window.history.replaceState(null, "", `/join/${code}`);
+        }
+
+        const shouldTreatAsLeft = hasLeftQuartet && !hasIntentionalJoin;
+        setLeftQuartet(shouldTreatAsLeft);
 
         const currentParticipants = await refreshParticipants(session.id);
 
@@ -764,7 +780,7 @@ export default function JoinSessionPage() {
           !alreadyJoined &&
           activeQuartet &&
           activeQuartet.sessionId !== session.id &&
-          !hasLeftQuartet
+          !shouldTreatAsLeft
         ) {
           setPendingActiveQuartet(activeQuartet);
           clearStatusMessage();
@@ -774,17 +790,15 @@ export default function JoinSessionPage() {
         if (
           !alreadyJoined &&
           activeQuartet?.sessionId === session.id &&
-          !hasLeftQuartet
+          !shouldTreatAsLeft
         ) {
-          window.sessionStorage.setItem(leftQuartetStorageKey(code), "true");
           clearActiveQuartetIfMatches(session.id);
-          setLeftQuartet(true);
-          showStatusMessage("You were removed from this quartet.");
+          window.location.href = "/join?removed=1";
           return;
         }
 
         if (alreadyJoined) {
-          if (hasLeftQuartet) {
+          if (shouldTreatAsLeft) {
             window.sessionStorage.removeItem(leftQuartetStorageKey(code));
             setLeftQuartet(false);
           }
@@ -808,10 +822,10 @@ export default function JoinSessionPage() {
               "transient"
             );
           }
-        } else if (!hasAutoJoined.current && !hasLeftQuartet) {
+        } else if (!hasAutoJoined.current && !shouldTreatAsLeft) {
           hasAutoJoined.current = true;
           await joinSession(session.id, profile.display_name, user.id);
-        } else if (hasLeftQuartet) {
+        } else if (shouldTreatAsLeft) {
           clearActiveQuartetIfMatches(session.id);
           showStatusMessage("You left this quartet.");
         }

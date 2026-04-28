@@ -6,6 +6,7 @@ import {
   getActiveQuartet,
   type ActiveQuartet,
 } from "@/lib/activeQuartet";
+import { intentionalJoinStorageKey } from "@/lib/joinIntent";
 import { parseJoinCode } from "@/lib/joinCode";
 import { getCurrentUser } from "@/lib/profileStore";
 import { trackEvent } from "@/lib/analytics";
@@ -47,7 +48,8 @@ export default function JoinPage() {
       return;
     }
 
-    window.location.href = `/join/${encodeURIComponent(code)}`;
+    window.sessionStorage.setItem(intentionalJoinStorageKey(code), "true");
+    window.location.href = `/join/${encodeURIComponent(code)}?intent=join`;
   }
 
   function joinQuartet() {
@@ -78,7 +80,11 @@ export default function JoinPage() {
         session_id: activeQuartet.sessionId,
       });
       clearActiveQuartet();
-      window.location.href = `/join/${encodeURIComponent(pendingCode)}`;
+      window.sessionStorage.setItem(
+        intentionalJoinStorageKey(pendingCode),
+        "true"
+      );
+      window.location.href = `/join/${encodeURIComponent(pendingCode)}?intent=join`;
     } catch (err) {
       console.error("Failed to leave current quartet", err);
       setMessage(
@@ -91,6 +97,15 @@ export default function JoinPage() {
   function closeScanner() {
     setScannerOpen(false);
   }
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("removed") === "1") {
+      clearActiveQuartet();
+      setMessage("You were removed from the quartet.");
+    }
+  }, []);
 
   useEffect(() => {
     if (!scannerOpen) return;
