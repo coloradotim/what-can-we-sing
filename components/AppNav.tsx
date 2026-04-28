@@ -29,9 +29,10 @@ const secondaryNavItems = [
     isActive: (pathname: string) => pathname === "/settings",
   },
   {
-    href: "/feedback",
-    label: "Feedback",
-    isActive: (pathname: string) => pathname === "/feedback",
+    href: "/help",
+    label: "Help",
+    isActive: (pathname: string) =>
+      pathname === "/help" || pathname === "/feedback",
   },
 ];
 
