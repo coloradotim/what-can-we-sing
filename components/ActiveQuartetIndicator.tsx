@@ -47,12 +47,14 @@ export function ActiveQuartetIndicator() {
     try {
       const user = await getCurrentUser();
 
-      if (user) {
-        await removeParticipant(activeQuartet.sessionId, user.id);
-        trackEvent("quartet_left", {
-          session_id: activeQuartet.sessionId,
-        });
+      if (!user) {
+        throw new Error("You must be logged in to leave a quartet.");
       }
+
+      await removeParticipant(activeQuartet.sessionId, user.id);
+      trackEvent("quartet_left", {
+        session_id: activeQuartet.sessionId,
+      });
 
       clearActiveQuartet();
       setActiveQuartet(null);

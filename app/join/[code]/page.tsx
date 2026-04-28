@@ -304,7 +304,7 @@ export default function JoinSessionPage() {
   }
 
   async function leaveQuartet() {
-    if (!sessionId || !currentUserId) {
+    if (!sessionId) {
       setMessage("Could not leave yet. Wait for the quartet to finish loading.");
       return;
     }
@@ -313,7 +313,13 @@ export default function JoinSessionPage() {
     setMessage("");
 
     try {
-      await removeParticipant(sessionId, currentUserId);
+      const userId = currentUserId || (await getCurrentUser())?.id;
+
+      if (!userId) {
+        throw new Error("You must be logged in to leave a quartet.");
+      }
+
+      await removeParticipant(sessionId, userId);
       clearActiveQuartetIfMatches(sessionId);
       window.sessionStorage.setItem(leftQuartetStorageKey(code), "true");
       trackEvent("quartet_left", {
@@ -393,7 +399,7 @@ export default function JoinSessionPage() {
   }
 
   async function leaveCurrentAndJoinThisQuartet() {
-    if (!pendingActiveQuartet || !currentUserId || !sessionId) {
+    if (!pendingActiveQuartet || !sessionId) {
       setMessage("Could not continue yet. Wait for this quartet to finish loading.");
       return;
     }
@@ -402,7 +408,13 @@ export default function JoinSessionPage() {
     setMessage("");
 
     try {
-      await removeParticipant(pendingActiveQuartet.sessionId, currentUserId);
+      const userId = currentUserId || (await getCurrentUser())?.id;
+
+      if (!userId) {
+        throw new Error("You must be logged in to leave a quartet.");
+      }
+
+      await removeParticipant(pendingActiveQuartet.sessionId, userId);
       trackEvent("quartet_left", {
         session_id: pendingActiveQuartet.sessionId,
       });
@@ -1021,7 +1033,7 @@ export default function JoinSessionPage() {
                       </a>
                       <button
                         onClick={leaveQuartet}
-                        disabled={leaving || !sessionId || !currentUserId}
+                        disabled={leaving || !sessionId}
                         className="rounded-xl bg-rose-200 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-rose-100 disabled:opacity-40"
                       >
                         {leaving ? "Leaving..." : "Leave quartet"}
@@ -1064,7 +1076,7 @@ export default function JoinSessionPage() {
                       <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                         <button
                           onClick={leaveQuartet}
-                          disabled={leaving || !sessionId || !currentUserId}
+                          disabled={leaving || !sessionId}
                           className="rounded-xl bg-rose-200 px-5 py-3 font-semibold text-slate-950 hover:bg-rose-100 disabled:opacity-40"
                         >
                           {leaving ? "Leaving..." : "Leave quartet"}
