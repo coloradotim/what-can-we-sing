@@ -10,6 +10,8 @@ export type AnalyticsEventName =
   | "quartet_left"
   | "quartet_member_removed"
   | "quartet_matches_viewed"
+  | "song_marked_sung"
+  | "song_mark_sung_failed"
   | "feedback_submitted";
 
 type AnalyticsPropertyValue = string | number | boolean | null | undefined;

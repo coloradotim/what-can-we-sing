@@ -21,6 +21,13 @@ const partConfidenceMigration = readFileSync(
   ),
   "utf8"
 );
+const sungMetadataMigration = readFileSync(
+  join(
+    repoRoot,
+    "supabase/migrations/20260428145000_add_repertoire_sung_metadata.sql"
+  ),
+  "utf8"
+);
 
 describe("Supabase contract guardrails", () => {
   const tables = [
@@ -68,5 +75,16 @@ describe("Supabase contract guardrails", () => {
     expect(partConfidenceMigration).toContain("part_confidences jsonb");
     expect(partConfidenceMigration).toContain("unnest(parts_known)");
     expect(partConfidenceMigration).toContain("confidence");
+  });
+
+  it("documents and migrates personal sung repertoire metadata", () => {
+    expect(contract).toContain("last_sung_at");
+    expect(contract).toContain("times_sung_count");
+    expect(contract).toContain("mark_repertoire_sung");
+    expect(sungMetadataMigration).toContain("last_sung_at timestamptz");
+    expect(sungMetadataMigration).toContain("times_sung_count integer");
+    expect(sungMetadataMigration).toContain("times_sung_count + 1");
+    expect(sungMetadataMigration).toContain("user_id = auth.uid()");
+    expect(sungMetadataMigration).toContain("sung_song_events");
   });
 });
