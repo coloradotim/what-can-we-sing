@@ -1,20 +1,3 @@
-import type { Voicing } from "@/lib/matching";
-
-export type FuzzySongTitleItem = {
-  id: string;
-  songTitle: string;
-  voicing: Voicing;
-};
-
-export type FuzzySongTitleSuggestion = {
-  id: string;
-  itemId: string;
-  itemTitle: string;
-  suggestedItemId: string;
-  suggestedTitle: string;
-  voicing: Voicing;
-};
-
 function normalizeTitleForExactMatch(title: string) {
   return title.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
@@ -110,52 +93,5 @@ export function isLikelySameSongTitle(a: string, b: string) {
     aTokens.length >= 3 &&
     bTokens.length >= 3 &&
     tokenOverlap(aTokens, bTokens) >= 0.75
-  );
-}
-
-function canonicalFirstTitle(
-  a: FuzzySongTitleItem,
-  b: FuzzySongTitleItem
-): [FuzzySongTitleItem, FuzzySongTitleItem] {
-  if (b.songTitle.length > a.songTitle.length) return [b, a];
-  if (a.songTitle.length > b.songTitle.length) return [a, b];
-
-  return a.songTitle.localeCompare(b.songTitle, undefined, {
-    sensitivity: "base",
-  }) <= 0
-    ? [a, b]
-    : [b, a];
-}
-
-export function findFuzzySongTitleSuggestions(
-  items: FuzzySongTitleItem[]
-): FuzzySongTitleSuggestion[] {
-  const suggestions: FuzzySongTitleSuggestion[] = [];
-
-  for (let i = 0; i < items.length; i += 1) {
-    for (let j = i + 1; j < items.length; j += 1) {
-      const first = items[i];
-      const second = items[j];
-
-      if (first.voicing !== second.voicing) continue;
-      if (!isLikelySameSongTitle(first.songTitle, second.songTitle)) continue;
-
-      const [canonical, variant] = canonicalFirstTitle(first, second);
-
-      suggestions.push({
-        id: [variant.id, canonical.id].sort().join(":"),
-        itemId: variant.id,
-        itemTitle: variant.songTitle,
-        suggestedItemId: canonical.id,
-        suggestedTitle: canonical.songTitle,
-        voicing: variant.voicing,
-      });
-    }
-  }
-
-  return suggestions.sort((a, b) =>
-    a.suggestedTitle.localeCompare(b.suggestedTitle, undefined, {
-      sensitivity: "base",
-    })
   );
 }
