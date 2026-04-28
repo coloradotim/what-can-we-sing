@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AnalyticsIdentity } from "@/components/AnalyticsIdentity";
+import { SiteFooter } from "@/components/SiteFooter";
 import "./globals.css";
 
 const siteTitle = "What Can We Sing";
@@ -62,7 +63,8 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <AnalyticsIdentity />
-        {children}
+        <div className="flex-1">{children}</div>
+        <SiteFooter />
       </body>
     </html>
   );
