@@ -18,6 +18,7 @@ import {
   getParticipants,
   getSessionByCode,
   removeParticipant,
+  removeParticipantById,
   subscribeToSessionParticipants,
   upsertParticipant,
 } from "@/lib/sessionStore";
@@ -120,6 +121,7 @@ export default function JoinSessionPage() {
   const [leftQuartet, setLeftQuartet] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [joiningQuartet, setJoiningQuartet] = useState(false);
+  const [removingParticipantId, setRemovingParticipantId] = useState("");
   const [pendingActiveQuartet, setPendingActiveQuartet] =
     useState<ActiveQuartet | null>(null);
   const [leavingCurrentQuartet, setLeavingCurrentQuartet] = useState(false);
@@ -323,6 +325,42 @@ export default function JoinSessionPage() {
       console.error(err);
       setMessage("Could not leave quartet. Check your connection and try again.");
       setLeaving(false);
+    }
+  }
+
+  async function removeQuartetParticipant(participant: DbParticipant) {
+    if (!sessionId || !currentUserId) {
+      setMessage("Could not remove that singer yet. Wait for the quartet to finish loading.");
+      return;
+    }
+
+    if (participant.user_id === currentUserId) return;
+
+    const participantName = getParticipantDisplayName(
+      participant,
+      profileDisplayNamesByUserId
+    );
+    const confirmed = window.confirm(
+      `Remove ${participantName} from this quartet?`
+    );
+
+    if (!confirmed) return;
+
+    setRemovingParticipantId(participant.id);
+    setMessage("");
+
+    try {
+      await removeParticipantById(sessionId, participant.id);
+      await refreshParticipants(sessionId, { showErrorMessage: false });
+      trackEvent("quartet_member_removed", {
+        session_id: sessionId,
+        participant_count: Math.max(0, participants.length - 1),
+      });
+    } catch (err) {
+      console.error(err);
+      setMessage("Could not remove that singer. Check your connection and try again.");
+    } finally {
+      setRemovingParticipantId("");
     }
   }
 
@@ -637,6 +675,7 @@ export default function JoinSessionPage() {
     !quartetExpired &&
     !pendingActiveQuartet &&
     !isQuartetFull;
+  const canManageParticipants = isCurrentUserParticipant && !leftQuartet;
 
   useEffect(() => {
     if (!sessionId || loading || loadError || quartetExpired) return;
@@ -759,6 +798,53 @@ export default function JoinSessionPage() {
 
         return matchArrangers.includes(eventArranger);
       }
+    );
+  }
+
+  function renderParticipantRow(participant: DbParticipant) {
+    const isCurrentParticipant = participant.user_id === currentUserId;
+
+    return (
+      <div
+        key={participant.id}
+        className="rounded-xl border border-white/10 bg-white/10 p-4"
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-semibold">
+              {getParticipantDisplayName(
+                participant,
+                profileDisplayNamesByUserId
+              )}
+            </p>
+            <p className="text-sm text-slate-300">
+              {participant.repertoire.length} songs loaded
+            </p>
+          </div>
+
+          {canManageParticipants && (
+            isCurrentParticipant ? (
+              <a
+                href="/settings"
+                className="w-fit rounded-lg border border-cyan-300/30 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-300/10"
+              >
+                Change my display name
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={() => removeQuartetParticipant(participant)}
+                disabled={Boolean(removingParticipantId)}
+                className="w-fit rounded-lg bg-rose-400/10 px-3 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-400/20 disabled:opacity-40"
+              >
+                {removingParticipantId === participant.id
+                  ? "Removing..."
+                  : "Remove from quartet"}
+              </button>
+            )
+          )}
+        </div>
+      </div>
     );
   }
 
@@ -986,13 +1072,6 @@ export default function JoinSessionPage() {
 
                         <div className="flex flex-wrap gap-x-4 gap-y-2">
                           <a
-                            href="/settings"
-                            className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
-                          >
-                            Change display name
-                          </a>
-
-                          <a
                             href="/repertoire"
                             className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
                           >
@@ -1014,22 +1093,7 @@ export default function JoinSessionPage() {
                       </p>
                     )}
 
-                    {participants.map((p) => (
-                      <div
-                        key={p.id}
-                        className="rounded-xl border border-white/10 bg-white/10 p-4"
-                      >
-                        <p className="font-semibold">
-                          {getParticipantDisplayName(
-                            p,
-                            profileDisplayNamesByUserId
-                          )}
-                        </p>
-                        <p className="text-sm text-slate-300">
-                          {p.repertoire.length} songs loaded
-                        </p>
-                      </div>
-                    ))}
+                    {participants.map(renderParticipantRow)}
                   </div>
                 </div>
               </>
@@ -1136,35 +1200,11 @@ export default function JoinSessionPage() {
                     <p className="mt-2 text-sm text-slate-300">{copyMessage}</p>
                   )}
 
-                  <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2">
-                    <a
-                      href="/settings"
-                      className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
-                    >
-                      Change display name
-                    </a>
-                  </div>
-
                   <div className="mt-6">
                     <h2 className="text-lg font-semibold">Participants</h2>
 
                     <div className="mt-4 space-y-3">
-                      {participants.map((p) => (
-                        <div
-                          key={p.id}
-                          className="rounded-xl border border-white/10 bg-white/10 p-4"
-                        >
-                          <p className="font-semibold">
-                            {getParticipantDisplayName(
-                              p,
-                              profileDisplayNamesByUserId
-                            )}
-                          </p>
-                          <p className="text-sm text-slate-300">
-                            {p.repertoire.length} songs loaded
-                          </p>
-                        </div>
-                      ))}
+                      {participants.map(renderParticipantRow)}
                     </div>
                   </div>
                 </div>
