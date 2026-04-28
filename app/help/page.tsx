@@ -99,8 +99,14 @@ export default function HelpPage() {
             Get started quickly
           </h1>
           <p className="mt-3 max-w-2xl text-slate-300">
-            What Can We Sing helps a pickup quartet find songs everyone can sing
-            together right now.
+            What Can We Sing helps a pickup quartet quickly answer the question:
+            what can we sing together right now?
+          </p>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
+            Each singer adds the songs they know, the voicing, the parts they
+            can sing, and how confident they feel. When singers join the same
+            quartet, the app compares everyone&apos;s repertoire and shows songs
+            where the required parts are covered by different people.
           </p>
         </header>
 
@@ -127,9 +133,11 @@ export default function HelpPage() {
               <h2 className="text-lg font-semibold text-white">
                 {section.title}
               </h2>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
-                {section.body}
-              </p>
+              <div className="mt-2 space-y-3 text-sm leading-6 text-slate-300">
+                {section.body.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </div>
             </article>
           ))}
         </section>
@@ -139,7 +147,8 @@ export default function HelpPage() {
             <h2 className="text-2xl font-semibold">Send feedback</h2>
             <p className="mt-2 text-sm leading-6 text-slate-300">
               Report a bug, describe confusing behavior, or suggest an
-              improvement. A short note is plenty.
+              improvement. A short note about what you were trying to do and
+              what happened is usually enough.
             </p>
           </div>
 
