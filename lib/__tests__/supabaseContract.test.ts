@@ -28,6 +28,13 @@ const sungMetadataMigration = readFileSync(
   ),
   "utf8"
 );
+const participantRemovalMigration = readFileSync(
+  join(
+    repoRoot,
+    "supabase/migrations/20260428151000_add_participant_removal_function.sql"
+  ),
+  "utf8"
+);
 
 describe("Supabase contract guardrails", () => {
   const tables = [
@@ -68,6 +75,17 @@ describe("Supabase contract guardrails", () => {
     expect(contract).toContain("leave");
     expect(contract).toContain("repertoire snapshot");
     expect(contract).toContain("Match calculation source");
+  });
+
+  it("documents and migrates participant removal by quartet members", () => {
+    expect(contract).toContain("remove_session_participant_by_id");
+    expect(participantRemovalMigration).toContain(
+      "remove_session_participant_by_id"
+    );
+    expect(participantRemovalMigration).toContain("auth.uid()");
+    expect(participantRemovalMigration).toContain("requester.session_id");
+    expect(participantRemovalMigration).toContain("delete from public.session_participants");
+    expect(participantRemovalMigration).toContain("to authenticated");
   });
 
   it("documents and migrates per-part repertoire confidence", () => {
