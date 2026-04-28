@@ -99,6 +99,19 @@ export async function removeParticipant(sessionId: string, userId: string) {
   if (error) throw error;
 }
 
+export async function removeParticipantById(
+  sessionId: string,
+  participantId: string
+) {
+  const { error } = await supabase
+    .from("session_participants")
+    .delete()
+    .eq("session_id", sessionId)
+    .eq("id", participantId);
+
+  if (error) throw error;
+}
+
 export function subscribeToSessionParticipants(
   sessionId: string,
   onChange: (payload: ParticipantChangePayload) => void,
