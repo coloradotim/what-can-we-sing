@@ -53,6 +53,10 @@ The Supabase project should have the current production schema applied:
 - `sung_song_events` stores each user's private "marked as sung" events for
   recent-use indicators.
 
+The app/database contract is documented in
+[docs/supabase-contract.md](docs/supabase-contract.md). Any PR that changes
+Supabase usage must update that contract, migrations, and tests or test notes.
+
 Database migrations live in `supabase/migrations`. Apply unapplied migrations
 to the linked Supabase project with:
 
@@ -61,14 +65,4 @@ supabase db push
 ```
 
 If the project is not linked locally, run `supabase link --project-ref <project-ref>`
-first, then `supabase db push`. The migration
-`20260428051000_fix_session_participants_rls.sql` updates
-`session_participants` row-level security so authenticated users can read
-session participants and insert, update, or delete only their own participant
-row.
-
-For the private repertoire notes feature, apply the one-time SQL in
-[docs/private-repertoire-notes.md](docs/private-repertoire-notes.md).
-
-For the recently sung feature, apply the one-time SQL in
-[docs/recently-sung-events.md](docs/recently-sung-events.md).
+first, then `supabase db push`.
