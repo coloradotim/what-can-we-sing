@@ -5,6 +5,13 @@ import { getMyRepertoire } from "@/lib/repertoireStore";
 import { getParticipants, upsertParticipant } from "@/lib/sessionStore";
 import { findParticipantByUserId } from "@/lib/sessionParticipantResolution";
 
+export class ActiveQuartetSnapshotError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ActiveQuartetSnapshotError";
+  }
+}
+
 export async function refreshActiveQuartetSnapshot() {
   const activeQuartet = getActiveQuartet();
   if (!activeQuartet) return { status: "no_active_quartet" as const };
@@ -21,7 +28,11 @@ export async function refreshActiveQuartetSnapshot() {
   }
 
   const profile = await getMyProfile();
-  if (!profile?.display_name) return { status: "missing_profile" as const };
+  if (!profile?.display_name) {
+    throw new ActiveQuartetSnapshotError(
+      "Could not update quartet matches because your profile is missing a display name."
+    );
+  }
 
   const repertoire = await getMyRepertoire();
   const entries: SingerEntry[] = repertoire.map((item) => ({
@@ -35,17 +46,31 @@ export async function refreshActiveQuartetSnapshot() {
   }));
   const lastActivityAt = new Date().toISOString();
 
-  await upsertParticipant(
+  const updatedParticipant = await upsertParticipant(
     activeQuartet.sessionId,
     user.id,
     profile.display_name,
     entries,
     lastActivityAt
   );
+
+  if (
+    updatedParticipant.session_id !== activeQuartet.sessionId ||
+    updatedParticipant.user_id !== user.id
+  ) {
+    throw new ActiveQuartetSnapshotError(
+      "Could not verify that the active quartet snapshot was updated."
+    );
+  }
+
   setActiveQuartet({
     ...activeQuartet,
     joinedAt: lastActivityAt,
   });
 
-  return { status: "updated" as const, songCount: entries.length };
+  return {
+    status: "updated" as const,
+    participant: updatedParticipant,
+    songCount: entries.length,
+  };
 }

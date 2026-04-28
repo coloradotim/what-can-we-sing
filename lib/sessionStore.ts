@@ -18,6 +18,13 @@ export type DbParticipant = {
   joined_at: string;
 };
 
+export class SessionParticipantWriteError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SessionParticipantWriteError";
+  }
+}
+
 export async function createSession(joinCode: string) {
   const { data, error } = await supabase
     .from("sessions")
@@ -74,6 +81,12 @@ export async function upsertParticipant(
     .single();
 
   if (error) throw error;
+  if (!data || data.session_id !== sessionId || data.user_id !== userId) {
+    throw new SessionParticipantWriteError(
+      "Could not verify the quartet participant snapshot was saved."
+    );
+  }
+
   await updateSessionActivity(sessionId, lastActivityAt);
   return data as DbParticipant;
 }
@@ -89,7 +102,60 @@ export async function getParticipants(sessionId: string) {
   return data as DbParticipant[];
 }
 
+async function getParticipantForDelete({
+  sessionId,
+  userId,
+  participantId,
+}: {
+  sessionId: string;
+  userId?: string;
+  participantId?: string;
+}) {
+  let query = supabase
+    .from("session_participants")
+    .select("id, session_id, user_id")
+    .eq("session_id", sessionId);
+
+  if (userId) query = query.eq("user_id", userId);
+  if (participantId) query = query.eq("id", participantId);
+
+  const { data, error } = await query.maybeSingle();
+
+  if (error) throw error;
+  return data as Pick<DbParticipant, "id" | "session_id" | "user_id"> | null;
+}
+
+async function verifyParticipantDeleted({
+  sessionId,
+  userId,
+  participantId,
+}: {
+  sessionId: string;
+  userId?: string;
+  participantId?: string;
+}) {
+  const remainingParticipant = await getParticipantForDelete({
+    sessionId,
+    userId,
+    participantId,
+  });
+
+  if (remainingParticipant) {
+    throw new SessionParticipantWriteError(
+      "Could not verify that the quartet participant row was deleted."
+    );
+  }
+}
+
 export async function removeParticipant(sessionId: string, userId: string) {
+  const participant = await getParticipantForDelete({ sessionId, userId });
+
+  if (!participant) {
+    throw new SessionParticipantWriteError(
+      "Could not find your quartet participant row to delete."
+    );
+  }
+
   const { error } = await supabase
     .from("session_participants")
     .delete()
@@ -97,12 +163,26 @@ export async function removeParticipant(sessionId: string, userId: string) {
     .eq("user_id", userId);
 
   if (error) throw error;
+  await verifyParticipantDeleted({ sessionId, userId });
+
+  return participant;
 }
 
 export async function removeParticipantById(
   sessionId: string,
   participantId: string
 ) {
+  const participant = await getParticipantForDelete({
+    sessionId,
+    participantId,
+  });
+
+  if (!participant) {
+    throw new SessionParticipantWriteError(
+      "Could not find the selected quartet participant row to delete."
+    );
+  }
+
   const { error } = await supabase
     .from("session_participants")
     .delete()
@@ -110,6 +190,9 @@ export async function removeParticipantById(
     .eq("id", participantId);
 
   if (error) throw error;
+  await verifyParticipantDeleted({ sessionId, participantId });
+
+  return participant;
 }
 
 export function subscribeToSessionParticipants(
