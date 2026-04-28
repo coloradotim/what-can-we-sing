@@ -170,6 +170,25 @@ describe("findMatches", () => {
     expect(matches[0].warnings).toContain(
       possibleSameSongNote("Why Try to Change Me", "Why Try To Change Me Now")
     );
+    expect(matches[0].titleMatchType).toBe("fuzzy");
+    expect(matches[0].titleVariants).toEqual([
+      {
+        title: "Why Try to Change Me",
+        normalizedTitle: "whytrytochangeme",
+        singers: [
+          { displayName: "T", part: "Tenor", confidence: null },
+          { displayName: "L", part: "Lead", confidence: null },
+          { displayName: "Bari", part: "Baritone", confidence: null },
+        ],
+      },
+      {
+        title: "Why Try To Change Me Now",
+        normalizedTitle: "whytrytochangemenow",
+        singers: [
+          { displayName: "Bass", part: "Bass", confidence: null },
+        ],
+      },
+    ]);
     expect(matches[1]).toMatchObject({
       songTitle: "Why Try to Change Me",
       category: "one_part_missing",

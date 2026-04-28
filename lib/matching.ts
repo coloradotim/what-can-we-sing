@@ -46,6 +46,20 @@ export type MatchResult = {
   assignments: Partial<Record<Part, SingerEntry[]>>;
   warnings: string[];
   score: number;
+  titleMatchType?: "exact" | "fuzzy";
+  titleVariants?: MatchTitleVariant[];
+};
+
+export type MatchTitleVariant = {
+  title: string;
+  normalizedTitle: string;
+  singers: MatchTitleVariantSinger[];
+};
+
+export type MatchTitleVariantSinger = {
+  displayName: string;
+  part: Part;
+  confidence: Confidence | null;
 };
 
 export const arrangementCheckNote =
@@ -257,6 +271,37 @@ function preferredSuggestionTitle(firstTitle: string, secondTitle: string) {
     : secondTitle;
 }
 
+function buildTitleVariants(
+  assignment: Record<Part, SingerEntry>
+): MatchTitleVariant[] {
+  const variants = new Map<string, MatchTitleVariant>();
+
+  for (const [part, entry] of Object.entries(assignment)) {
+    const assignedPart = part as Part;
+    const existing = variants.get(entry.songTitle);
+    const singer = {
+      displayName: entry.displayName,
+      part: assignedPart,
+      confidence: confidenceForPart(entry, assignedPart),
+    };
+
+    if (existing) {
+      existing.singers.push(singer);
+      continue;
+    }
+
+    variants.set(entry.songTitle, {
+      title: entry.songTitle,
+      normalizedTitle: normalizeTitle(entry.songTitle),
+      singers: [singer],
+    });
+  }
+
+  return Array.from(variants.values()).sort((a, b) =>
+    a.title.localeCompare(b.title, undefined, { sensitivity: "base" })
+  );
+}
+
 export function findMatches(entries: SingerEntry[]): MatchResult[] {
   const groups = new Map<string, SingerEntry[]>();
 
@@ -383,6 +428,8 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
         assignments: buildAssignments(fullAssignment),
         warnings,
         score: scoreMatch("possible", fullAssignment, group, requiredParts, warnings),
+        titleMatchType: "fuzzy",
+        titleVariants: buildTitleVariants(fullAssignment),
       });
     }
   }
