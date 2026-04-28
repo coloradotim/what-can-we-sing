@@ -78,25 +78,6 @@ export async function upsertParticipant(
   return data as DbParticipant;
 }
 
-export async function updateParticipantSnapshot(
-  participantId: string,
-  userId: string,
-  repertoire: SingerEntry[],
-  lastActivityAt = new Date().toISOString()
-) {
-  const { data, error } = await supabase
-    .from("session_participants")
-    .update({ repertoire })
-    .eq("id", participantId)
-    .eq("user_id", userId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  await updateSessionActivity(data.session_id, lastActivityAt);
-  return data as DbParticipant;
-}
-
 export async function getParticipants(sessionId: string) {
   const { data, error } = await supabase
     .from("session_participants")
