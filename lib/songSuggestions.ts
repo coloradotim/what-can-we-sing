@@ -2,7 +2,7 @@ import type { Voicing } from "@/lib/matching";
 
 export type SongSuggestionSource = {
   song_title: string;
-  voicing: Voicing;
+  voicing: string;
   arranger_name: string | null;
 };
 
@@ -11,6 +11,12 @@ export type SongSuggestion = {
   voicing: Voicing;
   arrangerName: string;
 };
+
+const validVoicings: Voicing[] = ["TTBB", "SATB", "SSAA"];
+
+function isVoicing(value: string): value is Voicing {
+  return validVoicings.includes(value as Voicing);
+}
 
 function normalizeSearchText(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -36,6 +42,8 @@ export function getSongSuggestions(
   const suggestions = new Map<string, SongSuggestion>();
 
   for (const row of rows) {
+    if (!isVoicing(row.voicing)) continue;
+
     const suggestion = {
       songTitle: row.song_title.trim(),
       voicing: row.voicing,

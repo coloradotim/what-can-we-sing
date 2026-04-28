@@ -7,6 +7,11 @@ import {
   type Voicing,
 } from "@/lib/matching";
 import { getCurrentUser } from "@/lib/profileStore";
+import {
+  getSongSuggestions,
+  type SongSuggestion,
+  type SongSuggestionSource,
+} from "@/lib/songSuggestions";
 
 export type RepertoireRow = {
   id: string;
@@ -102,6 +107,26 @@ export async function getMyRepertoire() {
 
   if (error) throw error;
   return (data as RawRepertoireRow[]).map(normalizeRepertoireRow);
+}
+
+export async function searchRepertoireSongSuggestions(
+  query: string,
+  limit = 6
+): Promise<SongSuggestion[]> {
+  const { data, error } = await supabase.rpc(
+    "search_repertoire_song_suggestions",
+    {
+      p_query: query,
+      p_limit: limit,
+    }
+  );
+
+  if (error) throw error;
+  return getSongSuggestions(
+    (data ?? []) as SongSuggestionSource[],
+    query,
+    limit
+  );
 }
 
 export async function markRepertoireItemAsSung(id: string, sessionId: string) {
