@@ -1,6 +1,7 @@
 "use client";
 
 import { getPostLoginRedirectPath } from "@/lib/authRedirect";
+import { loginIntro } from "@/lib/loginContent";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 
@@ -98,7 +99,23 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-md">
-        <h1 className="text-4xl font-bold">Log in</h1>
+        <section className="rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-5">
+          <p className="text-sm font-semibold uppercase text-cyan-300">
+            {loginIntro.title}
+          </p>
+          <h1 className="mt-3 text-4xl font-bold tracking-tight">
+            What can we sing together right now?
+          </h1>
+          <p className="mt-3 text-slate-200">{loginIntro.description}</p>
+          <p className="mt-3 text-sm leading-6 text-slate-300">
+            {loginIntro.details}
+          </p>
+          <p className="mt-3 text-sm font-semibold text-cyan-100">
+            {loginIntro.signInReason}
+          </p>
+        </section>
+
+        <h2 className="mt-8 text-3xl font-bold">Log in</h2>
         <p className="mt-3 text-slate-300">
           Enter your email and we’ll send you a one-time code. There is no
           password to remember.
