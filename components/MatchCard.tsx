@@ -7,8 +7,10 @@ import { partAbbreviation } from "@/lib/partAbbreviations";
 type MatchCardProps = {
   match: MatchResult;
   personalNotes?: string[];
+  isExpanded: boolean;
   isRecentlySung?: boolean;
   isMarkingSung?: boolean;
+  onToggle: () => void;
   onMarkAsSung?: () => void;
 };
 
@@ -36,8 +38,10 @@ const categoryStyles: Record<
 export function MatchCard({
   match,
   personalNotes = [],
+  isExpanded,
   isRecentlySung = false,
   isMarkingSung = false,
+  onToggle,
   onMarkAsSung,
 }: MatchCardProps) {
   const styles = categoryStyles[match.category];
@@ -50,9 +54,17 @@ export function MatchCard({
 
   return (
     <details
+      open={isExpanded}
       className={`group rounded-xl border px-3 py-2 shadow-lg open:pb-3 ${styles.row}`}
     >
-      <summary className="cursor-pointer list-none">
+      <summary
+        aria-expanded={isExpanded}
+        onClick={(event) => {
+          event.preventDefault();
+          onToggle();
+        }}
+        className="cursor-pointer list-none"
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="truncate text-base font-semibold text-white">
