@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeAnalyticsProperties } from "../analytics";
+import { getAnalyticsRoute, sanitizeAnalyticsProperties } from "../analytics";
 
 describe("sanitizeAnalyticsProperties", () => {
   it("keeps safe primitive analytics properties", () => {
@@ -32,5 +32,20 @@ describe("sanitizeAnalyticsProperties", () => {
     ).toEqual({
       song_count: 12,
     });
+  });
+});
+
+describe("getAnalyticsRoute", () => {
+  it("keeps public route names safe for dashboard breakdowns", () => {
+    expect(getAnalyticsRoute("/")).toBe("/");
+    expect(getAnalyticsRoute("/repertoire")).toBe("/repertoire");
+    expect(getAnalyticsRoute("/settings?tab=name")).toBe("/settings");
+  });
+
+  it("does not expose quartet join codes in route analytics", () => {
+    expect(getAnalyticsRoute("/join/ABC123")).toBe("/join/[code]");
+    expect(getAnalyticsRoute("/join/ABC123?intent=join")).toBe(
+      "/join/[code]"
+    );
   });
 });

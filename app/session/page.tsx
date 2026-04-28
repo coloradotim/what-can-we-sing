@@ -85,6 +85,11 @@ export default function SessionPage() {
         code,
         joinedAt: lastActivityAt,
       });
+      trackEvent("quartet_created", {
+        session_id: session.id,
+        participant_count: 1,
+        song_count: entries.length,
+      });
       trackEvent("quartet_started", {
         session_id: session.id,
         participant_count: 1,
@@ -115,6 +120,10 @@ export default function SessionPage() {
   async function leaveCurrentAndContinue() {
     if (!activeQuartet) return;
 
+    trackEvent("quartet_leave_clicked", {
+      session_id: activeQuartet.sessionId,
+      source: "start_page_existing_quartet",
+    });
     setLeavingCurrent(true);
     setErrorMessage("");
 
@@ -124,6 +133,10 @@ export default function SessionPage() {
         throw new Error("You must be logged in to leave a quartet.");
       }
 
+      trackEvent("quartet_leave_confirmed", {
+        session_id: activeQuartet.sessionId,
+        source: "start_page_existing_quartet",
+      });
       await removeParticipant(activeQuartet.sessionId, user.id);
       trackEvent("quartet_left", {
         session_id: activeQuartet.sessionId,
@@ -136,6 +149,10 @@ export default function SessionPage() {
       }
     } catch (err) {
       console.error("Failed to leave current quartet", err);
+      trackEvent("quartet_leave_failed", {
+        session_id: activeQuartet.sessionId,
+        source: "start_page_existing_quartet",
+      });
       setErrorMessage(
         "Could not leave your current quartet. Check your connection and try again."
       );

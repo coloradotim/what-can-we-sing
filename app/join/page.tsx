@@ -66,6 +66,10 @@ export default function JoinPage() {
   async function leaveCurrentAndContinue() {
     if (!activeQuartet || !pendingCode) return;
 
+    trackEvent("quartet_leave_clicked", {
+      session_id: activeQuartet.sessionId,
+      source: "manual_join_existing_quartet",
+    });
     setLeavingCurrent(true);
     setMessage("");
 
@@ -75,6 +79,10 @@ export default function JoinPage() {
         throw new Error("You must be logged in to leave a quartet.");
       }
 
+      trackEvent("quartet_leave_confirmed", {
+        session_id: activeQuartet.sessionId,
+        source: "manual_join_existing_quartet",
+      });
       await removeParticipant(activeQuartet.sessionId, user.id);
       trackEvent("quartet_left", {
         session_id: activeQuartet.sessionId,
@@ -87,6 +95,10 @@ export default function JoinPage() {
       window.location.href = `/join/${encodeURIComponent(pendingCode)}?intent=join`;
     } catch (err) {
       console.error("Failed to leave current quartet", err);
+      trackEvent("quartet_leave_failed", {
+        session_id: activeQuartet.sessionId,
+        source: "manual_join_existing_quartet",
+      });
       setMessage(
         "Could not leave your current quartet. Check your connection and try again."
       );

@@ -43,6 +43,10 @@ export function ActiveQuartetIndicator() {
   async function leaveQuartet() {
     if (!activeQuartet) return;
 
+    trackEvent("quartet_leave_confirmed", {
+      session_id: activeQuartet.sessionId,
+      source: "nav_active_quartet",
+    });
     setLeaving(true);
     setMessage("");
 
@@ -67,6 +71,10 @@ export function ActiveQuartetIndicator() {
       }
     } catch (err) {
       console.error("Failed to leave active quartet", err);
+      trackEvent("quartet_leave_failed", {
+        session_id: activeQuartet.sessionId,
+        source: "nav_active_quartet",
+      });
       setShowLeaveConfirmation(false);
       setMessage("Could not leave quartet. Try again.");
     } finally {
@@ -109,6 +117,10 @@ export function ActiveQuartetIndicator() {
             type="button"
             onClick={() => {
               setMessage("");
+              trackEvent("quartet_leave_clicked", {
+                session_id: activeQuartet.sessionId,
+                source: "nav_active_quartet",
+              });
               setShowLeaveConfirmation(true);
             }}
             disabled={leaving}

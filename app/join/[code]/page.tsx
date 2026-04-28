@@ -278,6 +278,10 @@ export default function JoinSessionPage() {
       return;
     }
 
+    trackEvent("quartet_join_attempted", {
+      session_id: id,
+    });
+
     try {
       setJoiningQuartet(true);
       if (options.clearLeftFlag) {
@@ -294,6 +298,15 @@ export default function JoinSessionPage() {
       );
 
       if (participantResolution.status === "full") {
+        trackEvent("quartet_join_failed", {
+          session_id: id,
+          reason: "quartet_full",
+          participant_count: existingParticipants.length,
+        });
+        trackEvent("quartet_full", {
+          session_id: id,
+          participant_count: existingParticipants.length,
+        });
         showStatusMessage("This quartet already has four singers.");
         return;
       }
@@ -310,6 +323,11 @@ export default function JoinSessionPage() {
       const updatedParticipants = await refreshParticipants(id);
 
       if (participantResolution.status === "existing") {
+        trackEvent("quartet_rejoined", {
+          session_id: id,
+          participant_count: updatedParticipants.length,
+          song_count: entries.length,
+        });
         showStatusMessage(
           options.successMessage ??
             `Updated ${name}'s repertoire with ${entries.length} songs.`,
@@ -323,12 +341,22 @@ export default function JoinSessionPage() {
         participant_count: updatedParticipants.length,
         song_count: entries.length,
       });
+      if (updatedParticipants.length >= MAX_QUARTET_PARTICIPANTS) {
+        trackEvent("quartet_full", {
+          session_id: id,
+          participant_count: updatedParticipants.length,
+        });
+      }
       showStatusMessage(
         `Joined as ${name} with ${entries.length} songs.`,
         "transient"
       );
     } catch (err) {
       console.error(err);
+      trackEvent("quartet_join_failed", {
+        session_id: id,
+        reason: "write_failed",
+      });
       showStatusMessage("Could not join quartet. Please try again.", "error");
     } finally {
       setJoiningQuartet(false);
@@ -389,6 +417,10 @@ export default function JoinSessionPage() {
       return false;
     }
 
+    trackEvent("quartet_leave_confirmed", {
+      session_id: sessionId,
+      source: "quartet_page",
+    });
     setLeaving(true);
     clearStatusMessage();
 
@@ -410,6 +442,10 @@ export default function JoinSessionPage() {
       return true;
     } catch (err) {
       console.error(err);
+      trackEvent("quartet_leave_failed", {
+        session_id: sessionId,
+        source: "quartet_page",
+      });
       showStatusMessage(
         "Could not leave quartet. Check your connection and try again.",
         "error"
@@ -421,6 +457,12 @@ export default function JoinSessionPage() {
 
   function requestLeaveQuartet() {
     clearStatusMessage();
+    if (sessionId) {
+      trackEvent("quartet_leave_clicked", {
+        session_id: sessionId,
+        source: "quartet_page",
+      });
+    }
     setShowLeaveConfirmation(true);
   }
 
@@ -523,6 +565,10 @@ export default function JoinSessionPage() {
       return;
     }
 
+    trackEvent("quartet_leave_clicked", {
+      session_id: pendingActiveQuartet.sessionId,
+      source: "join_different_quartet",
+    });
     setLeavingCurrentQuartet(true);
     clearStatusMessage();
 
@@ -533,6 +579,10 @@ export default function JoinSessionPage() {
         throw new Error("You must be logged in to leave a quartet.");
       }
 
+      trackEvent("quartet_leave_confirmed", {
+        session_id: pendingActiveQuartet.sessionId,
+        source: "join_different_quartet",
+      });
       await removeParticipant(pendingActiveQuartet.sessionId, userId);
       trackEvent("quartet_left", {
         session_id: pendingActiveQuartet.sessionId,
@@ -544,6 +594,10 @@ export default function JoinSessionPage() {
       });
     } catch (err) {
       console.error(err);
+      trackEvent("quartet_leave_failed", {
+        session_id: pendingActiveQuartet.sessionId,
+        source: "join_different_quartet",
+      });
       showStatusMessage(
         "Could not leave your current quartet. Check your connection and try again.",
         "error"
@@ -986,6 +1040,26 @@ export default function JoinSessionPage() {
       possible_match_count: possibleMatchCount,
       one_part_missing_count: onePartMissingCount,
     });
+    trackEvent("matches_generated", {
+      session_id: sessionId,
+      participant_count: participants.length,
+      match_count: matches.length,
+      ready_match_count: readyMatchCount,
+      possible_match_count: possibleMatchCount,
+      one_part_missing_count: onePartMissingCount,
+    });
+    if (participants.length >= MAX_QUARTET_PARTICIPANTS) {
+      trackEvent("quartet_full", {
+        session_id: sessionId,
+        participant_count: participants.length,
+      });
+    }
+    if (participants.length >= MAX_QUARTET_PARTICIPANTS && matches.length === 0) {
+      trackEvent("zero_matches_found", {
+        session_id: sessionId,
+        participant_count: participants.length,
+      });
+    }
   }, [
     loading,
     loadError,

@@ -63,6 +63,10 @@ export default function HelpPage() {
       const data = (await response.json()) as { message?: string };
 
       if (!response.ok) {
+        trackEvent("feedback_failed", {
+          category: type,
+          status_code: response.status,
+        });
         setStatusTone("error");
         setStatusMessage(data.message ?? "Could not send feedback.");
         return;
@@ -77,6 +81,10 @@ export default function HelpPage() {
       setMessage("");
     } catch (err) {
       console.error(err);
+      trackEvent("feedback_failed", {
+        category: type,
+        reason: "network",
+      });
       setStatusTone("error");
       setStatusMessage(
         "Network unavailable. Try again when you have a connection."

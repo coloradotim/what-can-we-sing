@@ -1,0 +1,278 @@
+{
+  "version": 1,
+  "tags": ["what-can-we-sing", "managed-in-repo"],
+  "dashboards": [
+    {
+      "key": "product-health",
+      "name": "What Can We Sing - Product Health",
+      "description": "Core usage, quartet creation, feedback, and route health.",
+      "insights": [
+        {
+          "key": "daily-active-users",
+          "name": "Daily active users",
+          "description": "Distinct signed-in users seen each day.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "series": [{ "event": "user_logged_in", "math": "dau" }]
+        },
+        {
+          "key": "weekly-active-users",
+          "name": "Weekly active users",
+          "description": "Distinct signed-in users seen each week.",
+          "type": "trend",
+          "dateFrom": "-12w",
+          "interval": "week",
+          "series": [{ "event": "user_logged_in", "math": "weekly_active" }]
+        },
+        {
+          "key": "quartet-activity",
+          "name": "Quartet activity",
+          "description": "Quartets created, joined, left, and rejoined.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "series": [
+            { "event": "quartet_created" },
+            { "event": "quartet_joined" },
+            { "event": "quartet_left" },
+            { "event": "quartet_rejoined" }
+          ]
+        },
+        {
+          "key": "full-quartets",
+          "name": "Quartets reaching full state",
+          "description": "Quartets with four participants.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "series": [{ "event": "quartet_full" }]
+        },
+        {
+          "key": "feedback-submissions",
+          "name": "Feedback submissions",
+          "description": "Feedback sent successfully by category.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "breakdown": "category",
+          "series": [{ "event": "feedback_submitted" }]
+        },
+        {
+          "key": "top-routes",
+          "name": "Top routes",
+          "description": "Route visits with join codes normalized to /join/[code].",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "breakdown": "route",
+          "series": [{ "event": "app_route_viewed" }]
+        }
+      ]
+    },
+    {
+      "key": "quartet-funnel",
+      "name": "What Can We Sing - Quartet Funnel",
+      "description": "From visiting the app to a full quartet with generated matches.",
+      "insights": [
+        {
+          "key": "quartet-funnel-core",
+          "name": "Quartet funnel",
+          "description": "Visit, authenticate, create or join, update repertoire, reach full quartet, and generate matches.",
+          "type": "funnel",
+          "dateFrom": "-30d",
+          "series": [
+            { "event": "app_route_viewed" },
+            { "event": "user_logged_in" },
+            { "event": "quartet_joined" },
+            { "event": "repertoire_updated" },
+            { "event": "quartet_full" },
+            { "event": "matches_generated" }
+          ]
+        },
+        {
+          "key": "quartet-funnel-browser",
+          "name": "Quartet funnel by browser",
+          "description": "Core quartet funnel broken down by browser.",
+          "type": "funnel",
+          "dateFrom": "-30d",
+          "breakdown": "$browser",
+          "series": [
+            { "event": "app_route_viewed" },
+            { "event": "user_logged_in" },
+            { "event": "quartet_joined" },
+            { "event": "quartet_full" },
+            { "event": "matches_generated" }
+          ]
+        },
+        {
+          "key": "quartet-funnel-device",
+          "name": "Quartet funnel by device",
+          "description": "Core quartet funnel broken down by device type.",
+          "type": "funnel",
+          "dateFrom": "-30d",
+          "breakdown": "$device_type",
+          "series": [
+            { "event": "app_route_viewed" },
+            { "event": "user_logged_in" },
+            { "event": "quartet_joined" },
+            { "event": "quartet_full" },
+            { "event": "matches_generated" }
+          ]
+        },
+        {
+          "key": "join-by-route",
+          "name": "Create vs join route",
+          "description": "Quartet joins by route context.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "breakdown": "route",
+          "series": [{ "event": "quartet_joined" }]
+        }
+      ]
+    },
+    {
+      "key": "repertoire-matching",
+      "name": "What Can We Sing - Repertoire & Matching",
+      "description": "Repertoire edits, snapshot size, match counts, and zero-match cases.",
+      "insights": [
+        {
+          "key": "repertoire-updates",
+          "name": "Repertoire updates",
+          "description": "Add, edit, and delete activity.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "breakdown": "action",
+          "series": [{ "event": "repertoire_updated" }]
+        },
+        {
+          "key": "song-count-snapshot",
+          "name": "Average songs per participant snapshot",
+          "description": "Average song count reported when singers join or refresh a quartet snapshot.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "series": [
+            { "event": "quartet_joined", "math": "avg", "mathProperty": "song_count" },
+            { "event": "quartet_rejoined", "math": "avg", "mathProperty": "song_count" }
+          ]
+        },
+        {
+          "key": "match-generation",
+          "name": "Matches generated",
+          "description": "Total and ready/possible/missing-part match counts.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "series": [
+            { "event": "matches_generated", "math": "avg", "mathProperty": "match_count" },
+            { "event": "matches_generated", "math": "avg", "mathProperty": "ready_match_count" },
+            { "event": "matches_generated", "math": "avg", "mathProperty": "possible_match_count" },
+            { "event": "matches_generated", "math": "avg", "mathProperty": "one_part_missing_count" }
+          ]
+        },
+        {
+          "key": "zero-matches",
+          "name": "Full quartets with zero matches",
+          "description": "Quartets that reached four singers but generated no matches.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "series": [{ "event": "zero_matches_found" }]
+        }
+      ]
+    },
+    {
+      "key": "reliability-errors",
+      "name": "What Can We Sing - Reliability / Errors",
+      "description": "Tracked client-side failures and feedback delivery issues.",
+      "insights": [
+        {
+          "key": "join-errors",
+          "name": "Join errors",
+          "description": "Quartet join failures by reason.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "breakdown": "reason",
+          "series": [{ "event": "quartet_join_failed" }]
+        },
+        {
+          "key": "leave-errors",
+          "name": "Leave errors",
+          "description": "Quartet leave failures by source.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "breakdown": "source",
+          "series": [{ "event": "quartet_leave_failed" }]
+        },
+        {
+          "key": "repertoire-errors",
+          "name": "Repertoire update errors",
+          "description": "Repertoire update failures by action.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "breakdown": "action",
+          "series": [{ "event": "repertoire_update_failed" }]
+        },
+        {
+          "key": "feedback-errors",
+          "name": "Feedback errors",
+          "description": "Feedback send failures.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "breakdown": "category",
+          "series": [{ "event": "feedback_failed" }]
+        },
+        {
+          "key": "recently-sung-errors",
+          "name": "Mark sung errors",
+          "description": "Failures when marking a match as recently sung.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "breakdown": "voicing",
+          "series": [{ "event": "song_mark_sung_failed" }]
+        }
+      ]
+    },
+    {
+      "key": "browser-mobile-compatibility",
+      "name": "What Can We Sing - Browser / Mobile Compatibility",
+      "description": "Key action success and failure by browser, operating system, and device type.",
+      "insights": [
+        {
+          "key": "leave-flow-by-browser",
+          "name": "Leave flow by browser",
+          "description": "Leave clicks, confirmations, successes, and failures by browser.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "breakdown": "$browser",
+          "series": [
+            { "event": "quartet_leave_clicked" },
+            { "event": "quartet_leave_confirmed" },
+            { "event": "quartet_left" },
+            { "event": "quartet_leave_failed" }
+          ]
+        },
+        {
+          "key": "join-flow-by-device",
+          "name": "Join flow by device",
+          "description": "Join attempts, successes, and failures by device type.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "breakdown": "$device_type",
+          "series": [
+            { "event": "quartet_join_attempted" },
+            { "event": "quartet_joined" },
+            { "event": "quartet_join_failed" }
+          ]
+        },
+        {
+          "key": "key-actions-ios-brave",
+          "name": "Key actions on browser/OS combinations",
+          "description": "Useful for Brave on iOS and Chrome on Mac compatibility checks.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "breakdown": "$browser",
+          "series": [
+            { "event": "quartet_joined" },
+            { "event": "quartet_left" },
+            { "event": "quartet_member_removed" },
+            { "event": "repertoire_updated" }
+          ]
+        }
+      ]
+    }
+  ]
+}
