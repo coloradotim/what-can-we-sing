@@ -1,21 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { AppNav } from "@/components/AppNav";
 import {
   clearActiveQuartet,
   getActiveQuartet,
+  setActiveQuartet as persistActiveQuartet,
   type ActiveQuartet,
 } from "@/lib/activeQuartet";
-import { getCurrentUser } from "@/lib/profileStore";
+import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
+import { buildParticipantEntries } from "@/lib/participantEntries";
+import { getMyRepertoire } from "@/lib/repertoireStore";
 import { trackEvent } from "@/lib/analytics";
-import { createSession, removeParticipant } from "@/lib/sessionStore";
+import {
+  createSession,
+  removeParticipant,
+  upsertParticipant,
+} from "@/lib/sessionStore";
 
 function makeJoinCode() {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
 
 export default function SessionPage() {
+  const router = useRouter();
+  const creatingQuartet = useRef(false);
   const [loading, setLoading] = useState(true);
   const [activeQuartet, setActiveQuartet] = useState<ActiveQuartet | null>(null);
   const [leavingCurrent, setLeavingCurrent] = useState(false);
@@ -34,30 +44,72 @@ export default function SessionPage() {
   }, []);
 
   async function createNewQuartet() {
+    if (creatingQuartet.current) return true;
+
+    creatingQuartet.current = true;
     setLoading(true);
     setErrorMessage("");
+    let didNavigate = false;
 
-    async function init() {
+    try {
+      const user = await getCurrentUser();
+      if (!user) {
+        router.replace("/login?redirect=/session");
+        didNavigate = true;
+        return true;
+      }
+
+      const profile = await getMyProfile();
+      if (!profile?.display_name) {
+        router.replace("/settings");
+        didNavigate = true;
+        return true;
+      }
+
+      const repertoire = await getMyRepertoire();
       const code = makeJoinCode();
+      const session = await createSession(code);
+      const entries = buildParticipantEntries(profile.display_name, repertoire);
+      const lastActivityAt = new Date().toISOString();
 
-      try {
-        const session = await createSession(code);
-        trackEvent("quartet_started", {
-          session_id: session.id,
-          participant_count: 0,
-        });
-        window.location.href = `/join/${code}`;
-      } catch (err) {
-        console.error("Failed to create session", err);
-        setErrorMessage(
-          "Could not create a quartet code. Check your connection and try again."
-        );
-      } finally {
+      await upsertParticipant(
+        session.id,
+        user.id,
+        profile.display_name,
+        entries,
+        lastActivityAt
+      );
+
+      persistActiveQuartet({
+        sessionId: session.id,
+        code,
+        joinedAt: lastActivityAt,
+      });
+      trackEvent("quartet_started", {
+        session_id: session.id,
+        participant_count: 1,
+        song_count: entries.length,
+      });
+      trackEvent("quartet_joined", {
+        session_id: session.id,
+        participant_count: 1,
+        song_count: entries.length,
+      });
+      didNavigate = true;
+      router.replace(`/join/${code}`);
+      return true;
+    } catch (err) {
+      console.error("Failed to create session", err);
+      setErrorMessage(
+        "Could not create a quartet code. Check your connection and try again."
+      );
+      return false;
+    } finally {
+      if (!didNavigate) {
+        creatingQuartet.current = false;
         setLoading(false);
       }
     }
-
-    init();
   }
 
   async function leaveCurrentAndContinue() {
@@ -78,7 +130,10 @@ export default function SessionPage() {
       });
       clearActiveQuartet();
       setActiveQuartet(null);
-      await createNewQuartet();
+      const didStartNewQuartet = await createNewQuartet();
+      if (!didStartNewQuartet) {
+        setLeavingCurrent(false);
+      }
     } catch (err) {
       console.error("Failed to leave current quartet", err);
       setErrorMessage(

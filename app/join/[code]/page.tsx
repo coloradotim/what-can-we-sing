@@ -53,6 +53,7 @@ import {
   getMyRepertoire,
   markRepertoireItemAsSung,
 } from "@/lib/repertoireStore";
+import { buildParticipantEntries } from "@/lib/participantEntries";
 import {
   getRecentSungSongs,
   type SungSongEvent,
@@ -249,20 +250,7 @@ export default function JoinSessionPage() {
 
   async function getMyEntries(name: string): Promise<SingerEntry[]> {
     const repertoire = await loadMyRepertoire();
-
-    return repertoire.map((item) => ({
-      repertoireId: item.id,
-      userId: item.user_id,
-      displayName: name,
-      songTitle: item.song_title,
-      voicing: item.voicing,
-      arrangerName: item.arranger_name,
-      partsKnown: item.parts_known,
-      confidence: item.confidence,
-      partConfidences: Object.fromEntries(
-        item.part_confidences.map(({ part, confidence }) => [part, confidence])
-      ),
-    }));
+    return buildParticipantEntries(name, repertoire);
   }
 
   async function joinSession(
