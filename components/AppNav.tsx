@@ -4,35 +4,33 @@ import { ActiveQuartetIndicator } from "@/components/ActiveQuartetIndicator";
 import { usePathname } from "next/navigation";
 import { SignOutButton } from "@/components/SignOutButton";
 
-const navItems = [
-  {
-    href: "/",
-    label: "Home",
-    isActive: (pathname: string) => pathname === "/",
-  },
+const primaryNavItems = [
   {
     href: "/session",
-    label: "Start a quartet",
+    label: "Start",
     isActive: (pathname: string) => pathname === "/session",
   },
   {
     href: "/join",
-    label: "Join a quartet",
+    label: "Join",
     isActive: (pathname: string) => pathname.startsWith("/join"),
   },
   {
     href: "/repertoire",
-    label: "Manage my rep",
+    label: "Repertoire",
     isActive: (pathname: string) => pathname === "/repertoire",
   },
+];
+
+const secondaryNavItems = [
   {
     href: "/settings",
-    label: "Settings",
+    label: "Profile",
     isActive: (pathname: string) => pathname === "/settings",
   },
   {
     href: "/feedback",
-    label: "Send feedback",
+    label: "Feedback",
     isActive: (pathname: string) => pathname === "/feedback",
   },
 ];
@@ -45,8 +43,35 @@ export function AppNav() {
       aria-label="Main navigation"
       className="rounded-2xl border border-white/10 bg-white/10 p-3"
     >
-      <div className="flex flex-wrap items-center gap-2">
-        {navItems.map((item) => {
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <a href="/" className="text-sm font-bold uppercase text-cyan-300">
+          What Can We Sing
+        </a>
+
+        <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
+          {primaryNavItems.map((item) => {
+            const active = item.isActive(pathname);
+
+            return (
+              <a
+                key={item.label}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={`rounded-xl px-3 py-2 text-center text-sm font-semibold ${
+                  active
+                    ? "bg-cyan-300 text-slate-950"
+                    : "bg-white/5 text-cyan-200 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {item.label}
+              </a>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+        {secondaryNavItems.map((item) => {
           const active = item.isActive(pathname);
 
           return (
@@ -54,10 +79,10 @@ export function AppNav() {
               key={item.label}
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={`rounded-xl px-3 py-2 text-sm font-semibold ${
+              className={`font-semibold ${
                 active
-                  ? "bg-cyan-300 text-slate-950"
-                  : "text-cyan-200 hover:bg-white/10 hover:text-white"
+                  ? "text-white"
+                  : "text-slate-300 hover:text-cyan-200"
               }`}
             >
               {item.label}
@@ -65,7 +90,7 @@ export function AppNav() {
           );
         })}
 
-        <SignOutButton className="rounded-xl px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-white/10 hover:text-white disabled:opacity-50" />
+        <SignOutButton className="font-semibold text-slate-300 hover:text-cyan-200 disabled:opacity-50" />
       </div>
       <ActiveQuartetIndicator />
     </nav>
