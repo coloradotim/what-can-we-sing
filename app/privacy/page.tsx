@@ -19,7 +19,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold">What is stored</h2>
             <p className="mt-2 text-slate-300">
               What Can We Sing stores your display name and your repertoire:
-              song titles, parts you know, confidence level, and optional
+              song titles, parts you know, confidence for each part, and optional
               arranger names.
             </p>
           </div>

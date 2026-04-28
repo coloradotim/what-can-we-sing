@@ -19,6 +19,13 @@ export type Confidence =
   | "A Little Rusty"
   | "Music Required";
 
+export type PartConfidence = {
+  part: Part;
+  confidence: Confidence;
+};
+
+export type PartConfidenceMap = Partial<Record<Part, Confidence>>;
+
 export type SingerEntry = {
   userId: string;
   displayName: string;
@@ -27,6 +34,7 @@ export type SingerEntry = {
   arrangerName?: string | null;
   partsKnown: Part[];
   confidence?: Confidence | null;
+  partConfidences?: PartConfidenceMap | null;
 };
 
 export type MatchResult = {
@@ -84,9 +92,25 @@ function confidenceValue(confidence?: string | null): number {
   return 3;
 }
 
-function confidenceWarning(entries: SingerEntry[]): string | null {
-  const weak = entries.filter((e) => {
-    const normalizedConfidence = normalizeConfidence(e.confidence);
+export function confidenceForPart(
+  entry: SingerEntry,
+  part: Part
+): Confidence | null {
+  return (
+    normalizeConfidence(entry.partConfidences?.[part]) ??
+    normalizeConfidence(entry.confidence)
+  );
+}
+
+function confidenceValueForPart(entry: SingerEntry, part: Part): number {
+  return confidenceValue(confidenceForPart(entry, part));
+}
+
+function confidenceWarning(
+  assignment: Record<Part, SingerEntry>
+): string | null {
+  const weak = Object.entries(assignment).filter(([part, entry]) => {
+    const normalizedConfidence = confidenceForPart(entry, part as Part);
     return (
       normalizedConfidence === "A Little Rusty" ||
       normalizedConfidence === "Music Required"
@@ -96,7 +120,10 @@ function confidenceWarning(entries: SingerEntry[]): string | null {
   if (!weak.length) return null;
 
   return `Confidence warning: ${weak
-    .map((e) => `${e.displayName} marked ${normalizeConfidence(e.confidence)}`)
+    .map(([part, entry]) => {
+      const normalizedConfidence = confidenceForPart(entry, part as Part);
+      return `${entry.displayName} marked ${normalizedConfidence} on ${part}`;
+    })
     .join(", ")}`;
 }
 
@@ -120,7 +147,10 @@ function findDistinctAssignment(
 
     const candidates = entries
       .filter((entry) => entry.partsKnown.includes(part) && !usedSingerIds.has(entry.userId))
-      .sort((a, b) => confidenceValue(b.confidence) - confidenceValue(a.confidence));
+      .sort(
+        (a, b) =>
+          confidenceValueForPart(b, part) - confidenceValueForPart(a, part)
+      );
 
     for (const candidate of candidates) {
       assignment[part] = candidate;
@@ -166,7 +196,15 @@ function scoreMatch(
   }[category];
 
   const assignedConfidence = Object.values(assignment).reduce(
-    (sum, entry) => sum + confidenceValue(entry.confidence),
+    (sum, entry) => {
+      const assignedPart = Object.entries(assignment).find(
+        ([, assignedEntry]) => assignedEntry === entry
+      )?.[0] as Part | undefined;
+
+      return assignedPart
+        ? sum + confidenceValueForPart(entry, assignedPart)
+        : sum;
+    },
     0
   );
 
@@ -237,10 +275,10 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
     const knownArrangers = knownArrangersForGroup(group);
     const warnings = arrangementWarningsForGroup(group, knownArrangers);
 
-    const confidence = confidenceWarning(group);
-    if (confidence) warnings.push(confidence);
-
     if (fullAssignment) {
+      const confidence = confidenceWarning(fullAssignment);
+      if (confidence) warnings.push(confidence);
+
       results.push({
         songTitle,
         voicing,
@@ -276,6 +314,9 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
     }
 
     if (bestNearMatch) {
+      const confidence = confidenceWarning(bestNearMatch.assignment);
+      if (confidence) warnings.push(confidence);
+
       results.push({
         songTitle,
         voicing,
@@ -330,7 +371,7 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
         possibleSameSongNote(first.songTitle, second.songTitle),
         ...arrangementWarningsForGroup(group, knownArrangers),
       ];
-      const confidence = confidenceWarning(group);
+      const confidence = confidenceWarning(fullAssignment);
       if (confidence) warnings.push(confidence);
 
       results.push({
