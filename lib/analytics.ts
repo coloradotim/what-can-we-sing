@@ -1,6 +1,7 @@
 import posthog from "posthog-js";
 
 export type AnalyticsEventName =
+  | "analytics_client_ready"
   | "app_route_viewed"
   | "user_logged_in"
   | "quartet_created"
@@ -28,6 +29,37 @@ export type AnalyticsEventName =
   | "help_viewed"
   | "feedback_submitted"
   | "feedback_failed";
+
+export const ANALYTICS_EVENT_NAMES = [
+  "analytics_client_ready",
+  "app_route_viewed",
+  "user_logged_in",
+  "quartet_created",
+  "quartet_join_attempted",
+  "repertoire_song_added",
+  "repertoire_song_edited",
+  "repertoire_song_deleted",
+  "repertoire_updated",
+  "repertoire_update_failed",
+  "quartet_started",
+  "quartet_joined",
+  "quartet_join_failed",
+  "quartet_leave_clicked",
+  "quartet_leave_confirmed",
+  "quartet_left",
+  "quartet_leave_failed",
+  "quartet_rejoined",
+  "quartet_full",
+  "quartet_member_removed",
+  "quartet_matches_viewed",
+  "matches_generated",
+  "zero_matches_found",
+  "song_marked_sung",
+  "song_mark_sung_failed",
+  "help_viewed",
+  "feedback_submitted",
+  "feedback_failed",
+] as const satisfies readonly AnalyticsEventName[];
 
 type AnalyticsPropertyValue = string | number | boolean | null | undefined;
 type AnalyticsProperties = Record<string, AnalyticsPropertyValue>;

@@ -39,6 +39,7 @@ The app currently tracks these events through `lib/analytics.ts`:
 
 | Event | Fires from | Properties | PII? | Dashboard usage |
 | --- | --- | --- | --- | --- |
+| `analytics_client_ready` | `components/AnalyticsIdentity.tsx` once per browser session when the client analytics layer mounts | none | No | Product Health |
 | `app_route_viewed` | `components/AnalyticsIdentity.tsx` on route changes | `route` | No; join codes are normalized | Product Health, Quartet Funnel |
 | `user_logged_in` | `components/AnalyticsIdentity.tsx` once per browser session after auth is restored | none | No | Product Health, Quartet Funnel |
 | `quartet_created` | `app/session/page.tsx` after a new session and participant row are created | `session_id`, `participant_count`, `song_count` | No free text | Product Health |
@@ -106,6 +107,49 @@ The sync script is idempotent by dashboard and insight name:
 - API keys are read from environment variables only
 
 The personal API key needs PostHog dashboard and insight read/write scopes.
+
+## Production Verification
+
+Use `/api/analytics/status` on the deployed app to verify the production build
+has the public PostHog configuration baked in. The response intentionally
+reports only safe values:
+
+- whether `NEXT_PUBLIC_POSTHOG_KEY` is present
+- whether `NEXT_PUBLIC_POSTHOG_HOST` is present
+- the configured PostHog host
+- the Vercel environment and commit SHA, when Vercel exposes them
+
+The status route does not return the PostHog project key or any private API key.
+
+When dashboards are empty, check these in order:
+
+1. Open `/api/analytics/status` on the same deployment users are testing. If
+   `posthogConfigured` is `false`, add `NEXT_PUBLIC_POSTHOG_KEY` and
+   `NEXT_PUBLIC_POSTHOG_HOST` in Vercel for Production and Preview, then rebuild.
+2. Confirm the dashboard sync used the same PostHog environment/project as the
+   `NEXT_PUBLIC_POSTHOG_KEY`. A common failure mode is syncing dashboards with a
+   personal API key against one PostHog environment while the app sends events
+   with a project key from another environment.
+3. If PostHog's pre-built dashboards show traffic but the repo-managed
+   dashboards are empty, the app is still sending data to PostHog. In that case,
+   first suspect a dashboard environment/project mismatch or managed dashboard
+   event filters that do not match the deployed app version.
+4. In PostHog, open Live Events and load the app in a normal browser profile
+   without Brave shields, content blockers, or strict tracking protection. A page
+   load should show `analytics_client_ready` and `app_route_viewed`.
+5. If Live Events shows app events but dashboard cards are empty, re-run
+   `npm run posthog:dashboards:sync` with the correct
+   `POSTHOG_ENVIRONMENT_ID`.
+6. If Live Events shows no events but `/api/analytics/status` is configured,
+   check the browser network tab for blocked requests to the configured PostHog
+   host. Ad blockers and privacy browsers can suppress analytics completely.
+
+During this audit, the deployed production JavaScript was verified to include
+the PostHog browser client, the public project key, the configured capture host,
+and the `app_route_viewed` event code. The repo event names also match the
+managed dashboard definitions. That means empty dashboards are most likely due
+to a PostHog environment/project mismatch, a deployment built before env changes,
+or browser blocking rather than a missing capture call in the app.
 
 ## Known Gaps
 

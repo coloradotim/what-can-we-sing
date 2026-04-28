@@ -13,8 +13,20 @@ function loggedInStorageKey(userId: string) {
   return `analytics:user_logged_in:${userId}`;
 }
 
+function clientReadyStorageKey() {
+  return "analytics:client_ready";
+}
+
 export function AnalyticsIdentity() {
   const pathname = usePathname();
+
+  useEffect(() => {
+    const storageKey = clientReadyStorageKey();
+    if (window.sessionStorage.getItem(storageKey)) return;
+
+    trackEvent("analytics_client_ready");
+    window.sessionStorage.setItem(storageKey, "true");
+  }, []);
 
   useEffect(() => {
     trackEvent("app_route_viewed", {
