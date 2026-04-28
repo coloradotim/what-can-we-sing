@@ -16,6 +16,14 @@
           "series": [{ "event": "user_logged_in", "math": "dau" }]
         },
         {
+          "key": "analytics-client-ready",
+          "name": "Analytics client ready",
+          "description": "Browser sessions where the configured PostHog client accepted its first app event.",
+          "type": "trend",
+          "dateFrom": "-30d",
+          "series": [{ "event": "analytics_client_ready" }]
+        },
+        {
           "key": "weekly-active-users",
           "name": "Weekly active users",
           "description": "Distinct signed-in users seen each week.",

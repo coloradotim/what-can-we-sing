@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { ANALYTICS_EVENT_NAMES } from "../analytics";
 
 const repoRoot = process.cwd();
 const dashboardSpec = JSON.parse(
@@ -55,6 +56,21 @@ describe("PostHog dashboard spec", () => {
 
     for (const event of events) {
       expect(analyticsDocs).toContain(`\`${event}\``);
+    }
+  });
+
+  it("only uses events emitted by the app analytics contract", () => {
+    const emittedEvents = new Set(ANALYTICS_EVENT_NAMES);
+    const dashboardEvents = new Set(
+      dashboardSpec.dashboards.flatMap((dashboard) =>
+        dashboard.insights.flatMap((insight) =>
+          insight.series.map((series) => series.event)
+        )
+      )
+    );
+
+    for (const event of dashboardEvents) {
+      expect(emittedEvents.has(event)).toBe(true);
     }
   });
 });
