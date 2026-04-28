@@ -120,7 +120,6 @@ export default function JoinSessionPage() {
   const [leftQuartet, setLeftQuartet] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [joiningQuartet, setJoiningQuartet] = useState(false);
-  const [realtimeMessage, setRealtimeMessage] = useState("");
   const [pendingActiveQuartet, setPendingActiveQuartet] =
     useState<ActiveQuartet | null>(null);
   const [leavingCurrentQuartet, setLeavingCurrentQuartet] = useState(false);
@@ -139,7 +138,10 @@ export default function JoinSessionPage() {
     }
   }
 
-  async function refreshParticipants(id: string) {
+  async function refreshParticipants(
+    id: string,
+    options: { showErrorMessage?: boolean } = {}
+  ) {
     try {
       const data = await getParticipants(id);
       setParticipants(data);
@@ -147,7 +149,9 @@ export default function JoinSessionPage() {
       return data;
     } catch (err) {
       console.error(err);
-      setMessage("Could not refresh singers. Please try again.");
+      if (options.showErrorMessage ?? true) {
+        setMessage("Could not refresh singers. Please try again.");
+      }
       throw err;
     }
   }
@@ -266,9 +270,6 @@ export default function JoinSessionPage() {
     if (isRefreshingCurrentParticipant.current) return;
 
     if (!id || !userId || !name) {
-      setMessage(
-        "Could not update your songs yet. Wait for the quartet to finish loading."
-      );
       return;
     }
 
@@ -295,9 +296,6 @@ export default function JoinSessionPage() {
       );
     } catch (err) {
       console.error("Could not update returning participant repertoire", err);
-      setMessage(
-        "Could not update your songs. Check your connection and come back to this quartet again."
-      );
     } finally {
       isRefreshingCurrentParticipant.current = false;
     }
@@ -436,7 +434,6 @@ export default function JoinSessionPage() {
     if (!sessionId) return;
 
     return subscribeToSessionParticipants(sessionId, (payload) => {
-      setRealtimeMessage("");
       setParticipants((currentParticipants) => {
         const updatedParticipants = applyParticipantChange(
           currentParticipants,
@@ -446,10 +443,8 @@ export default function JoinSessionPage() {
         void refreshParticipantProfileNames(updatedParticipants);
         return updatedParticipants;
       });
-      void refreshParticipants(sessionId).catch(() => undefined);
-    }, () => {
-      setRealtimeMessage(
-        "Live updates are having trouble. You can still use the current results or refresh singers."
+      void refreshParticipants(sessionId, { showErrorMessage: false }).catch(
+        () => undefined
       );
     });
   }, [sessionId]);
@@ -463,7 +458,6 @@ export default function JoinSessionPage() {
     if (!participantUserIdsKey) return;
 
     return subscribeToProfileDisplayNames(participantUserIds, (payload) => {
-      setRealtimeMessage("");
       setProfileDisplayNamesByUserId((currentProfileDisplayNames) =>
         applyProfileDisplayNameChange(
           currentProfileDisplayNames,
@@ -645,6 +639,18 @@ export default function JoinSessionPage() {
     !isQuartetFull;
 
   useEffect(() => {
+    if (!sessionId || loading || loadError || quartetExpired) return;
+
+    const timer = window.setInterval(() => {
+      void refreshParticipants(sessionId, { showErrorMessage: false }).catch(
+        () => undefined
+      );
+    }, 5000);
+
+    return () => window.clearInterval(timer);
+  }, [loading, loadError, quartetExpired, sessionId]);
+
+  useEffect(() => {
     if (
       loading ||
       !sessionId ||
@@ -810,23 +816,6 @@ export default function JoinSessionPage() {
           <p className="mt-4 rounded-xl bg-white/10 p-4 text-slate-200">
             {message}
           </p>
-        )}
-
-        {!loadError && !quartetExpired && realtimeMessage && (
-          <div className="mt-4 rounded-xl border border-amber-200/20 bg-amber-200/10 p-4 text-sm text-amber-50">
-            <p>{realtimeMessage}</p>
-            {sessionId && (
-              <button
-                type="button"
-                onClick={() => {
-                  void refreshParticipants(sessionId).catch(() => undefined);
-                }}
-                className="mt-3 rounded-xl bg-amber-100 px-4 py-2 font-semibold text-slate-950 hover:bg-white"
-              >
-                Refresh singers
-              </button>
-            )}
-          </div>
         )}
 
         {!loadError && !quartetExpired && pendingActiveQuartet && (

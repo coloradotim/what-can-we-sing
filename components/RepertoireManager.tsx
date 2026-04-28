@@ -13,6 +13,7 @@ import {
   type RepertoireRow,
 } from "@/lib/repertoireStore";
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
+import { refreshActiveQuartetSnapshot } from "@/lib/activeQuartetSnapshot";
 
 const voicings: Voicing[] = ["TTBB", "SATB", "SSAA"];
 
@@ -234,6 +235,11 @@ export default function RepertoireManager() {
         song_count: items.length + 1,
         parts_known_count: partsKnown.length,
       });
+      try {
+        await refreshActiveQuartetSnapshot();
+      } catch (err) {
+        console.error("Could not refresh active quartet snapshot", err);
+      }
 
       try {
         await loadRepertoire();
@@ -261,6 +267,11 @@ export default function RepertoireManager() {
       trackEvent("repertoire_song_deleted", {
         song_count: Math.max(0, items.length - 1),
       });
+      try {
+        await refreshActiveQuartetSnapshot();
+      } catch (err) {
+        console.error("Could not refresh active quartet snapshot", err);
+      }
       try {
         await loadRepertoire();
       } catch {
@@ -308,6 +319,11 @@ export default function RepertoireManager() {
         song_count: items.length,
         parts_known_count: editForm.partsKnown.length,
       });
+      try {
+        await refreshActiveQuartetSnapshot();
+      } catch (err) {
+        console.error("Could not refresh active quartet snapshot", err);
+      }
       try {
         await loadRepertoire();
       } catch {
