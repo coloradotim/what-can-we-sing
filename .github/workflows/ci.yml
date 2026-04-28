@@ -5,9 +5,44 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
+  guardrails:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check migration filenames
+        run: |
+          set -euo pipefail
+          bad_files="$(
+            find supabase/migrations -type f -name '*.sql' \
+              | awk -F/ '{
+                  file=$NF
+                  if (file !~ /^[0-9]{14}_[a-z0-9_]+\.sql$/) print $0
+                }'
+          )"
+
+          if [ -n "$bad_files" ]; then
+            echo "Migration filenames must use YYYYMMDDHHMMSS_descriptive_name.sql:"
+            echo "$bad_files"
+            exit 1
+          fi
+
+      - name: Check for committed secret values
+        run: |
+          set -euo pipefail
+          if git grep -n -I -E '(SUPABASE_SERVICE_ROLE_KEY=[^$[:space:]]{12,}|RESEND_API_KEY=[^$[:space:]]{12,}|sbp_[A-Za-z0-9_-]{20,}|sb_secret_[A-Za-z0-9_-]{20,})' -- ':!README.md' ':!docs/**' ':!.env.example'; then
+            echo "Potential committed secret value found. Keep production secrets in GitHub Actions, Supabase, or Vercel settings."
+            exit 1
+          fi
+
   test-and-build:
     runs-on: ubuntu-latest
+    needs: guardrails
 
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
