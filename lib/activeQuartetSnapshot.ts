@@ -43,6 +43,9 @@ export async function refreshActiveQuartetSnapshot() {
     arrangerName: item.arranger_name,
     partsKnown: item.parts_known,
     confidence: item.confidence,
+    partConfidences: Object.fromEntries(
+      item.part_confidences.map(({ part, confidence }) => [part, confidence])
+    ),
   }));
   const lastActivityAt = new Date().toISOString();
 

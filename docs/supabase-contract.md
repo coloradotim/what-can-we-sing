@@ -66,7 +66,10 @@ Required database contract:
 - `voicing text not null`
 - `arranger_name text`
 - `parts_known text[] not null`
-- `confidence text`
+- `part_confidences jsonb not null default '[]'::jsonb`
+- `confidence text` remains for legacy rows and compatibility; new code stores
+  per-part confidence in `part_confidences` and keeps this set to the first
+  row's confidence.
 - `notes text`
 - RLS enabled.
 - Authenticated users can select/insert/update/delete only rows where
@@ -75,6 +78,7 @@ Required database contract:
 
 Established by migrations:
 - `20260428060000_supabase_contract_alignment.sql`
+- `20260428142000_add_part_confidences_to_repertoire.sql`
 
 ### `sessions`
 
@@ -129,7 +133,8 @@ Required database contract:
 - `session_id uuid not null references public.sessions(id) on delete cascade`
 - `user_id uuid not null references auth.users(id) on delete cascade`
 - `display_name text not null`
-- `repertoire jsonb not null default '[]'::jsonb`
+- `repertoire jsonb not null default '[]'::jsonb`; snapshot entries include
+  `partsKnown` and, for current snapshots, `partConfidences`
 - `joined_at timestamptz not null default now()`
 - Unique index on `(session_id, user_id)` for upserts.
 - RLS enabled.

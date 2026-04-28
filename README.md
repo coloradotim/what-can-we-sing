@@ -42,7 +42,7 @@ After changing auth settings or email templates, run the manual checklist in
 The Supabase project should have the current production schema applied:
 
 - `profiles` stores each user's required `display_name`.
-- `user_repertoire` stores each user's songs, voicing, parts known, confidence,
+- `user_repertoire` stores each user's songs, voicing, part/confidence pairs,
   optional arranger name, and private notes.
 - `sessions` stores quartet codes and `last_activity_at` for 24-hour inactivity
   expiration.

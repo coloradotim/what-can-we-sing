@@ -2,7 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/AppNav";
-import type { Confidence, Part, Voicing } from "@/lib/matching";
+import type {
+  Confidence,
+  Part,
+  PartConfidence,
+  Voicing,
+} from "@/lib/matching";
 import {
   findFuzzySongTitleSuggestions,
   type FuzzySongTitleSuggestion,
@@ -33,13 +38,22 @@ const confidenceLevels: Confidence[] = [
   "Music Required",
 ];
 
+const emptyPartRow = (): PartConfidenceFormRow => ({
+  part: "",
+  confidence: "",
+});
+
 type RepertoireForm = {
   songTitle: string;
   voicing: Voicing;
   arrangerName: string;
-  partsKnown: Part[];
-  confidence: Confidence;
+  partRows: PartConfidenceFormRow[];
   notes: string;
+};
+
+type PartConfidenceFormRow = {
+  part: Part | "";
+  confidence: Confidence | "";
 };
 
 export default function RepertoireManager() {
@@ -51,8 +65,9 @@ export default function RepertoireManager() {
   const [voicing, setVoicing] = useState<Voicing | "">("");
   const [arrangerName, setArrangerName] = useState("");
   const [notes, setNotes] = useState("");
-  const [partsKnown, setPartsKnown] = useState<Part[]>([]);
-  const [confidence, setConfidence] = useState<Confidence | "">("");
+  const [partRows, setPartRows] = useState<PartConfidenceFormRow[]>([
+    { part: "", confidence: "" },
+  ]);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [showArranger, setShowArranger] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -66,6 +81,31 @@ export default function RepertoireManager() {
     []
   );
   const [updatingSuggestionId, setUpdatingSuggestionId] = useState("");
+
+  function completePartConfidences(
+    rows: PartConfidenceFormRow[]
+  ): PartConfidence[] {
+    return rows
+      .filter(
+        (row): row is PartConfidence =>
+          Boolean(row.part) && Boolean(row.confidence)
+      )
+      .map((row) => ({
+        part: row.part,
+        confidence: row.confidence,
+      }));
+  }
+
+  function hasDuplicateParts(rows: PartConfidenceFormRow[]) {
+    const selectedParts = rows
+      .map((row) => row.part)
+      .filter((part): part is Part => Boolean(part));
+    return new Set(selectedParts).size !== selectedParts.length;
+  }
+
+  function rowHasMissingPartOrConfidence(rows: PartConfidenceFormRow[]) {
+    return rows.some((row) => !row.part || !row.confidence);
+  }
 
   async function loadRepertoire() {
     try {
@@ -143,8 +183,7 @@ export default function RepertoireManager() {
     setVoicing("");
     setArrangerName("");
     setNotes("");
-    setPartsKnown([]);
-    setConfidence("");
+    setPartRows([emptyPartRow()]);
     setShowArranger(false);
   }
 
@@ -159,22 +198,13 @@ export default function RepertoireManager() {
     setMessage("");
   }
 
-  function togglePart(part: Part) {
-    setPartsKnown((current) =>
-      current.includes(part)
-        ? current.filter((p) => p !== part)
-        : [...current, part]
-    );
-  }
-
   function startEditing(item: RepertoireRow) {
     setEditingId(item.id);
     setEditForm({
       songTitle: item.song_title,
       voicing: item.voicing,
       arrangerName: item.arranger_name ?? "",
-      partsKnown: item.parts_known,
-      confidence: item.confidence,
+      partRows: item.part_confidences,
       notes: item.notes ?? "",
     });
     setMessage("");
@@ -185,21 +215,66 @@ export default function RepertoireManager() {
     setEditForm(null);
   }
 
-  function toggleEditPart(part: Part) {
+  function updateEditForm(patch: Partial<RepertoireForm>) {
+    setEditForm((current) => (current ? { ...current, ...patch } : current));
+  }
+
+  function updatePartRow(
+    rowIndex: number,
+    patch: Partial<PartConfidenceFormRow>
+  ) {
+    setPartRows((current) =>
+      current.map((row, index) =>
+        index === rowIndex ? { ...row, ...patch } : row
+      )
+    );
+  }
+
+  function addPartRow() {
+    setPartRows((current) => [...current, emptyPartRow()]);
+  }
+
+  function removePartRow(rowIndex: number) {
+    setPartRows((current) =>
+      current.length <= 1
+        ? current
+        : current.filter((_, index) => index !== rowIndex)
+    );
+  }
+
+  function updateEditPartRow(
+    rowIndex: number,
+    patch: Partial<PartConfidenceFormRow>
+  ) {
     setEditForm((current) => {
       if (!current) return current;
 
       return {
         ...current,
-        partsKnown: current.partsKnown.includes(part)
-          ? current.partsKnown.filter((p) => p !== part)
-          : [...current.partsKnown, part],
+        partRows: current.partRows.map((row, index) =>
+          index === rowIndex ? { ...row, ...patch } : row
+        ),
       };
     });
   }
 
-  function updateEditForm(patch: Partial<RepertoireForm>) {
-    setEditForm((current) => (current ? { ...current, ...patch } : current));
+  function addEditPartRow() {
+    setEditForm((current) =>
+      current
+        ? { ...current, partRows: [...current.partRows, emptyPartRow()] }
+        : current
+    );
+  }
+
+  function removeEditPartRow(rowIndex: number) {
+    setEditForm((current) => {
+      if (!current || current.partRows.length <= 1) return current;
+
+      return {
+        ...current,
+        partRows: current.partRows.filter((_, index) => index !== rowIndex),
+      };
+    });
   }
 
   async function addItem() {
@@ -215,24 +290,24 @@ export default function RepertoireManager() {
       return;
     }
 
-    if (!confidence) {
-      setMessage("Choose a confidence level before saving.");
+    if (rowHasMissingPartOrConfidence(partRows)) {
+      setMessage("Choose a part and confidence for each row before saving.");
       return;
     }
 
-    if (partsKnown.length === 0) {
-      setMessage("Choose at least one part you know before saving.");
+    if (hasDuplicateParts(partRows)) {
+      setMessage("Use each part only once for this song.");
       return;
     }
 
     try {
       setIsAdding(true);
+      const partConfidences = completePartConfidences(partRows);
       await addRepertoireItem({
         songTitle: songTitle.trim(),
         voicing,
         arrangerName: arrangerName.trim() || undefined,
-        partsKnown,
-        confidence,
+        partConfidences,
         notes: notes.trim() || undefined,
       });
 
@@ -241,7 +316,7 @@ export default function RepertoireManager() {
       setMessage("Song added.");
       trackEvent("repertoire_song_added", {
         song_count: items.length + 1,
-        parts_known_count: partsKnown.length,
+        parts_known_count: partConfidences.length,
       });
       let snapshotUpdated = true;
       try {
@@ -319,19 +394,26 @@ export default function RepertoireManager() {
       return;
     }
 
-    if (editForm.partsKnown.length === 0) {
-      setMessage("Choose at least one part you know before saving changes.");
+    if (rowHasMissingPartOrConfidence(editForm.partRows)) {
+      setMessage(
+        "Choose a part and confidence for each row before saving changes."
+      );
+      return;
+    }
+
+    if (hasDuplicateParts(editForm.partRows)) {
+      setMessage("Use each part only once for this song.");
       return;
     }
 
     try {
       setSavingEditId(id);
+      const partConfidences = completePartConfidences(editForm.partRows);
       await updateRepertoireItem(id, {
         songTitle: editForm.songTitle.trim(),
         voicing: editForm.voicing,
         arrangerName: editForm.arrangerName.trim() || undefined,
-        partsKnown: editForm.partsKnown,
-        confidence: editForm.confidence,
+        partConfidences,
         notes: editForm.notes.trim() || undefined,
       });
 
@@ -339,7 +421,7 @@ export default function RepertoireManager() {
       setMessage("Song updated.");
       trackEvent("repertoire_song_edited", {
         song_count: items.length,
-        parts_known_count: editForm.partsKnown.length,
+        parts_known_count: partConfidences.length,
       });
       let snapshotUpdated = true;
       try {
@@ -393,8 +475,7 @@ export default function RepertoireManager() {
         songTitle: suggestion.suggestedTitle,
         voicing: item.voicing,
         arrangerName: item.arranger_name ?? undefined,
-        partsKnown: item.parts_known,
-        confidence: item.confidence,
+        partConfidences: item.part_confidences,
         notes: item.notes ?? undefined,
       });
       dismissSuggestion(suggestion.id);
@@ -424,8 +505,8 @@ export default function RepertoireManager() {
   const canAddSong =
     Boolean(songTitle.trim()) &&
     Boolean(voicing) &&
-    Boolean(confidence) &&
-    partsKnown.length > 0;
+    !rowHasMissingPartOrConfidence(partRows) &&
+    !hasDuplicateParts(partRows);
   const visibleItems = items
     .filter((item) =>
       item.song_title.toLowerCase().includes(searchQuery.trim().toLowerCase())
@@ -636,34 +717,13 @@ export default function RepertoireManager() {
                           onChange={(e) =>
                             updateEditForm({
                               voicing: e.target.value as Voicing,
-                              partsKnown: [],
+                              partRows: [emptyPartRow()],
                             })
                           }
                           className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
                         >
                           {voicings.map((v) => (
                             <option key={v}>{v}</option>
-                          ))}
-                        </select>
-                      </label>
-
-                      <label className="block">
-                        <span className="text-sm font-medium text-slate-300">
-                          Confidence
-                        </span>
-                        <select
-                          value={editForm.confidence}
-                          onChange={(e) =>
-                            updateEditForm({
-                              confidence: e.target.value as Confidence,
-                            })
-                          }
-                          className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-                        >
-                          {confidenceLevels.map((level) => (
-                            <option key={level} value={level}>
-                              {level}
-                            </option>
                           ))}
                         </select>
                       </label>
@@ -685,24 +745,86 @@ export default function RepertoireManager() {
 
                     <div className="mt-5">
                       <p className="text-sm font-medium text-slate-300">
-                        Parts you know
+                        Parts and confidence
                       </p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {partsByVoicing[editForm.voicing].map((part) => (
-                          <button
-                            key={part}
-                            type="button"
-                            onClick={() => toggleEditPart(part)}
-                            className={`min-h-12 rounded-xl px-4 py-3 text-sm font-semibold ring-1 ${
-                              editForm.partsKnown.includes(part)
-                                ? "bg-cyan-300 text-slate-950 ring-cyan-200"
-                                : "bg-slate-800 text-slate-200 ring-white/10 hover:bg-slate-700"
-                            }`}
+                      <div className="mt-2 space-y-3">
+                        {editForm.partRows.map((row, rowIndex) => (
+                          <div
+                            key={rowIndex}
+                            className="grid gap-2 rounded-xl border border-white/10 bg-slate-950/60 p-3 sm:grid-cols-[1fr_1fr_auto]"
                           >
-                            {partButtonLabel(editForm.voicing, part)}
-                          </button>
+                            <label className="block">
+                              <span className="text-xs font-semibold uppercase tracking-normal text-slate-400">
+                                Part
+                              </span>
+                              <select
+                                value={row.part}
+                                onChange={(e) =>
+                                  updateEditPartRow(rowIndex, {
+                                    part: e.target.value as Part | "",
+                                  })
+                                }
+                                className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                              >
+                                <option value="">Choose part</option>
+                                {partsByVoicing[editForm.voicing].map((part) => (
+                                  <option
+                                    key={part}
+                                    value={part}
+                                    disabled={editForm.partRows.some(
+                                      (candidate, candidateIndex) =>
+                                        candidateIndex !== rowIndex &&
+                                        candidate.part === part
+                                    )}
+                                  >
+                                    {partButtonLabel(editForm.voicing, part)}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label className="block">
+                              <span className="text-xs font-semibold uppercase tracking-normal text-slate-400">
+                                Confidence
+                              </span>
+                              <select
+                                value={row.confidence}
+                                onChange={(e) =>
+                                  updateEditPartRow(rowIndex, {
+                                    confidence: e.target.value as Confidence | "",
+                                  })
+                                }
+                                className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                              >
+                                <option value="">Choose confidence</option>
+                                {confidenceLevels.map((level) => (
+                                  <option key={level} value={level}>
+                                    {level}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => removeEditPartRow(rowIndex)}
+                              disabled={editForm.partRows.length <= 1}
+                              className="min-h-12 rounded-xl bg-slate-800 px-3 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-700 disabled:opacity-40 sm:self-end"
+                            >
+                              Remove
+                            </button>
+                          </div>
                         ))}
                       </div>
+                      <button
+                        type="button"
+                        onClick={addEditPartRow}
+                        disabled={
+                          editForm.partRows.length >=
+                          partsByVoicing[editForm.voicing].length
+                        }
+                        className="mt-3 rounded-xl bg-white/10 px-4 py-3 text-sm font-semibold text-cyan-200 hover:bg-white/20 disabled:opacity-40"
+                      >
+                        Add another part
+                      </button>
                     </div>
 
                     <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -742,17 +864,14 @@ export default function RepertoireManager() {
                       </div>
 
                       <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-300">
-                        {item.parts_known.map((part) => (
+                        {item.part_confidences.map(({ part, confidence }) => (
                           <span
                             key={part}
                             className="rounded-full bg-cyan-300/10 px-2 py-0.5 font-semibold text-cyan-100 ring-1 ring-cyan-300/20"
                           >
-                            {partAbbreviation(item.voicing, part)}
+                            {partAbbreviation(item.voicing, part)} · {confidence}
                           </span>
                         ))}
-                        <span className="rounded-full bg-slate-900 px-2 py-0.5 font-medium text-slate-300">
-                          {item.confidence}
-                        </span>
                         {item.arranger_name && (
                           <span className="truncate text-slate-400">
                             Arr. {item.arranger_name}
@@ -847,7 +966,7 @@ export default function RepertoireManager() {
                         type="button"
                         onClick={() => {
                           setVoicing(v);
-                          setPartsKnown([]);
+                          setPartRows([emptyPartRow()]);
                         }}
                         className={`min-h-12 rounded-xl px-3 py-3 text-sm font-semibold ring-1 ${
                           voicing === v
@@ -863,52 +982,91 @@ export default function RepertoireManager() {
 
                 <div>
                   <p className="text-sm font-medium text-slate-300">
-                    Parts you know
+                    Parts and confidence
                   </p>
-                  <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <div className="mt-2 space-y-3">
                     {voicing ? (
-                      partsByVoicing[voicing].map((part) => (
-                        <button
-                          key={part}
-                          type="button"
-                          onClick={() => togglePart(part)}
-                          className={`min-h-12 rounded-xl px-3 py-3 text-sm font-semibold ring-1 ${
-                            partsKnown.includes(part)
-                              ? "bg-cyan-300 text-slate-950 ring-cyan-200"
-                              : "bg-slate-800 text-slate-200 ring-white/10 hover:bg-slate-700"
-                          }`}
+                      partRows.map((row, rowIndex) => (
+                        <div
+                          key={rowIndex}
+                          className="grid gap-2 rounded-xl border border-white/10 bg-slate-950/60 p-3 sm:grid-cols-[1fr_1fr_auto]"
                         >
-                          {partButtonLabel(voicing, part)}
-                        </button>
+                          <label className="block">
+                            <span className="text-xs font-semibold uppercase tracking-normal text-slate-400">
+                              Part
+                            </span>
+                            <select
+                              value={row.part}
+                              onChange={(e) =>
+                                updatePartRow(rowIndex, {
+                                  part: e.target.value as Part | "",
+                                })
+                              }
+                              className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                            >
+                              <option value="">Choose part</option>
+                              {partsByVoicing[voicing].map((part) => (
+                                <option
+                                  key={part}
+                                  value={part}
+                                  disabled={partRows.some(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex !== rowIndex &&
+                                      candidate.part === part
+                                  )}
+                                >
+                                  {partButtonLabel(voicing, part)}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label className="block">
+                            <span className="text-xs font-semibold uppercase tracking-normal text-slate-400">
+                              Confidence
+                            </span>
+                            <select
+                              value={row.confidence}
+                              onChange={(e) =>
+                                updatePartRow(rowIndex, {
+                                  confidence: e.target.value as Confidence | "",
+                                })
+                              }
+                              className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                            >
+                              <option value="">Choose confidence</option>
+                              {confidenceLevels.map((level) => (
+                                <option key={level} value={level}>
+                                  {level}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => removePartRow(rowIndex)}
+                            disabled={partRows.length <= 1}
+                            className="min-h-12 rounded-xl bg-slate-800 px-3 py-3 text-sm font-semibold text-slate-200 hover:bg-slate-700 disabled:opacity-40 sm:self-end"
+                          >
+                            Remove
+                          </button>
+                        </div>
                       ))
                     ) : (
-                      <p className="col-span-2 text-sm text-slate-400 sm:col-span-4">
+                      <p className="text-sm text-slate-400">
                         Choose a voicing first.
                       </p>
                     )}
                   </div>
-                </div>
-
-                <div>
-                  <p className="text-sm font-medium text-slate-300">
-                    Confidence
-                  </p>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                    {confidenceLevels.map((level) => (
-                      <button
-                        key={level}
-                        type="button"
-                        onClick={() => setConfidence(level)}
-                        className={`min-h-12 rounded-xl px-3 py-3 text-sm font-semibold ring-1 ${
-                          confidence === level
-                            ? "bg-cyan-300 text-slate-950 ring-cyan-200"
-                            : "bg-slate-800 text-slate-200 ring-white/10 hover:bg-slate-700"
-                        }`}
-                      >
-                        {level}
-                      </button>
-                    ))}
-                  </div>
+                  {voicing && (
+                    <button
+                      type="button"
+                      onClick={addPartRow}
+                      disabled={partRows.length >= partsByVoicing[voicing].length}
+                      className="mt-3 rounded-xl bg-white/10 px-4 py-3 text-sm font-semibold text-cyan-200 hover:bg-white/20 disabled:opacity-40"
+                    >
+                      Add another part
+                    </button>
+                  )}
                 </div>
 
                 <div>

@@ -14,6 +14,13 @@ const migration = readFileSync(
   ),
   "utf8"
 );
+const partConfidenceMigration = readFileSync(
+  join(
+    repoRoot,
+    "supabase/migrations/20260428142000_add_part_confidences_to_repertoire.sql"
+  ),
+  "utf8"
+);
 
 describe("Supabase contract guardrails", () => {
   const tables = [
@@ -54,5 +61,12 @@ describe("Supabase contract guardrails", () => {
     expect(contract).toContain("leave");
     expect(contract).toContain("repertoire snapshot");
     expect(contract).toContain("Match calculation source");
+  });
+
+  it("documents and migrates per-part repertoire confidence", () => {
+    expect(contract).toContain("part_confidences");
+    expect(partConfidenceMigration).toContain("part_confidences jsonb");
+    expect(partConfidenceMigration).toContain("unnest(parts_known)");
+    expect(partConfidenceMigration).toContain("confidence");
   });
 });

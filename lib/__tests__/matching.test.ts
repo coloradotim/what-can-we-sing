@@ -35,7 +35,7 @@ describe("findMatches", () => {
     const matches = findMatches(entries);
 
     expect(matches[0].warnings).toContain(
-      "Confidence warning: Rusty marked A Little Rusty, Music marked Music Required"
+      "Confidence warning: Rusty marked A Little Rusty on Lead, Music marked Music Required on Baritone"
     );
   });
 
@@ -350,6 +350,41 @@ describe("findMatches", () => {
     const matches = findMatches(entries);
 
     expect(matches[0].assignments.Tenor?.[0].displayName).toBe("Ready Tenor");
+  });
+
+  it("uses confidence for the assigned part when choosing flexible singers", () => {
+    const entries: SingerEntry[] = [
+      {
+        userId: "1",
+        displayName: "Flexible",
+        songTitle: "Part Confidence Song",
+        voicing: "TTBB",
+        partsKnown: ["Tenor", "Lead"],
+        confidence: "Music Required",
+        partConfidences: {
+          Tenor: "Music Required",
+          Lead: "Good to Go",
+        },
+      },
+      {
+        userId: "2",
+        displayName: "Tenor Only",
+        songTitle: "Part Confidence Song",
+        voicing: "TTBB",
+        partsKnown: ["Tenor"],
+        confidence: "Music Required",
+        partConfidences: {
+          Tenor: "Good to Go",
+        },
+      },
+      { userId: "3", displayName: "Bari", songTitle: "Part Confidence Song", voicing: "TTBB", partsKnown: ["Baritone"], confidence: "Good to Go" },
+      { userId: "4", displayName: "Bass", songTitle: "Part Confidence Song", voicing: "TTBB", partsKnown: ["Bass"], confidence: "Good to Go" },
+    ];
+
+    const matches = findMatches(entries);
+
+    expect(matches[0].assignments.Tenor?.[0].displayName).toBe("Tenor Only");
+    expect(matches[0].assignments.Lead?.[0].displayName).toBe("Flexible");
   });
 
   it("uses extra part coverage as a modest tie-breaker", () => {

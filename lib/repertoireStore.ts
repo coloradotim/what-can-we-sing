@@ -1,5 +1,11 @@
 import { supabase } from "@/lib/supabase";
-import { normalizeConfidence, type Confidence, type Part, type Voicing } from "@/lib/matching";
+import {
+  normalizeConfidence,
+  type Confidence,
+  type Part,
+  type PartConfidence,
+  type Voicing,
+} from "@/lib/matching";
 import { getCurrentUser } from "@/lib/profileStore";
 
 export type RepertoireRow = {
@@ -9,20 +15,74 @@ export type RepertoireRow = {
   voicing: Voicing;
   arranger_name: string | null;
   parts_known: Part[];
+  part_confidences: PartConfidence[];
   confidence: Confidence;
   notes: string | null;
   created_at: string;
   updated_at: string;
 };
 
-type RawRepertoireRow = Omit<RepertoireRow, "confidence"> & {
+type RawRepertoireRow = Omit<RepertoireRow, "confidence" | "part_confidences"> & {
   confidence: string | null;
+  part_confidences?: unknown;
 };
 
+const validParts: Part[] = [
+  "Tenor",
+  "Lead",
+  "Baritone",
+  "Bass",
+  "Soprano",
+  "Alto",
+  "Soprano 1",
+  "Soprano 2",
+  "Alto 1",
+  "Alto 2",
+];
+
+function isPart(value: unknown): value is Part {
+  return typeof value === "string" && validParts.includes(value as Part);
+}
+
+function normalizePartConfidences(row: RawRepertoireRow): PartConfidence[] {
+  if (Array.isArray(row.part_confidences)) {
+    const seen = new Set<Part>();
+    const normalized = row.part_confidences
+      .map((item) => {
+        if (!item || typeof item !== "object") return null;
+        const candidate = item as { part?: unknown; confidence?: unknown };
+        const confidence =
+          typeof candidate.confidence === "string"
+            ? normalizeConfidence(candidate.confidence)
+            : null;
+
+        if (!isPart(candidate.part) || !confidence || seen.has(candidate.part)) {
+          return null;
+        }
+
+        seen.add(candidate.part);
+        return { part: candidate.part, confidence };
+      })
+      .filter((item): item is PartConfidence => Boolean(item));
+
+    if (normalized.length > 0) return normalized;
+  }
+
+  const fallbackConfidence = normalizeConfidence(row.confidence) ?? "Music Required";
+  return row.parts_known.map((part) => ({
+    part,
+    confidence: fallbackConfidence,
+  }));
+}
+
 function normalizeRepertoireRow(row: RawRepertoireRow): RepertoireRow {
+  const partConfidences = normalizePartConfidences(row);
+
   return {
     ...row,
-    confidence: normalizeConfidence(row.confidence) ?? "Music Required",
+    parts_known: partConfidences.map((item) => item.part),
+    part_confidences: partConfidences,
+    confidence: partConfidences[0]?.confidence ?? "Music Required",
   };
 }
 
@@ -44,12 +104,12 @@ export async function addRepertoireItem(input: {
   songTitle: string;
   voicing: Voicing;
   arrangerName?: string;
-  partsKnown: Part[];
-  confidence: Confidence;
+  partConfidences: PartConfidence[];
   notes?: string;
 }) {
   const user = await getCurrentUser();
   if (!user) throw new Error("You must be logged in.");
+  const primaryConfidence = input.partConfidences[0]?.confidence ?? "Music Required";
 
   const { data, error } = await supabase
     .from("user_repertoire")
@@ -58,8 +118,9 @@ export async function addRepertoireItem(input: {
       song_title: input.songTitle,
       voicing: input.voicing,
       arranger_name: input.arrangerName || null,
-      parts_known: input.partsKnown,
-      confidence: input.confidence,
+      parts_known: input.partConfidences.map((item) => item.part),
+      part_confidences: input.partConfidences,
+      confidence: primaryConfidence,
       notes: input.notes || null,
     })
     .select()
@@ -75,13 +136,13 @@ export async function updateRepertoireItem(
     songTitle: string;
     voicing: Voicing;
     arrangerName?: string;
-    partsKnown: Part[];
-    confidence: Confidence;
+    partConfidences: PartConfidence[];
     notes?: string;
   }
 ) {
   const user = await getCurrentUser();
   if (!user) throw new Error("You must be logged in.");
+  const primaryConfidence = input.partConfidences[0]?.confidence ?? "Music Required";
 
   const { data, error } = await supabase
     .from("user_repertoire")
@@ -89,8 +150,9 @@ export async function updateRepertoireItem(
       song_title: input.songTitle,
       voicing: input.voicing,
       arranger_name: input.arrangerName || null,
-      parts_known: input.partsKnown,
-      confidence: input.confidence,
+      parts_known: input.partConfidences.map((item) => item.part),
+      part_confidences: input.partConfidences,
+      confidence: primaryConfidence,
       notes: input.notes || null,
     })
     .eq("id", id)
