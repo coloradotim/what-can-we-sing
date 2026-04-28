@@ -20,13 +20,11 @@ import {
   addRepertoireItem,
   deleteRepertoireItem,
   getMyRepertoire,
+  searchRepertoireSongSuggestions,
   updateRepertoireItem,
   type RepertoireRow,
 } from "@/lib/repertoireStore";
-import {
-  getSongSuggestions,
-  type SongSuggestion,
-} from "@/lib/songSuggestions";
+import type { SongSuggestion } from "@/lib/songSuggestions";
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 import { refreshActiveQuartetSnapshot } from "@/lib/activeQuartetSnapshot";
 
@@ -73,6 +71,8 @@ export default function RepertoireManager() {
   const [partFilter, setPartFilter] = useState<Part | "">("");
   const [neverSungOnly, setNeverSungOnly] = useState(false);
   const [songTitle, setSongTitle] = useState("");
+  const [songSuggestions, setSongSuggestions] = useState<SongSuggestion[]>([]);
+  const [songSuggestionsOpen, setSongSuggestionsOpen] = useState(false);
   const [voicing, setVoicing] = useState<Voicing | "">("");
   const [arrangerName, setArrangerName] = useState("");
   const [notes, setNotes] = useState("");
@@ -186,8 +186,37 @@ export default function RepertoireManager() {
     return () => window.cancelAnimationFrame(frame);
   }, [isAddOpen]);
 
+  useEffect(() => {
+    if (!isAddOpen || !songSuggestionsOpen || songTitle.trim().length < 2) {
+      setSongSuggestions([]);
+      return;
+    }
+
+    let cancelled = false;
+    const timeout = window.setTimeout(async () => {
+      try {
+        const suggestions = await searchRepertoireSongSuggestions(songTitle);
+        if (!cancelled) {
+          setSongSuggestions(suggestions);
+        }
+      } catch (err) {
+        console.error("Could not load song suggestions", err);
+        if (!cancelled) {
+          setSongSuggestions([]);
+        }
+      }
+    }, 150);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+  }, [isAddOpen, songSuggestionsOpen, songTitle]);
+
   function resetAddForm() {
     setSongTitle("");
+    setSongSuggestions([]);
+    setSongSuggestionsOpen(false);
     setVoicing("");
     setArrangerName("");
     setNotes("");
@@ -208,6 +237,7 @@ export default function RepertoireManager() {
 
   function selectSongSuggestion(suggestion: SongSuggestion) {
     setSongTitle(suggestion.songTitle);
+    setSongSuggestionsOpen(false);
     setVoicing(suggestion.voicing);
     setArrangerName(suggestion.arrangerName);
     setShowArranger(Boolean(suggestion.arrangerName));
@@ -539,7 +569,6 @@ export default function RepertoireManager() {
     sort: sortOption,
   };
   const visibleItems = filterAndSortRepertoire(items, repertoireFilters);
-  const songSuggestions = getSongSuggestions(items, songTitle);
   const hasActiveFilters = hasActiveRepertoireFilters(repertoireFilters);
   const partFilterOptions = voicingFilter
     ? partsByVoicing[voicingFilter]
@@ -1043,11 +1072,15 @@ export default function RepertoireManager() {
                   <input
                     ref={songTitleInputRef}
                     value={songTitle}
-                    onChange={(e) => setSongTitle(e.target.value)}
+                    onChange={(e) => {
+                      setSongTitle(e.target.value);
+                      setSongSuggestionsOpen(true);
+                    }}
+                    onFocus={() => setSongSuggestionsOpen(true)}
                     autoComplete="off"
                     className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
                   />
-                  {songSuggestions.length > 0 && (
+                  {songSuggestionsOpen && songSuggestions.length > 0 && (
                     <div className="mt-2 overflow-hidden rounded-xl border border-cyan-300/20 bg-slate-900">
                       <p className="px-3 py-2 text-xs font-semibold uppercase tracking-normal text-slate-400">
                         Existing songs

@@ -75,6 +75,9 @@ Code:
 - Mark own song as sung:
   `lib/repertoireStore.ts#markRepertoireItemAsSung`, through
   `public.mark_repertoire_sung`
+- Search global song identity suggestions:
+  `lib/repertoireStore.ts#searchRepertoireSongSuggestions`, through
+  `public.search_repertoire_song_suggestions`
 - Used by `lib/activeQuartetSnapshot.ts` to refresh the current user's
   `session_participants.repertoire` snapshot.
 
@@ -104,11 +107,18 @@ Required database contract:
   updates only the authenticated user's matching `user_repertoire` row,
   increments `times_sung_count`, sets `last_sung_at`, and records the matching
   private `sung_song_events` row in one database operation.
+- `public.search_repertoire_song_suggestions(p_query text, p_limit integer)`
+  is a security-definer RPC available only to authenticated users. It returns
+  distinct global song identity suggestions from all repertoire rows:
+  `song_title`, `voicing`, and `arranger_name`. It must not return `user_id`,
+  singer names, notes, parts, confidence, timestamps, or other per-user
+  repertoire details.
 
 Established by migrations:
 - `20260428060000_supabase_contract_alignment.sql`
 - `20260428142000_add_part_confidences_to_repertoire.sql`
 - `20260428145000_add_repertoire_sung_metadata.sql`
+- `20260428223000_add_global_song_suggestions.sql`
 
 ### `sessions`
 
