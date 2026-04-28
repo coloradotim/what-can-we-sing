@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   formatFeedbackEmailText,
   validateFeedbackSubmission,
-} from "@/lib/feedback";
+} from "../../../lib/feedback";
 
 const resendApiUrl = "https://api.resend.com/emails";
 
@@ -15,7 +15,13 @@ export async function POST(request: NextRequest) {
   let submission;
 
   try {
-    submission = validateFeedbackSubmission(await request.json());
+    const body = await request.json();
+
+    submission = validateFeedbackSubmission({
+      type: body?.type,
+      message: body?.message,
+      contactEmail: body?.contactEmail,
+    });
   } catch (err) {
     return jsonResponse(
       err instanceof Error ? err.message : "Could not read feedback.",
@@ -95,7 +101,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      console.error("Feedback email failed", await response.text());
+      console.error("Feedback email failed", {
+        status: response.status,
+        statusText: response.statusText,
+      });
       return jsonResponse("Could not send feedback. Please try again.", 502);
     }
 

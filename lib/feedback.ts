@@ -10,7 +10,6 @@ export type FeedbackSubmission = {
   type: FeedbackType;
   message: string;
   contactEmail?: string;
-  path?: string;
 };
 
 export type FeedbackContext = {
@@ -32,7 +31,6 @@ export function validateFeedbackSubmission(
   const message = typeof value.message === "string" ? value.message.trim() : "";
   const contactEmail =
     typeof value.contactEmail === "string" ? value.contactEmail.trim() : "";
-  const path = typeof value.path === "string" ? value.path.trim() : "";
 
   if (!isFeedbackType(type)) {
     throw new Error("Choose a feedback type.");
@@ -50,7 +48,6 @@ export function validateFeedbackSubmission(
     type,
     message,
     ...(contactEmail ? { contactEmail } : {}),
-    ...(path ? { path } : {}),
   };
 }
 
@@ -61,7 +58,6 @@ export function formatFeedbackEmailText(
   return [
     `Type: ${submission.type}`,
     `Submitted: ${context.timestamp}`,
-    `Path: ${submission.path ?? "Unknown"}`,
     `User ID: ${context.userId ?? "Unknown"}`,
     `Display name: ${context.displayName ?? "Unknown"}`,
     `Contact email: ${submission.contactEmail ?? "Not provided"}`,

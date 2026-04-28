@@ -54,7 +54,6 @@ export default function FeedbackPage() {
           type,
           message,
           contactEmail,
-          path: window.location.href,
         }),
       });
       const data = (await response.json()) as { message?: string };
