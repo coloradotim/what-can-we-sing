@@ -14,6 +14,25 @@ migrations in `supabase/migrations`, and tests or test documentation.
   It uses Supabase Auth only to identify the current user and read their profile.
 - Realtime is required for `profiles` and `session_participants`.
 
+## App Flow Contract
+
+- Starting a quartet creates a `sessions` row and immediately inserts the
+  current user's `session_participants` snapshot before navigating to
+  `/join/[code]`.
+- `/join/[code]` reads fresh session and participant data from Supabase on load.
+  Existing participants are recognized by `user_id`, not by display name.
+- Local active-quartet state is a shortcut for navigation only. It must not be
+  treated as proof that the user still has a current `session_participants` row.
+- Repertoire add, edit, delete, and mark-as-sung actions update
+  `user_repertoire`. Add/edit/delete actions refresh the active quartet
+  `session_participants.repertoire` snapshot when the user is in a quartet.
+- Leaving a quartet deletes the current user's `session_participants` row.
+- Removing another singer uses `remove_session_participant_by_id` and deletes
+  the selected participant row when the requester is also a current participant
+  in that session.
+- Quartet participant lists and match results derive from the latest
+  `session_participants` rows plus profile display names.
+
 ## Tables And Objects
 
 ### `profiles`
@@ -100,6 +119,8 @@ Code:
 - Read by join code: `lib/sessionStore.ts#getSessionByCode`
 - Update `last_activity_at`: internal helper in `lib/sessionStore.ts`, called
   after participant snapshot upserts.
+- Start quartet flow: `app/session/page.tsx` creates the session before
+  inserting the first participant snapshot.
 
 Expected context:
 - Browser authenticated user.
@@ -133,6 +154,9 @@ Code:
   `lib/sessionStore.ts#subscribeToSessionParticipants`
 - Repertoire snapshot refresh:
   `lib/activeQuartetSnapshot.ts#refreshActiveQuartetSnapshot`
+- Participant display data:
+  `lib/participantEntries.ts` combines participant membership with
+  `profiles.display_name`
 - Match calculation source:
   `app/join/[code]/page.tsx` builds entries from current participants and calls
   `findMatches`.
@@ -206,7 +230,9 @@ Expected context:
 
 ## Auth Assumptions
 
-- Users sign in with Supabase Auth OTP from `app/login/page.tsx`.
+- Users sign in with Supabase Auth email OTP from `app/login/page.tsx`.
+- The app verifies typed codes with Supabase and does not rely on magic-link
+  callback redirects.
 - Most app pages require an authenticated user before reading or writing app
   tables.
 - RLS policies are written for the `authenticated` role and `auth.uid()`.
@@ -224,6 +250,10 @@ Expected context:
 
 Automated tests currently cover:
 - Matching rules and ranking in `lib/__tests__/matching.test.ts`
+- Title normalization and suggested matches in
+  `lib/__tests__/matching.test.ts`
+- Participant entry derivation from profile names in
+  `lib/__tests__/participantEntries.test.ts`
 - Participant realtime payload application in
   `lib/__tests__/sessionParticipantChanges.test.ts`
 - Existing participant/rejoin recognition by `user_id` in
@@ -231,6 +261,16 @@ Automated tests currently cover:
 - Display names derived from `profiles` instead of stale participant names in
   `lib/__tests__/sessionParticipantDisplayName.test.ts`
 - Active quartet local-storage behavior in `lib/__tests__/activeQuartet.test.ts`
+- Auth route guards and post-login redirect behavior in
+  `lib/__tests__/authRoute.test.ts` and
+  `lib/__tests__/authRedirect.test.ts`
+- Feedback route validation and server-only destination handling in API route
+  tests
+- Analytics event sanitization in `lib/__tests__/analytics.test.ts`
+- Quartet action confirmation controls in
+  `components/QuartetActionConfirmation.test.tsx`
+- Deployment automation docs/workflow guardrails in
+  `lib/__tests__/deploymentAutomation.test.ts`
 - Supabase contract/migration text in
   `lib/__tests__/supabaseContract.test.ts`
 

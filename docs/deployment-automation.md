@@ -55,11 +55,14 @@ Configure GitHub branch protection for `main` in repository settings:
 
 - Require a pull request before merging.
 - Require status checks to pass before merging.
-- Require the `CI / test-and-build` check.
-- Require the `CI / guardrails` check.
+- Require the `CI / test-and-build (pull_request)` check.
+- Require the `CI / guardrails (pull_request)` check.
 - Optionally require one approval before merging.
 - Prevent direct pushes to `main` where practical.
 - Allow auto-merge only after required checks and approvals pass.
+
+Do not require the `Supabase Migrations` workflow as a pre-merge PR check. It
+runs after migration changes merge to `main`.
 
 These settings are repository settings and are not stored in the codebase.
 

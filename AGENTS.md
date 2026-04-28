@@ -13,7 +13,11 @@ The app is for practical, in-the-room decision-making, not archival repertoire m
 - Same title + same voicing can be grouped, but different arrangers or missing arrangers should be flagged as possible matches, not ignored.
 - Do not combine different voicings.
 - Repertoire is cloud-backed in Supabase.
-- Sessions store participant repertoire snapshots; users can refresh their snapshot.
+- Sessions store participant repertoire snapshots; repertoire add/edit/delete
+  flows refresh the active quartet snapshot when a user is in a quartet.
+- `profiles.display_name` is the source of truth for names shown in quartet UI;
+  do not depend on `session_participants.display_name` for display.
+- `session_participants` is the source of truth for active quartet membership.
 
 ## Barbershop-specific context
 - Pickup quartets often form informally at rehearsals, conventions, afterglows, or social singing events.
@@ -136,5 +140,8 @@ Guardrails:
 - `lib/__tests__/matching.test.ts`: matching tests
 - `lib/sessionStore.ts`: sessions/participants/realtime
 - `lib/repertoireStore.ts`: cloud repertoire
+- `lib/activeQuartetSnapshot.ts`: refreshes active quartet snapshots after repertoire changes
+- `lib/participantEntries.ts`: combines participant rows with profile display names
 - `app/join/[code]/page.tsx`: session join/results
 - `app/repertoire/page.tsx`: repertoire management
+- `docs/supabase-contract.md`: app/database contract and Supabase guardrails
