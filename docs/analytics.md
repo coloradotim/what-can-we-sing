@@ -43,6 +43,7 @@ The app currently tracks these events through `lib/analytics.ts`:
 - `quartet_matches_viewed`
 - `song_marked_sung`
 - `song_mark_sung_failed`
+- `help_viewed`
 - `feedback_submitted`
 
 When adding an event, update this document and keep the privacy contract above

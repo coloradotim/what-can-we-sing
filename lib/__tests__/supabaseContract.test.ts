@@ -89,6 +89,7 @@ describe("Supabase contract guardrails", () => {
     expect(analyticsDocs).toContain("Do not send free-text user content");
     expect(analyticsDocs).toContain("feedback text");
     expect(analyticsDocs).toContain("song titles");
+    expect(analyticsDocs).toContain("help_viewed");
     expect(analyticsDocs).toContain("quartet_member_removed");
   });
 

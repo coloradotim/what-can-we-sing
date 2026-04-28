@@ -34,6 +34,7 @@ const setupPrompts: Record<
   Exclude<SetupState, "loading" | "ready">,
   {
     message: string;
+    helper?: string;
     href: string;
     action: string;
   }
@@ -45,6 +46,8 @@ const setupPrompts: Record<
   },
   missing_repertoire: {
     message: "Add a few songs before starting or joining a quartet.",
+    helper:
+      "You can still use Start or Join from the navigation if you are helping set up a quartet.",
     href: "/repertoire",
     action: "Add songs",
   },
@@ -135,11 +138,22 @@ export default function Home() {
             <p className="text-lg font-semibold text-white">
               {setupPrompt.message}
             </p>
+            {setupPrompt.helper && (
+              <p className="mt-2 text-sm leading-6 text-cyan-50/80">
+                {setupPrompt.helper}
+              </p>
+            )}
             <a
               href={setupPrompt.href}
               className="mt-4 inline-block rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200"
             >
               {setupPrompt.action}
+            </a>
+            <a
+              href="/help"
+              className="ml-3 mt-4 inline-block px-1 py-3 text-sm font-semibold text-cyan-100 hover:text-white"
+            >
+              Help
             </a>
           </div>
         )}
@@ -195,10 +209,10 @@ export default function Home() {
                 Profile
               </a>
               <a
-                href="/feedback"
+                href="/help"
                 className="font-semibold text-slate-300 hover:text-cyan-200"
               >
-                Feedback
+                Help
               </a>
             </div>
           </>
