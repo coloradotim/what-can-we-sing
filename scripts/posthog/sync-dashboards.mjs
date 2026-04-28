@@ -101,41 +101,42 @@ async function readSpec() {
   return spec;
 }
 
-function eventToFilter(event, order) {
-  const filter = {
-    id: event.event,
+function eventToQueryNode(event) {
+  const node = {
+    kind: "EventsNode",
+    event: event.event,
     name: event.event,
-    type: "events",
-    order,
     math: event.math || "total",
   };
 
   if (event.mathProperty) {
-    filter.math_property = event.mathProperty;
+    node.math_property = event.mathProperty;
   }
 
-  return filter;
+  return node;
 }
 
-function filtersForInsight(insight) {
-  const filters = {
-    insight: insight.type === "funnel" ? "FUNNELS" : "TRENDS",
-    date_from: insight.dateFrom || "-30d",
-    events: insight.series.map(eventToFilter),
+function queryForInsight(insight) {
+  const query = {
+    kind: insight.type === "funnel" ? "FunnelsQuery" : "TrendsQuery",
+    dateRange: {
+      date_from: insight.dateFrom || "-30d",
+    },
+    series: insight.series.map(eventToQueryNode),
   };
 
   if (insight.interval) {
-    filters.interval = insight.interval;
+    query.interval = insight.interval;
   }
 
   if (insight.breakdown) {
-    filters.breakdown = insight.breakdown;
-    filters.breakdown_type = insight.breakdown.startsWith("$")
-      ? "event"
-      : "event";
+    query.breakdownFilter = {
+      breakdown: insight.breakdown,
+      breakdown_type: "event",
+    };
   }
 
-  return filters;
+  return query;
 }
 
 async function posthogFetch(endpoint, options = {}) {
@@ -210,7 +211,7 @@ async function upsertInsight(environment, dashboardId, insight, tags) {
   const body = {
     name: insight.name,
     description: insight.description,
-    filters: filtersForInsight(insight),
+    query: queryForInsight(insight),
     dashboards: [dashboardId],
     saved: true,
     tags,
