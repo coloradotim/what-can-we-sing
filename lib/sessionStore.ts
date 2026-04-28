@@ -128,10 +128,33 @@ export function subscribeToSessionParticipants(
     .on(
       "postgres_changes",
       {
-        event: "*",
+        event: "INSERT",
         schema: "public",
         table: "session_participants",
         filter: `session_id=eq.${sessionId}`,
+      },
+      (payload) => {
+        onChange(payload as ParticipantChangePayload);
+      }
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "session_participants",
+        filter: `session_id=eq.${sessionId}`,
+      },
+      (payload) => {
+        onChange(payload as ParticipantChangePayload);
+      }
+    )
+    .on(
+      "postgres_changes",
+      {
+        event: "DELETE",
+        schema: "public",
+        table: "session_participants",
       },
       (payload) => {
         onChange(payload as ParticipantChangePayload);

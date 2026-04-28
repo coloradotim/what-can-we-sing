@@ -76,6 +76,39 @@ describe("applyParticipantChange", () => {
     expect(result.map((item) => item.id)).toEqual(["two"]);
   });
 
+  it("removes deleted participants when realtime only sends the primary key", () => {
+    const first = participant("one", "session-1", "2026-01-01T00:00:00Z");
+    const second = participant("two", "session-1", "2026-01-01T00:01:00Z");
+
+    const result = applyParticipantChange(
+      [first, second],
+      {
+        eventType: "DELETE",
+        new: {},
+        old: { id: "one" },
+      },
+      "session-1"
+    );
+
+    expect(result.map((item) => item.id)).toEqual(["two"]);
+  });
+
+  it("ignores unscoped delete events for participants not in local state", () => {
+    const existing = participant("one", "session-1", "2026-01-01T00:00:00Z");
+
+    const result = applyParticipantChange(
+      [existing],
+      {
+        eventType: "DELETE",
+        new: {},
+        old: { id: "other-session-participant" },
+      },
+      "session-1"
+    );
+
+    expect(result).toEqual([existing]);
+  });
+
   it("ignores changes from other sessions", () => {
     const existing = participant("one", "session-1", "2026-01-01T00:00:00Z");
     const otherSession = participant(
