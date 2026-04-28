@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/AppNav";
+import { QuartetActionConfirmation } from "@/components/QuartetActionConfirmation";
 import type {
   Confidence,
   Part,
@@ -87,6 +88,7 @@ export default function RepertoireManager() {
   const [isAdding, setIsAdding] = useState(false);
   const [savingEditId, setSavingEditId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<RepertoireRow | null>(null);
   const [dismissedSuggestionIds, setDismissedSuggestionIds] = useState<string[]>(
     []
   );
@@ -369,6 +371,13 @@ export default function RepertoireManager() {
     }
   }
 
+  function requestDeleteItem(item: RepertoireRow) {
+    if (deletingId) return;
+
+    setMessage("");
+    setItemToDelete(item);
+  }
+
   async function deleteItem(id: string) {
     if (deletingId) return;
 
@@ -378,6 +387,7 @@ export default function RepertoireManager() {
       if (editingId === id) {
         cancelEditing();
       }
+      setItemToDelete(null);
       setMessage("Song deleted.");
       trackEvent("repertoire_song_deleted", {
         song_count: Math.max(0, items.length - 1),
@@ -402,9 +412,16 @@ export default function RepertoireManager() {
     } catch (err) {
       console.error(err);
       setMessage("Could not delete song. Please try again.");
+      setItemToDelete(null);
     } finally {
       setDeletingId(null);
     }
+  }
+
+  async function confirmDeleteItem() {
+    if (!itemToDelete) return;
+
+    await deleteItem(itemToDelete.id);
   }
 
   async function saveEdit(id: string) {
@@ -567,6 +584,18 @@ export default function RepertoireManager() {
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-5xl">
         <AppNav />
+        <QuartetActionConfirmation
+          open={Boolean(itemToDelete)}
+          busy={Boolean(deletingId)}
+          title="Delete song?"
+          description={`This will remove "${
+            itemToDelete?.song_title ?? "this song"
+          }" from your repertoire. This cannot be undone.`}
+          confirmLabel="Delete song"
+          busyLabel="Deleting..."
+          onCancel={() => setItemToDelete(null)}
+          onConfirm={confirmDeleteItem}
+        />
 
         <h1 className="mt-4 text-4xl font-bold tracking-tight">My Repertoire</h1>
         <p className="mt-2 text-slate-300">
@@ -988,7 +1017,7 @@ export default function RepertoireManager() {
                         Cancel
                       </button>
                       <button
-                        onClick={() => deleteItem(item.id)}
+                        onClick={() => requestDeleteItem(item)}
                         disabled={savingEditId === item.id || deletingId === item.id}
                         className="rounded-xl bg-rose-400/10 px-5 py-3 font-semibold text-rose-200 hover:bg-rose-400/20 disabled:opacity-40"
                       >
@@ -1039,7 +1068,7 @@ export default function RepertoireManager() {
                         Edit
                       </button>
                       <button
-                        onClick={() => deleteItem(item.id)}
+                        onClick={() => requestDeleteItem(item)}
                         disabled={deletingId === item.id}
                         className="rounded-lg bg-rose-400/10 px-3 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-400/20 disabled:opacity-40"
                       >
