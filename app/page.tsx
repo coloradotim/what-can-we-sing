@@ -53,6 +53,7 @@ const setupPrompts: Record<
 export default function Home() {
   const [setupState, setSetupState] = useState<SetupState>("loading");
   const [activeQuartet, setActiveQuartet] = useState<ActiveQuartet | null>(null);
+  const [repertoireCount, setRepertoireCount] = useState(0);
   const [message, setMessage] = useState("");
   const [messageTone, setMessageTone] = useState<"error" | "success">("error");
 
@@ -82,6 +83,7 @@ export default function Home() {
         }
 
         const repertoire = await getMyRepertoire();
+        setRepertoireCount(repertoire.length);
         setActiveQuartet(getActiveQuartet());
         setSetupState(repertoire.length > 0 ? "ready" : "missing_repertoire");
       } catch (err) {
@@ -109,7 +111,7 @@ export default function Home() {
           What Can We Sing
         </p>
         <h1 className="mt-3 text-4xl font-bold tracking-tight">
-          Find songs your quartet can sing now.
+          What can we sing right now?
         </h1>
 
         {message && (
@@ -144,9 +146,15 @@ export default function Home() {
 
         {setupState === "ready" && (
           <>
-            <p className="mt-6 rounded-xl bg-white/10 px-4 py-3 text-sm text-slate-300">
-              Start a quartet, join with a code, or update your repertoire.
-            </p>
+            <div className="mt-6 rounded-xl bg-white/10 px-4 py-3">
+              <p className="text-sm font-semibold text-slate-100">
+                {repertoireCount} {repertoireCount === 1 ? "song" : "songs"} in
+                your repertoire
+              </p>
+              <p className="mt-1 text-sm text-slate-300">
+                Start a quartet, join with a code, or update your song list.
+              </p>
+            </div>
 
             {activeQuartet && (
               <a
@@ -162,12 +170,12 @@ export default function Home() {
               </a>
             )}
 
-            <div className="mt-4 space-y-3">
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
               {actions.map((action) => (
                 <a
                   key={action.href}
                   href={action.href}
-                  className="block rounded-xl border border-white/10 bg-white/10 px-5 py-4 hover:border-cyan-300/60 hover:bg-white/15"
+                  className="block rounded-xl border border-white/10 bg-white/10 px-5 py-4 hover:border-cyan-300/60 hover:bg-white/15 sm:min-h-32"
                 >
                   <span className="block text-lg font-semibold text-white">
                     {action.title}
@@ -177,6 +185,21 @@ export default function Home() {
                   </span>
                 </a>
               ))}
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+              <a
+                href="/settings"
+                className="font-semibold text-slate-300 hover:text-cyan-200"
+              >
+                Profile
+              </a>
+              <a
+                href="/feedback"
+                className="font-semibold text-slate-300 hover:text-cyan-200"
+              >
+                Feedback
+              </a>
             </div>
           </>
         )}
