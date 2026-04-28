@@ -1,5 +1,5 @@
 import { getActiveQuartet, clearActiveQuartetIfMatches, setActiveQuartet } from "@/lib/activeQuartet";
-import { type SingerEntry } from "@/lib/matching";
+import { buildParticipantEntries } from "@/lib/participantEntries";
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 import { getMyRepertoire } from "@/lib/repertoireStore";
 import { getParticipants, upsertParticipant } from "@/lib/sessionStore";
@@ -35,18 +35,7 @@ export async function refreshActiveQuartetSnapshot() {
   }
 
   const repertoire = await getMyRepertoire();
-  const entries: SingerEntry[] = repertoire.map((item) => ({
-    userId: item.user_id,
-    displayName: profile.display_name,
-    songTitle: item.song_title,
-    voicing: item.voicing,
-    arrangerName: item.arranger_name,
-    partsKnown: item.parts_known,
-    confidence: item.confidence,
-    partConfidences: Object.fromEntries(
-      item.part_confidences.map(({ part, confidence }) => [part, confidence])
-    ),
-  }));
+  const entries = buildParticipantEntries(profile.display_name, repertoire);
   const lastActivityAt = new Date().toISOString();
 
   const updatedParticipant = await upsertParticipant(
