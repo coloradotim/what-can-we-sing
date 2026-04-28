@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-labelledby="title">
+  <title id="title">What Can We Sing touch icon</title>
+  <rect width="180" height="180" rx="40" fill="#020617"/>
+  <circle cx="90" cy="90" r="70" fill="#083344"/>
+  <path d="M62 47v68a18 18 0 1 1-11-16.5V47h11Zm56 0v68a18 18 0 1 1-11-16.5V47h11Z" fill="#67e8f9"/>
+  <path d="M62 47h56v17H62z" fill="#a5f3fc"/>
+  <path d="M70 137c13 8 27 8 40 0" fill="none" stroke="#e0f2fe" stroke-width="9" stroke-linecap="round"/>
+</svg>
