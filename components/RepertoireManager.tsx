@@ -9,10 +9,6 @@ import type {
   PartConfidence,
   Voicing,
 } from "@/lib/matching";
-import {
-  findFuzzySongTitleSuggestions,
-  type FuzzySongTitleSuggestion,
-} from "@/lib/fuzzySongTitles";
 import { partAbbreviation, partButtonLabel } from "@/lib/partAbbreviations";
 import {
   filterAndSortRepertoire,
@@ -89,10 +85,6 @@ export default function RepertoireManager() {
   const [savingEditId, setSavingEditId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [itemToDelete, setItemToDelete] = useState<RepertoireRow | null>(null);
-  const [dismissedSuggestionIds, setDismissedSuggestionIds] = useState<string[]>(
-    []
-  );
-  const [updatingSuggestionId, setUpdatingSuggestionId] = useState("");
 
   function completePartConfidences(
     rows: PartConfidenceFormRow[]
@@ -490,52 +482,6 @@ export default function RepertoireManager() {
     }
   }
 
-  function dismissSuggestion(suggestionId: string) {
-    setDismissedSuggestionIds((current) =>
-      current.includes(suggestionId) ? current : [...current, suggestionId]
-    );
-  }
-
-  async function applyTitleSuggestion(suggestion: FuzzySongTitleSuggestion) {
-    if (updatingSuggestionId) return;
-
-    const item = items.find((candidate) => candidate.id === suggestion.itemId);
-    if (!item) {
-      setMessage("Could not find that song. Refresh and try again.");
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Update "${suggestion.itemTitle}" to "${suggestion.suggestedTitle}"?`
-    );
-
-    if (!confirmed) return;
-
-    try {
-      setUpdatingSuggestionId(suggestion.id);
-      await updateRepertoireItem(item.id, {
-        songTitle: suggestion.suggestedTitle,
-        voicing: item.voicing,
-        arrangerName: item.arranger_name ?? undefined,
-        partConfidences: item.part_confidences,
-        notes: item.notes ?? undefined,
-      });
-      dismissSuggestion(suggestion.id);
-      setMessage("Song title updated.");
-      try {
-        await refreshActiveQuartetSnapshot();
-      } catch (err) {
-        console.error("Could not update active quartet snapshot", err);
-      }
-      await loadRepertoire();
-    } catch (err) {
-      console.error(err);
-      setMessage("Could not update that song title. Please try again.");
-    } finally {
-      setUpdatingSuggestionId("");
-    }
-  }
-
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
@@ -572,14 +518,6 @@ export default function RepertoireManager() {
   ]
     .filter(Boolean)
     .join(" ");
-  const titleSuggestions = findFuzzySongTitleSuggestions(
-    items.map((item) => ({
-      id: item.id,
-      songTitle: item.song_title,
-      voicing: item.voicing,
-    }))
-  ).filter((suggestion) => !dismissedSuggestionIds.includes(suggestion.id));
-
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-5xl">
@@ -643,64 +581,6 @@ export default function RepertoireManager() {
             Add song
           </button>
         </section>
-
-        {titleSuggestions.length > 0 && (
-          <section className="mt-8 rounded-2xl border border-amber-300/25 bg-amber-300/10 p-4">
-            <div>
-              <h2 className="text-xl font-semibold text-amber-100">
-                Possible duplicate titles
-              </h2>
-              <p className="mt-1 text-sm text-amber-50/80">
-                These are not used as confirmed matches unless you update your
-                own repertoire.
-              </p>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              {titleSuggestions.map((suggestion) => (
-                <div
-                  key={suggestion.id}
-                  className="rounded-xl border border-amber-200/20 bg-slate-950/50 p-3"
-                >
-                  <p className="text-sm text-amber-50">
-                    Possible same song: Is{" "}
-                    <span className="font-semibold">
-                      "{suggestion.itemTitle}"
-                    </span>{" "}
-                    the same as{" "}
-                    <span className="font-semibold">
-                      "{suggestion.suggestedTitle}"
-                    </span>
-                    ?
-                  </p>
-                  <p className="mt-1 text-xs font-semibold text-amber-100/80">
-                    {suggestion.voicing}
-                  </p>
-                  <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                    <button
-                      type="button"
-                      onClick={() => applyTitleSuggestion(suggestion)}
-                      disabled={Boolean(updatingSuggestionId)}
-                      className="rounded-lg bg-amber-200 px-3 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-100 disabled:opacity-40"
-                    >
-                      {updatingSuggestionId === suggestion.id
-                        ? "Updating..."
-                        : "Update my title"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => dismissSuggestion(suggestion.id)}
-                      disabled={Boolean(updatingSuggestionId)}
-                      className="rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-slate-200 hover:bg-white/20 disabled:opacity-40"
-                    >
-                      Dismiss
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
 
         <section className="mt-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
