@@ -101,6 +101,8 @@ The sync script is idempotent by dashboard and insight name:
 - existing dashboards are patched by exact name
 - existing insights are patched by exact name
 - missing dashboards and insights are created
+- insights are created with PostHog query objects rather than legacy insight
+  filters
 - API keys are read from environment variables only
 
 The personal API key needs PostHog dashboard and insight read/write scopes.
