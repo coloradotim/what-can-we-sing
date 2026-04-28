@@ -19,7 +19,6 @@ import {
   getSessionByCode,
   removeParticipant,
   subscribeToSessionParticipants,
-  updateParticipantSnapshot,
   upsertParticipant,
 } from "@/lib/sessionStore";
 import {
@@ -223,16 +222,7 @@ export default function JoinSessionPage() {
       const entries = await getMyEntries(name);
       const lastActivityAt = new Date().toISOString();
 
-      if (participantResolution.status === "existing") {
-        await updateParticipantSnapshot(
-          participantResolution.participant.id,
-          userId,
-          entries,
-          lastActivityAt
-        );
-      } else {
-        await upsertParticipant(id, userId, name, entries, lastActivityAt);
-      }
+      await upsertParticipant(id, userId, name, entries, lastActivityAt);
 
       setActiveQuartet({ sessionId: id, code, joinedAt: lastActivityAt });
       setSession((current) =>
@@ -296,20 +286,9 @@ export default function JoinSessionPage() {
 
       const entries = await getMyEntries(name);
       const lastActivityAt = new Date().toISOString();
-      const updatedParticipant = await updateParticipantSnapshot(
-        existingParticipant.id,
-        userId,
-        entries,
-        lastActivityAt
-      );
+      await upsertParticipant(id, userId, name, entries, lastActivityAt);
 
-      setParticipants((currentParticipants) =>
-        currentParticipants.map((participant) =>
-          participant.id === updatedParticipant.id
-            ? updatedParticipant
-            : participant
-        )
-      );
+      await refreshParticipants(id);
       setActiveQuartet({ sessionId: id, code, joinedAt: lastActivityAt });
       setSession((current) =>
         current ? { ...current, last_activity_at: lastActivityAt } : current
@@ -337,10 +316,9 @@ export default function JoinSessionPage() {
       await removeParticipant(sessionId, currentUserId);
       clearActiveQuartetIfMatches(sessionId);
       window.sessionStorage.setItem(leftQuartetStorageKey(code), "true");
-      const updatedParticipants = await refreshParticipants(sessionId);
       trackEvent("quartet_left", {
         session_id: sessionId,
-        participant_count: updatedParticipants.length,
+        participant_count: Math.max(0, participants.length - 1),
       });
       window.location.href = "/?leftQuartet=1";
     } catch (err) {
@@ -468,6 +446,7 @@ export default function JoinSessionPage() {
         void refreshParticipantProfileNames(updatedParticipants);
         return updatedParticipants;
       });
+      void refreshParticipants(sessionId).catch(() => undefined);
     }, () => {
       setRealtimeMessage(
         "Live updates are having trouble. You can still use the current results or refresh singers."
@@ -491,10 +470,6 @@ export default function JoinSessionPage() {
           payload,
           participantUserIds
         )
-      );
-    }, () => {
-      setRealtimeMessage(
-        "Live profile updates are having trouble. You can still refresh singers."
       );
     });
   }, [participantUserIdsKey]);
