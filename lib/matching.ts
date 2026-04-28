@@ -62,6 +62,10 @@ export type MatchTitleVariantSinger = {
   confidence: Confidence | null;
 };
 
+type InternalMatchResult = MatchResult & {
+  sourceGroupKeys?: string[];
+};
+
 export const arrangementCheckNote =
   "Consider double-checking that everyone is singing the same arrangement.";
 
@@ -310,9 +314,10 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
     groups.set(key, [...(groups.get(key) ?? []), entry]);
   }
 
-  const results: MatchResult[] = [];
+  const results: InternalMatchResult[] = [];
+  const fuzzyFullMatchGroupKeys = new Set<string>();
 
-  for (const group of groups.values()) {
+  for (const [groupKey, group] of groups) {
     const { songTitle, voicing } = group[0];
     const requiredParts = requiredPartsForVoicing(voicing);
 
@@ -333,6 +338,7 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
         assignments: buildAssignments(fullAssignment),
         warnings,
         score: scoreMatch("ready", fullAssignment, group, requiredParts, warnings),
+        sourceGroupKeys: [groupKey],
       });
 
       continue;
@@ -377,17 +383,18 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
           requiredParts,
           warnings
         ),
+        sourceGroupKeys: [groupKey],
       });
     }
   }
 
-  const exactGroups = Array.from(groups.values());
+  const exactGroups = Array.from(groups.entries());
   const possibleSuggestionKeys = new Set<string>();
 
   for (let i = 0; i < exactGroups.length; i += 1) {
     for (let j = i + 1; j < exactGroups.length; j += 1) {
-      const firstGroup = exactGroups[i];
-      const secondGroup = exactGroups[j];
+      const [firstGroupKey, firstGroup] = exactGroups[i];
+      const [secondGroupKey, secondGroup] = exactGroups[j];
       const first = firstGroup[0];
       const second = secondGroup[0];
 
@@ -410,6 +417,8 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
 
       if (possibleSuggestionKeys.has(suggestionKey)) continue;
       possibleSuggestionKeys.add(suggestionKey);
+      fuzzyFullMatchGroupKeys.add(firstGroupKey);
+      fuzzyFullMatchGroupKeys.add(secondGroupKey);
 
       const knownArrangers = knownArrangersForGroup(group);
       const warnings = [
@@ -430,9 +439,19 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
         score: scoreMatch("possible", fullAssignment, group, requiredParts, warnings),
         titleMatchType: "fuzzy",
         titleVariants: buildTitleVariants(fullAssignment),
+        sourceGroupKeys: [firstGroupKey, secondGroupKey],
       });
     }
   }
 
-  return results.sort((a, b) => b.score - a.score);
+  return results
+    .filter((match) => {
+      if (match.category !== "one_part_missing") return true;
+
+      return !match.sourceGroupKeys?.some((key) =>
+        fuzzyFullMatchGroupKeys.has(key)
+      );
+    })
+    .map(({ sourceGroupKeys: _sourceGroupKeys, ...match }) => match)
+    .sort((a, b) => b.score - a.score);
 }
