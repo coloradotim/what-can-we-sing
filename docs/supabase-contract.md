@@ -261,6 +261,10 @@ Automated tests currently cover:
 - Display names derived from `profiles` instead of stale participant names in
   `lib/__tests__/sessionParticipantDisplayName.test.ts`
 - Active quartet local-storage behavior in `lib/__tests__/activeQuartet.test.ts`
+- Active quartet snapshot refresh behavior in
+  `lib/__tests__/activeQuartetSnapshot.test.ts`
+- Supabase-backed participant write verification in
+  `lib/__tests__/sessionStore.test.ts`
 - Auth route guards and post-login redirect behavior in
   `lib/__tests__/authRoute.test.ts` and
   `lib/__tests__/authRedirect.test.ts`
