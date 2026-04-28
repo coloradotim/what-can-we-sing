@@ -161,7 +161,7 @@ describe("findMatches", () => {
 
     const matches = findMatches(entries);
 
-    expect(matches).toHaveLength(2);
+    expect(matches).toHaveLength(1);
     expect(matches[0]).toMatchObject({
       songTitle: "Why Try To Change Me Now",
       category: "possible",
@@ -189,11 +189,31 @@ describe("findMatches", () => {
         ],
       },
     ]);
-    expect(matches[1]).toMatchObject({
-      songTitle: "Why Try to Change Me",
-      category: "one_part_missing",
-      missingParts: ["Bass"],
+  });
+
+  it("does not show a duplicate missing-part result when a flexible singer completes a fuzzy title match", () => {
+    const entries: SingerEntry[] = [
+      { userId: "1", displayName: "T", songTitle: "Why Try to Change Me", voicing: "TTBB", partsKnown: ["Tenor"] },
+      { userId: "2", displayName: "L", songTitle: "Why Try to Change Me", voicing: "TTBB", partsKnown: ["Lead"] },
+      { userId: "3", displayName: "Bari", songTitle: "Why Try to Change Me", voicing: "TTBB", partsKnown: ["Baritone"] },
+      {
+        userId: "4",
+        displayName: "Flex",
+        songTitle: "Why Try To Change Me Now",
+        voicing: "TTBB",
+        partsKnown: ["Baritone", "Bass"],
+      },
+    ];
+
+    const matches = findMatches(entries);
+
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toMatchObject({
+      songTitle: "Why Try To Change Me Now",
+      category: "possible",
+      missingParts: [],
     });
+    expect(matches[0].assignments.Bass?.[0].displayName).toBe("Flex");
   });
 
   it("does not make fuzzy title suggestions ready-to-sing matches", () => {
