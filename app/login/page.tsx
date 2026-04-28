@@ -1,40 +1,33 @@
 "use client";
 
-import { getMagicLinkRedirectUrl } from "@/lib/authRedirect";
+import { getPostLoginRedirectPath } from "@/lib/authRedirect";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [hasSentCode, setHasSentCode] = useState(false);
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
-  async function sendMagicLink() {
-    if (!email.trim()) {
-      setMessage("Enter your email address and we’ll send a login link.");
+  async function sendLoginCode() {
+    const normalizedEmail = email.trim();
+
+    if (!normalizedEmail) {
+      setMessage("Enter your email address and we’ll send a login code.");
       return;
     }
 
     setIsSending(true);
     setMessage("");
 
-    const emailRedirectTo = getMagicLinkRedirectUrl({
-      siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
-      origin: window.location.origin,
-      search: window.location.search,
-    });
-
-    if (!emailRedirectTo) {
-      setMessage("Login is not configured for this site yet.");
-      setIsSending(false);
-      return;
-    }
-
     try {
       const { error } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
+        email: normalizedEmail,
         options: {
-          emailRedirectTo,
+          shouldCreateUser: true,
         },
       });
 
@@ -43,9 +36,9 @@ export default function LoginPage() {
         return;
       }
 
-      setMessage(
-        "Check your email for a What Can We Sing login link. Open it in this browser to continue."
-      );
+      setHasSentCode(true);
+      setCode("");
+      setMessage("Enter the code sent to your email.");
     } catch (err) {
       console.error(err);
       setMessage("Network unavailable. Try again when you have a connection.");
@@ -54,13 +47,61 @@ export default function LoginPage() {
     }
   }
 
+  async function verifyLoginCode() {
+    const normalizedEmail = email.trim();
+    const normalizedCode = code.replace(/\s+/g, "");
+
+    if (!normalizedEmail) {
+      setMessage("Enter your email address and request a new code.");
+      setHasSentCode(false);
+      return;
+    }
+
+    if (!normalizedCode) {
+      setMessage("Enter the code sent to your email.");
+      return;
+    }
+
+    setIsVerifying(true);
+    setMessage("");
+
+    try {
+      const emailResult = await supabase.auth.verifyOtp({
+        email: normalizedEmail,
+        token: normalizedCode,
+        type: "email",
+      });
+      const signupResult = emailResult.error
+        ? await supabase.auth.verifyOtp({
+            email: normalizedEmail,
+            token: normalizedCode,
+            type: "signup",
+          })
+        : emailResult;
+
+      if (signupResult.error) {
+        setMessage(
+          "That code did not work. Check the code, request a new one if it expired, and try again."
+        );
+        return;
+      }
+
+      window.location.href = getPostLoginRedirectPath(window.location.search);
+    } catch (err) {
+      console.error(err);
+      setMessage("Network unavailable. Try again when you have a connection.");
+    } finally {
+      setIsVerifying(false);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-md">
         <h1 className="text-4xl font-bold">Log in</h1>
         <p className="mt-3 text-slate-300">
-          Enter your email and we’ll send you a magic link. There is no password
-          to remember.
+          Enter your email and we’ll send you a one-time code. There is no
+          password to remember.
         </p>
 
         <div className="mt-8 rounded-2xl border border-white/10 bg-white/10 p-6">
@@ -70,19 +111,56 @@ export default function LoginPage() {
             </span>
             <input
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setHasSentCode(false);
+                setCode("");
+                setMessage("");
+              }}
               placeholder="you@example.com"
+              type="email"
+              autoComplete="email"
               className="mt-1 w-full rounded-xl bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
             />
           </label>
 
           <button
-            onClick={sendMagicLink}
-            disabled={isSending}
+            onClick={sendLoginCode}
+            disabled={isSending || isVerifying}
             className="mt-4 w-full rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
           >
-            {isSending ? "Sending..." : "Send magic link"}
+            {isSending
+              ? "Sending..."
+              : hasSentCode
+              ? "Resend code"
+              : "Send code"}
           </button>
+
+          {hasSentCode && (
+            <>
+              <label className="mt-5 block">
+                <span className="text-sm font-medium text-slate-300">
+                  One-time code
+                </span>
+                <input
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="123456"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  className="mt-1 w-full rounded-xl bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                />
+              </label>
+
+              <button
+                onClick={verifyLoginCode}
+                disabled={isSending || isVerifying}
+                className="mt-4 w-full rounded-xl bg-white px-5 py-3 font-semibold text-slate-950 hover:bg-slate-100 disabled:opacity-40"
+              >
+                {isVerifying ? "Checking..." : "Log in with code"}
+              </button>
+            </>
+          )}
 
           {message && <p className="mt-4 text-sm text-slate-300">{message}</p>}
         </div>

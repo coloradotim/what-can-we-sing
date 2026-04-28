@@ -2,7 +2,7 @@
 
 Supabase's built-in Auth email sender is useful for early development, but it
 is rate-limited and should not be used for real user testing. Configure custom
-SMTP in Supabase Auth with Resend so magic link emails are reliable.
+SMTP in Supabase Auth with Resend so one-time login code emails are reliable.
 
 Do not add SMTP credentials to this repository, frontend code, or Vercel
 environment variables. The Resend API key belongs only in the Supabase
@@ -67,25 +67,19 @@ Set:
 Site URL: https://what-can-we-sing.vercel.app
 ```
 
-Add redirect URLs:
-
-```text
-https://what-can-we-sing.vercel.app/*
-http://localhost:3000/*
-```
-
-The production app sends magic links through `/auth/callback`, and these
-wildcard redirect URLs allow both production and local callback paths.
+The OTP login flow does not use magic-link redirects or `/auth/callback`.
+Redirect URL settings are not part of the current login flow.
 
 ## 6. Confirm email templates
 
 Keep the project templates in
-[auth-email-template.md](./auth-email-template.md). The Magic Link template
-must preserve the app-generated `{{ .RedirectTo }}` and append:
+[auth-email-template.md](./auth-email-template.md). The Supabase Magic Link
+template should show `{{ .Token }}` as a one-time code and should not include
+`{{ .ConfirmationURL }}`, `{{ .RedirectTo }}`, `{{ .TokenHash }}`, or an
+`/auth/callback` link.
 
-```text
-&token_hash={{ .TokenHash }}&type=email
-```
+Use the same one-time code subject and body for the Confirm signup template so
+new users receive a code too.
 
 ## 7. Test the flow
 
@@ -94,15 +88,16 @@ Run the checklist in
 
 At minimum, verify:
 
-1. A magic link email arrives promptly.
+1. A login code email arrives promptly.
 2. The sender shows as What Can We Sing from the verified sender address.
-3. The button opens `/auth/callback`.
-4. The user lands in the app and stays logged in after refresh.
-5. The flow works on both desktop and mobile.
+3. The email contains a short one-time code, not a login link.
+4. Entering the code logs the user in.
+5. The user lands in the app and stays logged in after refresh.
+6. The flow works on both desktop and mobile.
 
 If delivery fails, check:
 
 - The Resend domain is verified.
 - The sender email matches the verified domain.
 - The Supabase SMTP password is the Resend API key.
-- Supabase Auth URL configuration includes the production callback URL.
+- The Supabase Auth email template includes `{{ .Token }}`.
