@@ -47,6 +47,7 @@ export function MatchCard({
   const styles = categoryStyles[match.category];
   const parts = requiredPartsForVoicing(match.voicing);
   const hasDetails =
+    Boolean(match.titleVariants?.length) ||
     match.warnings.length > 0 ||
     match.arrangerNames.length > 0 ||
     personalNotes.length > 0 ||
@@ -137,6 +138,46 @@ export function MatchCard({
             {match.arrangerNames.join(", ")}
           </p>
         )}
+
+        {match.titleMatchType === "fuzzy" && match.titleVariants?.length ? (
+          <div className="mt-3 rounded-lg bg-amber-300/10 p-3 text-sm text-amber-50">
+            <p className="font-semibold text-amber-100">
+              Potential title match
+            </p>
+            <p className="mt-1 text-xs text-amber-50/80">
+              These repertoire entries may refer to the same song.
+            </p>
+            <p className="mt-2 text-xs text-amber-50/70">
+              Comparison key:{" "}
+              {match.titleVariants
+                .map((variant) => variant.normalizedTitle)
+                .join(" / ")}
+            </p>
+            <div className="mt-3 space-y-3">
+              {match.titleVariants.map((variant) => (
+                <div key={variant.title}>
+                  <p className="font-semibold text-white">"{variant.title}"</p>
+                  <ul className="mt-1 space-y-1">
+                    {variant.singers.map((singer) => (
+                      <li
+                        key={`${variant.title}-${singer.displayName}-${singer.part}`}
+                        className="text-xs text-amber-50/90"
+                      >
+                        {singer.displayName} -{" "}
+                        {partAbbreviation(match.voicing, singer.part)}
+                        {singer.confidence ? ` - ${singer.confidence}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-xs text-amber-50/80">
+              If these are the same song, consider updating repertoire titles
+              so future matches are clearer.
+            </p>
+          </div>
+        ) : null}
 
         {match.warnings.length > 0 && (
           <div
