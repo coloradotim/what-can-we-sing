@@ -66,6 +66,25 @@ Notes:
 - Vercel deploys from GitHub
 
 ## Workflow
+Use the local repo at `~/Documents/Codex/what-can-we-sing`.
+
+When the user asks to `work issue #X`, treat that as instruction to implement
+GitHub issue `#X` using the standard issue workflow:
+
+1. Read `AGENTS.md`.
+2. Check out `main`.
+3. Pull latest `origin/main`.
+4. Create a feature branch named for the issue, using the `codex/` prefix unless
+   the user requests a different name.
+5. Make the requested changes.
+6. Consider whether documentation needs to be updated.
+7. Consider whether tests need to be updated.
+8. Run `npm run test:run`.
+9. Run `npm run build`.
+10. Commit changes to the feature branch.
+11. Push the branch.
+12. Open a PR that links the issue.
+
 Before finishing any change:
 - run `npm run test:run`
 - run `npm run build`
@@ -74,6 +93,33 @@ Before finishing any change:
 - preserve existing tests and add tests for matching logic changes
 - when adding or changing Supabase operations, update migrations/RLS,
   `docs/supabase-contract.md`, and related tests or test notes
+
+Every PR should explicitly consider docs and tests. Update docs when a change
+affects user-visible behavior, setup, deployment, environment variables,
+Supabase schema/RLS/contracts, analytics events, matching logic,
+auth/session behavior, or major app flows. Update tests when a change affects
+business logic, data flow, matching, Supabase helpers, auth/session behavior,
+UI state transitions, or regression-prone bugs. If docs or tests are not
+updated, explain why in the PR.
+
+Supabase changes must be captured in repo migrations and docs rather than
+dashboard-only changes. If a change requires schema, RLS, or data-model updates,
+add a proper migration and update `docs/supabase-contract.md` as needed.
+Production Supabase migrations should be deployed by the automated GitHub
+Actions workflow after merge to `main`. If automation is unavailable or a
+manual step remains, document that clearly in the PR.
+
+For normal repo work, ask early for any needed access: repo file writes, Git
+metadata writes, network access for Git/package/build/font resources, pushing
+branches, and opening PRs.
+
+Guardrails:
+- do not commit directly to `main`
+- do not commit secrets
+- do not use service-role keys in browser code
+- do not bypass failing tests or builds
+- do not deploy production Supabase changes outside the approved migration
+  deployment workflow
 
 ## Important files
 - `lib/matching.ts`: core matching/ranking logic
