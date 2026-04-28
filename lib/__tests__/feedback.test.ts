@@ -11,13 +11,11 @@ describe("feedback helpers", () => {
         type: "Bug report",
         message: "  Something broke.  ",
         contactEmail: "  singer@example.com  ",
-        path: "  /settings  ",
       })
     ).toEqual({
       type: "Bug report",
       message: "Something broke.",
       contactEmail: "singer@example.com",
-      path: "/settings",
     });
   });
 
@@ -37,7 +35,6 @@ describe("feedback helpers", () => {
           type: "Feature idea",
           message: "Add a pitch pipe.",
           contactEmail: "singer@example.com",
-          path: "/join/ABC123",
         },
         {
           userId: "user-1",
