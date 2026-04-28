@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { identifyAnalyticsUser, trackEvent } from "@/lib/analytics";
+import { usePathname } from "next/navigation";
+import {
+  getAnalyticsRoute,
+  identifyAnalyticsUser,
+  trackEvent,
+} from "@/lib/analytics";
 import { getCurrentUser } from "@/lib/profileStore";
 
 function loggedInStorageKey(userId: string) {
@@ -9,6 +14,14 @@ function loggedInStorageKey(userId: string) {
 }
 
 export function AnalyticsIdentity() {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    trackEvent("app_route_viewed", {
+      route: getAnalyticsRoute(pathname),
+    });
+  }, [pathname]);
+
   useEffect(() => {
     async function identifyUser() {
       try {

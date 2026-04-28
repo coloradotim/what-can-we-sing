@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "posthog:dashboards:check": "node scripts/posthog/sync-dashboards.mjs --check",
+    "posthog:dashboards:sync": "node scripts/posthog/sync-dashboards.mjs",
     "test": "vitest",
     "test:run": "vitest run",
     "ship": "./scripts/ship.sh",

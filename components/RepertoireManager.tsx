@@ -337,6 +337,11 @@ export default function RepertoireManager() {
         song_count: items.length + 1,
         parts_known_count: partConfidences.length,
       });
+      trackEvent("repertoire_updated", {
+        action: "add",
+        song_count: items.length + 1,
+        parts_known_count: partConfidences.length,
+      });
       let snapshotUpdated = true;
       try {
         await refreshActiveQuartetSnapshot();
@@ -357,6 +362,9 @@ export default function RepertoireManager() {
       }
     } catch (err) {
       console.error(err);
+      trackEvent("repertoire_update_failed", {
+        action: "add",
+      });
       setMessage("Could not add song. Please try again.");
     } finally {
       setIsAdding(false);
@@ -384,6 +392,10 @@ export default function RepertoireManager() {
       trackEvent("repertoire_song_deleted", {
         song_count: Math.max(0, items.length - 1),
       });
+      trackEvent("repertoire_updated", {
+        action: "delete",
+        song_count: Math.max(0, items.length - 1),
+      });
       let snapshotUpdated = true;
       try {
         await refreshActiveQuartetSnapshot();
@@ -403,6 +415,9 @@ export default function RepertoireManager() {
       }
     } catch (err) {
       console.error(err);
+      trackEvent("repertoire_update_failed", {
+        action: "delete",
+      });
       setMessage("Could not delete song. Please try again.");
       setItemToDelete(null);
     } finally {
@@ -457,6 +472,11 @@ export default function RepertoireManager() {
         song_count: items.length,
         parts_known_count: partConfidences.length,
       });
+      trackEvent("repertoire_updated", {
+        action: "edit",
+        song_count: items.length,
+        parts_known_count: partConfidences.length,
+      });
       let snapshotUpdated = true;
       try {
         await refreshActiveQuartetSnapshot();
@@ -476,6 +496,9 @@ export default function RepertoireManager() {
       }
     } catch (err) {
       console.error(err);
+      trackEvent("repertoire_update_failed", {
+        action: "edit",
+      });
       setMessage("Could not save changes. Please try again.");
     } finally {
       setSavingEditId(null);

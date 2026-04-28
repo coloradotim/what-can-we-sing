@@ -1,19 +1,33 @@
 import posthog from "posthog-js";
 
 export type AnalyticsEventName =
+  | "app_route_viewed"
   | "user_logged_in"
+  | "quartet_created"
+  | "quartet_join_attempted"
   | "repertoire_song_added"
   | "repertoire_song_edited"
   | "repertoire_song_deleted"
+  | "repertoire_updated"
+  | "repertoire_update_failed"
   | "quartet_started"
   | "quartet_joined"
+  | "quartet_join_failed"
+  | "quartet_leave_clicked"
+  | "quartet_leave_confirmed"
   | "quartet_left"
+  | "quartet_leave_failed"
+  | "quartet_rejoined"
+  | "quartet_full"
   | "quartet_member_removed"
   | "quartet_matches_viewed"
+  | "matches_generated"
+  | "zero_matches_found"
   | "song_marked_sung"
   | "song_mark_sung_failed"
   | "help_viewed"
-  | "feedback_submitted";
+  | "feedback_submitted"
+  | "feedback_failed";
 
 type AnalyticsPropertyValue = string | number | boolean | null | undefined;
 type AnalyticsProperties = Record<string, AnalyticsPropertyValue>;
@@ -59,6 +73,19 @@ export function sanitizeAnalyticsProperties(
       );
     })
   );
+}
+
+export function getAnalyticsRoute(pathname: string | null | undefined) {
+  if (!pathname) return "/";
+
+  const normalizedPathname = pathname.split("?")[0]?.split("#")[0] || "/";
+  const segments = normalizedPathname.split("/").filter(Boolean);
+
+  if (segments[0] === "join" && segments.length > 1) {
+    return "/join/[code]";
+  }
+
+  return normalizedPathname || "/";
 }
 
 export function trackEvent(
