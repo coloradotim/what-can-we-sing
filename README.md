@@ -59,8 +59,11 @@ The app/database contract is documented in
 [docs/supabase-contract.md](docs/supabase-contract.md). Any PR that changes
 Supabase usage must update that contract, migrations, and tests or test notes.
 
-Database migrations live in `supabase/migrations`. Apply unapplied migrations
-to the linked Supabase project with:
+Database migrations live in `supabase/migrations`. In production, migrations are
+deployed by GitHub Actions after a migration PR is merged to `main`; see
+[docs/deployment-automation.md](docs/deployment-automation.md). For local
+development or emergency fallback, apply unapplied migrations to the linked
+Supabase project with:
 
 ```bash
 supabase db push
