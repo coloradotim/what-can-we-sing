@@ -11,11 +11,19 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your Supabase anon key
 NEXT_PUBLIC_SITE_URL=https://your-production-app-url
 NEXT_PUBLIC_POSTHOG_KEY=your PostHog project API key
 NEXT_PUBLIC_POSTHOG_HOST=your PostHog host URL
+RESEND_API_KEY=your Resend API key for server-side feedback email
+FEEDBACK_FROM_EMAIL=What Can We Sing <feedback@your-verified-domain>
+FEEDBACK_TO_EMAIL=feedback destination address
 ```
 
 `NEXT_PUBLIC_SITE_URL` is used for Supabase magic-link redirects in production. Set it to the deployed Vercel app URL, without a trailing path. If it is blank during local development, login links fall back to the current localhost origin.
 
 `NEXT_PUBLIC_POSTHOG_KEY` and `NEXT_PUBLIC_POSTHOG_HOST` enable optional product analytics. Leave them blank to disable analytics in local development. Analytics events use counts, IDs, and booleans only; free-text repertoire notes, feedback text, song titles, arranger names, names, and email addresses should not be sent to PostHog.
+
+`RESEND_API_KEY`, `FEEDBACK_FROM_EMAIL`, and `FEEDBACK_TO_EMAIL` are server-only
+settings for the in-app feedback form. Configure them in Vercel, not as
+`NEXT_PUBLIC_*` variables. For the current deployment, set
+`FEEDBACK_TO_EMAIL` to the app owner address.
 
 Magic links redirect through `/auth/callback`, where the app exchanges the Supabase code or token hash for a session before sending the user to the intended page. In Supabase Auth URL configuration, add the production callback URL and any required local development callback URL to the allowed redirect URLs, such as:
 

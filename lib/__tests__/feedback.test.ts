@@ -1,0 +1,50 @@
+import { describe, expect, it } from "vitest";
+import {
+  formatFeedbackEmailText,
+  validateFeedbackSubmission,
+} from "../feedback";
+
+describe("feedback helpers", () => {
+  it("validates and trims feedback submissions", () => {
+    expect(
+      validateFeedbackSubmission({
+        type: "Bug report",
+        message: "  Something broke.  ",
+        contactEmail: "  singer@example.com  ",
+        path: "  /settings  ",
+      })
+    ).toEqual({
+      type: "Bug report",
+      message: "Something broke.",
+      contactEmail: "singer@example.com",
+      path: "/settings",
+    });
+  });
+
+  it("rejects blank messages", () => {
+    expect(() =>
+      validateFeedbackSubmission({
+        type: "General feedback",
+        message: " ",
+      })
+    ).toThrow("Add a message before sending feedback.");
+  });
+
+  it("formats useful app context for the feedback email", () => {
+    expect(
+      formatFeedbackEmailText(
+        {
+          type: "Feature idea",
+          message: "Add a pitch pipe.",
+          contactEmail: "singer@example.com",
+          path: "/join/ABC123",
+        },
+        {
+          userId: "user-1",
+          displayName: "Tim",
+          timestamp: "2026-04-27T00:00:00.000Z",
+        }
+      )
+    ).toContain("Display name: Tim");
+  });
+});

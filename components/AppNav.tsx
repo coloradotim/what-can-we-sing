@@ -30,6 +30,11 @@ const navItems = [
     label: "Settings",
     isActive: (pathname: string) => pathname === "/settings",
   },
+  {
+    href: "/feedback",
+    label: "Send feedback",
+    isActive: (pathname: string) => pathname === "/feedback",
+  },
 ];
 
 export function AppNav() {
