@@ -8,6 +8,7 @@ describe("PostHog dashboard query generation", () => {
         key: "top-routes",
         name: "Top routes",
         type: "trend",
+        display: "ActionsBarValue",
         dateFrom: "-30d",
         breakdown: "route",
         series: [{ event: "app_route_viewed" }],
@@ -32,6 +33,9 @@ describe("PostHog dashboard query generation", () => {
           },
         ],
       },
+      trendsFilter: {
+        display: "ActionsBarValue",
+      },
     });
   });
 
@@ -41,6 +45,7 @@ describe("PostHog dashboard query generation", () => {
         key: "join-flow-by-device",
         name: "Join flow by device",
         type: "trend",
+        display: "ActionsBarValue",
         breakdown: "$device_type",
         series: [{ event: "quartet_joined" }],
       })
