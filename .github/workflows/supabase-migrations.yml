@@ -32,7 +32,10 @@ jobs:
 
       - uses: supabase/setup-cli@v2
         with:
-          version: latest
+          # Use the beta CLI so we can bypass the connection pooler. The
+          # pooler has repeatedly failed SASL auth during db push even after
+          # refreshing the DB password secret.
+          version: beta
 
       - name: Verify required secrets
         run: |
@@ -42,7 +45,7 @@ jobs:
           test -n "$SUPABASE_PROJECT_ID"
 
       - name: Link production Supabase project
-        run: supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD"
+        run: supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD" --skip-pooler
 
       - name: Apply migrations
         run: supabase --yes db push
