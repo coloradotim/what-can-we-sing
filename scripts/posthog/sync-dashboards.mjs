@@ -11,16 +11,35 @@ const specPath = path.join(repoRoot, "analytics/posthog/dashboards.json");
 
 const args = new Set(process.argv.slice(2));
 const checkOnly = args.has("--check");
+const inspectMode = args.has("--inspect");
+const compareMode = args.has("--compare");
+const sandboxMode = args.has("--sandbox");
 const skipRefresh = args.has("--skip-refresh");
 const trendDisplayTypes = new Set([
   "ActionsLineGraph",
   "ActionsTable",
   "ActionsPie",
   "ActionsBar",
-  "ActionsBarValue",
   "WorldMap",
   "BoldNumber",
 ]);
+const defaultSandboxInsightKeys = ["analytics-client-ready", "top-routes"];
+
+function argValue(name) {
+  const argv = process.argv.slice(2);
+  const index = argv.indexOf(name);
+
+  if (index === -1) return "";
+
+  return argv[index + 1] || "";
+}
+
+function splitCsv(value) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
 
 function requiredEnv(name) {
   const value = process.env[name];
@@ -141,6 +160,42 @@ async function readSpec() {
   return spec;
 }
 
+function allInsights(spec) {
+  return spec.dashboards.flatMap((dashboard) =>
+    dashboard.insights.map((insight) => ({
+      dashboard,
+      insight,
+    }))
+  );
+}
+
+export function selectInsightEntries(spec, selectedKeys) {
+  const selected = new Set(selectedKeys);
+
+  if (selected.size === 0) {
+    return allInsights(spec);
+  }
+
+  return allInsights(spec).filter(({ insight }) => selected.has(insight.key));
+}
+
+export function sandboxDashboardFromSpec(spec, selectedKeys) {
+  const selectedEntries = selectInsightEntries(spec, selectedKeys);
+
+  return {
+    key: "dashboard-sync-sandbox",
+    name: "What Can We Sing - Dashboard Sync Sandbox",
+    description:
+      "Temporary dashboard for testing repo-managed PostHog insight queries before updating production dashboards.",
+    insights: selectedEntries.map(({ insight }) => ({
+      ...insight,
+      key: `sandbox-${insight.key}`,
+      name: `Sandbox - ${insight.name}`,
+      description: `${insight.description} Sandbox copy of ${insight.key}.`,
+    })),
+  };
+}
+
 function eventToQueryNode(event) {
   const node = {
     kind: "EventsNode",
@@ -176,7 +231,7 @@ function breakdownsForInsight(insight) {
   ];
 }
 
-export function queryForInsight(insight) {
+function sourceQueryForInsight(insight) {
   const query = {
     kind: insight.type === "funnel" ? "FunnelsQuery" : "TrendsQuery",
     dateRange: {
@@ -203,6 +258,13 @@ export function queryForInsight(insight) {
   }
 
   return query;
+}
+
+export function queryForInsight(insight) {
+  return {
+    kind: "InsightVizNode",
+    source: sourceQueryForInsight(insight),
+  };
 }
 
 async function posthogFetch(endpoint, options = {}) {
@@ -239,6 +301,173 @@ async function listAll(endpoint) {
   }
 
   return results;
+}
+
+function compactQuery(query) {
+  if (!query) return null;
+
+  return {
+    kind: query.kind,
+    dateRange: query.dateRange,
+    series: query.series?.map((series) => ({
+      kind: series.kind,
+      event: series.event,
+      name: series.name,
+      math: series.math,
+      math_property: series.math_property,
+    })),
+    breakdownFilter: query.breakdownFilter,
+    trendsFilter: query.trendsFilter,
+    funnelsFilter: query.funnelsFilter,
+    interval: query.interval,
+    source: query.source ? compactQuery(query.source) : undefined,
+  };
+}
+
+function compactInsight(insight) {
+  return {
+    id: insight.id,
+    short_id: insight.short_id,
+    name: insight.name,
+    description: insight.description,
+    saved: insight.saved,
+    dashboards: insight.dashboards,
+    tags: insight.tags,
+    filters: insight.filters,
+    query: compactQuery(insight.query),
+    result:
+      insight.result === undefined
+        ? undefined
+        : {
+            type: Array.isArray(insight.result) ? "array" : typeof insight.result,
+            length: Array.isArray(insight.result) ? insight.result.length : undefined,
+            preview: Array.isArray(insight.result)
+              ? insight.result.slice(0, 3)
+              : insight.result,
+          },
+  };
+}
+
+function printJson(value) {
+  console.log(JSON.stringify(value, null, 2));
+}
+
+async function getDashboardByNameOrId(environment, nameOrId) {
+  if (!nameOrId) {
+    throw new Error("Pass --dashboard \"Dashboard name\" or --dashboard 123.");
+  }
+
+  if (/^\d+$/.test(nameOrId)) {
+    return posthogFetch(`/api/environments/${environment}/dashboards/${nameOrId}/`);
+  }
+
+  const dashboards = await listAll(
+    `/api/environments/${environment}/dashboards/?limit=100`
+  );
+  const dashboard = dashboards.find((item) => item.name === nameOrId);
+
+  if (!dashboard) {
+    throw new Error(`Dashboard not found: ${nameOrId}`);
+  }
+
+  return posthogFetch(`/api/environments/${environment}/dashboards/${dashboard.id}/`);
+}
+
+async function getInsightByNameOrId(environment, nameOrId) {
+  if (!nameOrId) {
+    throw new Error("Pass --insight \"Insight name\" or --insight 123.");
+  }
+
+  if (/^\d+$/.test(nameOrId)) {
+    return posthogFetch(`/api/environments/${environment}/insights/${nameOrId}/`);
+  }
+
+  const insights = await listAll(
+    `/api/environments/${environment}/insights/?limit=100`
+  );
+  const insight = insights.find((item) => item.name === nameOrId);
+
+  if (!insight) {
+    throw new Error(`Insight not found: ${nameOrId}`);
+  }
+
+  return posthogFetch(`/api/environments/${environment}/insights/${insight.id}/`);
+}
+
+async function inspectPostHog(environment) {
+  const dashboardNameOrId = argValue("--dashboard");
+  const insightNameOrId = argValue("--insight");
+
+  if (dashboardNameOrId) {
+    const dashboard = await getDashboardByNameOrId(environment, dashboardNameOrId);
+    const tileInsights = (dashboard.tiles || [])
+      .map((tile) => tile.insight)
+      .filter((insight) => insight && typeof insight === "object");
+    const insights = await listAll(
+      `/api/environments/${environment}/insights/?limit=100`
+    );
+    const dashboardInsightIds = new Set(
+      [
+        ...(dashboard.tiles || []).map((tile) => tile.insight?.id || tile.insight),
+        ...(dashboard.insights || []).map((insight) =>
+          typeof insight === "object" ? insight.id : insight
+        ),
+      ].filter(Boolean)
+    );
+    const dashboardInsights =
+      tileInsights.length > 0
+        ? tileInsights
+        : insights.filter((insight) => dashboardInsightIds.has(insight.id));
+
+    printJson({
+      dashboard: {
+        id: dashboard.id,
+        name: dashboard.name,
+        description: dashboard.description,
+        pinned: dashboard.pinned,
+        tiles: dashboard.tiles?.map((tile) => ({
+          id: tile.id,
+          insight: tile.insight?.id || tile.insight,
+          layouts: tile.layouts,
+        })),
+      },
+      insights: dashboardInsights.map(compactInsight),
+    });
+    return;
+  }
+
+  if (insightNameOrId) {
+    printJson(compactInsight(await getInsightByNameOrId(environment, insightNameOrId)));
+    return;
+  }
+
+  throw new Error("Pass --dashboard or --insight with --inspect.");
+}
+
+async function comparePostHogInsights(environment) {
+  const left = argValue("--left");
+  const right = argValue("--right");
+
+  if (!left || !right) {
+    throw new Error("Pass --left and --right insight names or IDs with --compare.");
+  }
+
+  const leftInsight = compactInsight(await getInsightByNameOrId(environment, left));
+  const rightInsight = compactInsight(await getInsightByNameOrId(environment, right));
+
+  printJson({
+    left: leftInsight,
+    right: rightInsight,
+    same: {
+      query:
+        JSON.stringify(leftInsight.query) === JSON.stringify(rightInsight.query),
+      filters:
+        JSON.stringify(leftInsight.filters) === JSON.stringify(rightInsight.filters),
+      dashboards:
+        JSON.stringify(leftInsight.dashboards) ===
+        JSON.stringify(rightInsight.dashboards),
+    },
+  });
 }
 
 async function upsertDashboard(environment, dashboard, tags) {
@@ -339,9 +568,38 @@ async function main() {
     throw new Error("Missing POSTHOG_ENVIRONMENT_ID or POSTHOG_PROJECT_ID");
   }
 
-  const tags = spec.tags || [];
+  if (inspectMode) {
+    await inspectPostHog(environment);
+    return;
+  }
 
-  for (const dashboardSpec of spec.dashboards) {
+  if (compareMode) {
+    await comparePostHogInsights(environment);
+    return;
+  }
+
+  const selectedInsightKeys = splitCsv(argValue("--only"));
+  const tags = spec.tags || [];
+  const dashboardSpecs = sandboxMode
+    ? [
+        sandboxDashboardFromSpec(
+          spec,
+          selectedInsightKeys.length > 0
+            ? selectedInsightKeys
+            : defaultSandboxInsightKeys
+        ),
+      ]
+    : spec.dashboards.map((dashboard) => ({
+        ...dashboard,
+        insights: selectInsightEntries(
+          { dashboards: [dashboard] },
+          selectedInsightKeys
+        ).map(({ insight }) => insight),
+      }));
+
+  for (const dashboardSpec of dashboardSpecs) {
+    if (dashboardSpec.insights.length === 0) continue;
+
     const dashboard = await upsertDashboard(environment, dashboardSpec, tags);
     console.log(`Synced dashboard: ${dashboardSpec.name}`);
 
