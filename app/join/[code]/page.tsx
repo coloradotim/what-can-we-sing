@@ -1356,8 +1356,6 @@ export default function JoinSessionPage() {
               <details className="group mt-4 rounded-2xl border border-white/10 bg-white/10 p-3 open:p-4">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
                   <p className="min-w-0 truncate text-sm font-semibold text-slate-200">
-                    Quartet full
-                    <span className="px-1 text-slate-500">·</span>
                     {isCurrentUserParticipant ? (
                       <>
                         Singing as{" "}

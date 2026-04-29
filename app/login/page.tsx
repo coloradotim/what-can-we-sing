@@ -182,8 +182,15 @@ export default function LoginPage() {
           {message && <p className="mt-4 text-sm text-slate-300">{message}</p>}
         </div>
 
-        <p className="mt-5 text-sm text-slate-400">
-          See what data is stored and why on the{" "}
+        <p className="mt-5 text-sm leading-6 text-slate-400">
+          New here?{" "}
+          <a
+            href="/help"
+            className="font-semibold text-cyan-300 hover:text-cyan-200"
+          >
+            Read how the app works
+          </a>
+          . See what data is stored and why on the{" "}
           <a
             href="/privacy"
             className="font-semibold text-cyan-300 hover:text-cyan-200"
