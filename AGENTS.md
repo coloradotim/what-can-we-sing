@@ -120,9 +120,10 @@ updated, explain why in the PR.
 Supabase changes must be captured in repo migrations and docs rather than
 dashboard-only changes. If a change requires schema, RLS, or data-model updates,
 add a proper migration and update `docs/supabase-contract.md` as needed.
-Production Supabase migrations should be deployed by the automated GitHub
-Actions workflow after merge to `main`. If automation is unavailable or a
-manual step remains, document that clearly in the PR.
+Production deploys should run through the `Production Deploy` GitHub Actions
+workflow, which applies Supabase migrations before the Vercel production deploy.
+If automation is unavailable or a manual step remains, document that clearly in
+the PR.
 
 For normal repo work, ask early for any needed access: repo file writes, Git
 metadata writes, network access for Git/package/build/font resources, pushing
