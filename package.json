@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "posthog:dashboards:check": "node scripts/posthog/sync-dashboards.mjs --check",
+    "posthog:dashboards:inspect": "node scripts/posthog/sync-dashboards.mjs --inspect",
+    "posthog:dashboards:compare": "node scripts/posthog/sync-dashboards.mjs --compare",
     "posthog:dashboards:sync": "node scripts/posthog/sync-dashboards.mjs",
     "song-suggestions:import": "node scripts/import-song-suggestions.mjs",
     "test": "vitest",
