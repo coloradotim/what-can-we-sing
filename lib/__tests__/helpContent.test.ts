@@ -44,25 +44,25 @@ describe("help content", () => {
   it("is organized into onboarding, repertoire, and quartet guidance", () => {
     expect(helpGuideSections.map((section) => section.title)).toEqual([
       "Get Singing Quickly",
-      "Manage What You Know",
-      "Understand What The Group Can Sing",
+      "Manage The Songs You Know",
+      "Understand What Your Pick-Up Quartet Can Sing",
     ]);
 
     expect(guideText).toContain("First Time Setup");
     expect(guideText).toContain("you do not need to enter your entire repertoire");
-    expect(guideText).toContain("Song title autocomplete");
+    expect(guideText).toContain("Song Title Autocomplete");
     expect(guideText).toContain("Suggestions are optional");
     expect(guideText).toContain("does not add it to anyone else’s repertoire");
     expect(guideText).toContain("TTBB means Tenor, Lead, Baritone, Bass");
     expect(guideText).toContain("add it more than once");
     expect(guideText).toContain("A singer may know multiple parts");
     expect(guideText).toContain("each singer can only cover one required part");
-    expect(guideText).toContain("No arranger entered");
+    expect(guideText).toContain("no arranger entered");
     expect(guideText).toContain("Unknown");
     expect(guideText).toContain("Notes are for your own memory");
     expect(guideText).toContain("Recently sung helps you remember");
     expect(guideText).toContain("sort by title");
-    expect(guideText).toContain("Never sung");
+    expect(guideText).toContain("Never Sung");
   });
 
   it("explains quartet match details and management", () => {
