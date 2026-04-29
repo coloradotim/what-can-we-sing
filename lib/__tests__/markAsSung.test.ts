@@ -7,6 +7,7 @@ function match(assignments: MatchResult["assignments"]): MatchResult {
     songTitle: "Test Song",
     voicing: "TTBB",
     arrangerNames: [],
+    hasMissingArrangerInfo: false,
     category: "ready",
     missingParts: [],
     assignments,

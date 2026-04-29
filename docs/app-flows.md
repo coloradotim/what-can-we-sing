@@ -70,7 +70,11 @@ voicing. Title matching is forgiving enough to catch close variants, but
 different voicings are not combined.
 
 Arranger differences or missing arranger values do not block a match. They are
-shown as confirmation warnings so singers can decide quickly in the room.
+shown so singers can decide quickly in the room. Different entered arranger
+names are treated as a confirmation warning. A blank arranger simply means no
+arranger was entered; it is shown as missing information, not as a problem. A
+literal value such as `Unknown` is treated as an entered arranger name and
+should not be collapsed with blank data.
 
 ## Navigation
 

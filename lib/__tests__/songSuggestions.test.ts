@@ -23,6 +23,21 @@ describe("getSongSuggestions", () => {
       voicing: "TTBB" as const,
       arranger_name: "SPEBSQSA",
     },
+    {
+      song_title: "Heart of My Heart",
+      voicing: "TTBB" as const,
+      arranger_name: null,
+    },
+    {
+      song_title: "Heart of My Heart",
+      voicing: "TTBB" as const,
+      arranger_name: "Unknown",
+    },
+    {
+      song_title: "Heart of My Heart",
+      voicing: "TTBB" as const,
+      arranger_name: "Joe Arranger",
+    },
   ];
 
   it("waits until the query is useful", () => {
@@ -50,6 +65,26 @@ describe("getSongSuggestions", () => {
         songTitle: "Why Try to Change Me Now",
         voicing: "TTBB",
         arrangerName: "SPEBSQSA",
+      },
+    ]);
+  });
+
+  it("keeps blank arranger distinct from literal Unknown and entered names", () => {
+    expect(getSongSuggestions(rows, "heart")).toEqual([
+      {
+        songTitle: "Heart of My Heart",
+        voicing: "TTBB",
+        arrangerName: "",
+      },
+      {
+        songTitle: "Heart of My Heart",
+        voicing: "TTBB",
+        arrangerName: "Joe Arranger",
+      },
+      {
+        songTitle: "Heart of My Heart",
+        voicing: "TTBB",
+        arrangerName: "Unknown",
       },
     ]);
   });
