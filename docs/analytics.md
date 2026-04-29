@@ -104,6 +104,9 @@ The sync script is idempotent by dashboard and insight name:
 - missing dashboards and insights are created
 - insights are created with PostHog query objects rather than legacy insight
   filters
+- event-property breakdowns are generated with PostHog query `breakdowns`
+  entries, for example the `Top routes` card groups `app_route_viewed` by the
+  `route` event property
 - API keys are read from environment variables only
 
 The personal API key needs PostHog dashboard and insight read/write scopes.
@@ -139,7 +142,9 @@ When dashboards are empty, check these in order:
    load should show `analytics_client_ready` and `app_route_viewed`.
 5. If Live Events shows app events but dashboard cards are empty, re-run
    `npm run posthog:dashboards:sync` with the correct
-   `POSTHOG_ENVIRONMENT_ID`.
+   `POSTHOG_ENVIRONMENT_ID`. The managed insights depend on the script's
+   current query-object format, including event-property `breakdowns` for cards
+   such as `Top routes`.
 6. If Live Events shows no events but `/api/analytics/status` is configured,
    check the browser network tab for blocked requests to the configured PostHog
    host. Ad blockers and privacy browsers can suppress analytics completely.

@@ -3,7 +3,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
@@ -81,6 +81,27 @@ function validateSpec(spec) {
         throw new Error(`Unsupported insight type for ${insight.key}.`);
       }
 
+      if (insight.breakdown && insight.breakdowns) {
+        throw new Error(
+          `Insight ${insight.key} must use either breakdown or breakdowns, not both.`
+        );
+      }
+
+      if (insight.breakdowns) {
+        const breakdowns = asArray(
+          insight.breakdowns,
+          `Insight ${insight.key} breakdowns must be an array.`
+        );
+
+        for (const breakdown of breakdowns) {
+          if (!breakdown.property) {
+            throw new Error(
+              `Insight ${insight.key} has a breakdown without property.`
+            );
+          }
+        }
+      }
+
       const series = asArray(
         insight.series,
         `Insight ${insight.key} must include event series.`
@@ -116,7 +137,27 @@ function eventToQueryNode(event) {
   return node;
 }
 
-function queryForInsight(insight) {
+function breakdownsForInsight(insight) {
+  if (insight.breakdowns) {
+    return insight.breakdowns.map((breakdown) => ({
+      property: breakdown.property,
+      type: breakdown.type || "event",
+    }));
+  }
+
+  if (!insight.breakdown) {
+    return [];
+  }
+
+  return [
+    {
+      property: insight.breakdown,
+      type: insight.breakdownType || "event",
+    },
+  ];
+}
+
+export function queryForInsight(insight) {
   const query = {
     kind: insight.type === "funnel" ? "FunnelsQuery" : "TrendsQuery",
     dateRange: {
@@ -129,10 +170,10 @@ function queryForInsight(insight) {
     query.interval = insight.interval;
   }
 
-  if (insight.breakdown) {
+  const breakdowns = breakdownsForInsight(insight);
+  if (breakdowns.length > 0) {
     query.breakdownFilter = {
-      breakdown: insight.breakdown,
-      breakdown_type: "event",
+      breakdowns,
     };
   }
 
@@ -264,7 +305,9 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error(err instanceof Error ? err.message : err);
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((err) => {
+    console.error(err instanceof Error ? err.message : err);
+    process.exitCode = 1;
+  });
+}
