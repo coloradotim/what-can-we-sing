@@ -36,6 +36,7 @@ NEXT_PUBLIC_POSTHOG_HOST=your PostHog host URL
 RESEND_API_KEY=your Resend API key for server-side feedback email
 FEEDBACK_FROM_EMAIL=What Can We Sing <feedback@your-verified-domain>
 FEEDBACK_TO_EMAIL=feedback destination address
+SUPABASE_SERVICE_ROLE_KEY=only for local/server catalog import scripts
 ```
 
 `NEXT_PUBLIC_POSTHOG_KEY` and `NEXT_PUBLIC_POSTHOG_HOST` enable optional product analytics. Leave them blank to disable analytics in local development. Analytics events use counts, IDs, and booleans only; free-text repertoire notes, feedback text, song titles, arranger names, names, and email addresses should not be sent to PostHog.
@@ -80,6 +81,9 @@ The Supabase project should have the current production schema applied:
   recent-use indicators. Marking a song as sung is performed through the
   `mark_repertoire_sung` database function so repertoire metadata and the event
   log stay in sync.
+- `song_suggestion_catalog` stores optional reference suggestions imported from
+  `data/song_suggestion_catalog.psv`. It is used only for autocomplete; catalog
+  rows are not added to anyone's repertoire unless a user chooses to save one.
 
 The app/database contract is documented in
 [docs/supabase-contract.md](docs/supabase-contract.md). Any PR that changes
@@ -97,6 +101,16 @@ supabase db push
 
 If the project is not linked locally, run `supabase link --project-ref <project-ref>`
 first, then `supabase db push`.
+
+To refresh the optional song suggestion catalog after migrations are applied,
+run the import script with a server-side Supabase service role key:
+
+```bash
+SUPABASE_SERVICE_ROLE_KEY=... npm run song-suggestions:import
+```
+
+Use `npm run song-suggestions:import -- --dry-run` to parse and deduplicate the
+catalog file without writing to Supabase.
 
 ## Analytics
 

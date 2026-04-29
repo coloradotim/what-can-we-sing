@@ -77,6 +77,7 @@ export default function RepertoireManager() {
   const [songTitle, setSongTitle] = useState("");
   const [songSuggestions, setSongSuggestions] = useState<SongSuggestion[]>([]);
   const [songSuggestionsOpen, setSongSuggestionsOpen] = useState(false);
+  const [songSuggestionsLoading, setSongSuggestionsLoading] = useState(false);
   const [voicing, setVoicing] = useState<Voicing | "">("");
   const [arrangerName, setArrangerName] = useState("");
   const [notes, setNotes] = useState("");
@@ -193,12 +194,14 @@ export default function RepertoireManager() {
   useEffect(() => {
     if (!isAddOpen || !songSuggestionsOpen || songTitle.trim().length < 2) {
       setSongSuggestions([]);
+      setSongSuggestionsLoading(false);
       return;
     }
 
     let cancelled = false;
     const timeout = window.setTimeout(async () => {
       try {
+        setSongSuggestionsLoading(true);
         const suggestions = await searchRepertoireSongSuggestions(songTitle);
         if (!cancelled) {
           setSongSuggestions(suggestions);
@@ -208,8 +211,12 @@ export default function RepertoireManager() {
         if (!cancelled) {
           setSongSuggestions([]);
         }
+      } finally {
+        if (!cancelled) {
+          setSongSuggestionsLoading(false);
+        }
       }
-    }, 150);
+    }, 250);
 
     return () => {
       cancelled = true;
@@ -220,6 +227,7 @@ export default function RepertoireManager() {
   function resetAddForm() {
     setSongTitle("");
     setSongSuggestions([]);
+    setSongSuggestionsLoading(false);
     setSongSuggestionsOpen(false);
     setVoicing("");
     setArrangerName("");
@@ -1082,34 +1090,53 @@ export default function RepertoireManager() {
                     autoComplete="off"
                     className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
                   />
-                  {songSuggestionsOpen && songSuggestions.length > 0 && (
+                  <p className="mt-1 text-xs text-slate-400">
+                    Start typing to see suggestions, or enter your own song
+                    title.
+                  </p>
+                  {songSuggestionsOpen && songTitle.trim().length >= 2 && (
                     <div className="mt-2 overflow-hidden rounded-xl border border-cyan-300/20 bg-slate-900">
                       <p className="px-3 py-2 text-xs font-semibold uppercase tracking-normal text-slate-400">
-                        Existing songs
+                        Song suggestions
                       </p>
-                      <div className="divide-y divide-white/10">
-                        {songSuggestions.map((suggestion) => (
-                          <button
-                            key={`${suggestion.songTitle}:${suggestion.voicing}:${suggestion.arrangerName}`}
-                            type="button"
-                            onClick={() => selectSongSuggestion(suggestion)}
-                            className="w-full px-3 py-3 text-left hover:bg-cyan-300/10 focus:bg-cyan-300/10 focus:outline-none"
-                          >
-                            <span className="block font-semibold text-white">
-                              {suggestion.songTitle}
-                            </span>
-                            <span className="mt-1 block text-xs text-slate-300">
-                              {songSuggestionSubtitle(suggestion)}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
+                      {songSuggestionsLoading ? (
+                        <p className="px-3 py-3 text-sm text-slate-300">
+                          Searching suggestions...
+                        </p>
+                      ) : songSuggestions.length > 0 ? (
+                        <div className="divide-y divide-white/10">
+                          {songSuggestions.map((suggestion) => (
+                            <button
+                              key={`${suggestion.songTitle}:${suggestion.voicing}:${suggestion.arrangerName}`}
+                              type="button"
+                              onClick={() => selectSongSuggestion(suggestion)}
+                              className="w-full px-3 py-3 text-left hover:bg-cyan-300/10 focus:bg-cyan-300/10 focus:outline-none"
+                            >
+                              <span className="block font-semibold text-white">
+                                {suggestion.songTitle}
+                              </span>
+                              <span className="mt-1 block text-xs text-slate-300">
+                                {songSuggestionSubtitle(suggestion)}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="px-3 py-3 text-sm text-slate-300">
+                          No suggestion found. You can still add this song
+                          manually.
+                        </p>
+                      )}
                     </div>
                   )}
                 </label>
 
                 <div>
                   <p className="text-sm font-medium text-slate-300">Voicing</p>
+                  <p className="mt-1 text-xs text-slate-400">
+                    Suggestions are optional. You can always type your own title
+                    and choose the correct voicing.
+                  </p>
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     {voicings.map((v) => (
                       <button

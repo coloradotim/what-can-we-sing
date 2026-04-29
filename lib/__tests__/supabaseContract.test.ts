@@ -44,6 +44,13 @@ const songSuggestionsMigration = readFileSync(
   ),
   "utf8"
 );
+const songSuggestionCatalogMigration = readFileSync(
+  join(
+    repoRoot,
+    "supabase/migrations/20260429060000_add_song_suggestion_catalog.sql"
+  ),
+  "utf8"
+);
 
 describe("Supabase contract guardrails", () => {
   const tables = [
@@ -132,16 +139,39 @@ describe("Supabase contract guardrails", () => {
   it("documents and migrates global song identity suggestions", () => {
     expect(contract).toContain("search_repertoire_song_suggestions");
     expect(contract).toContain("distinct global song identity suggestions");
+    expect(contract).toContain("song_suggestion_catalog");
     expect(contract).toContain("must not return `user_id`");
     expect(songSuggestionsMigration).toContain(
       "search_repertoire_song_suggestions"
     );
+    expect(songSuggestionCatalogMigration).toContain(
+      "song_suggestion_catalog"
+    );
+    expect(songSuggestionCatalogMigration).toContain("pg_trgm");
+    expect(songSuggestionCatalogMigration).toContain(
+      "song_suggestion_catalog_unique_idx"
+    );
+    expect(songSuggestionCatalogMigration).toContain(
+      "song_suggestion_catalog_title_trgm_idx"
+    );
+    expect(songSuggestionCatalogMigration).toContain("enable row level security");
+    expect(songSuggestionCatalogMigration).toContain(
+      "search_repertoire_song_suggestions"
+    );
     expect(songSuggestionsMigration).toContain("security definer");
+    expect(songSuggestionCatalogMigration).toContain("security definer");
     expect(songSuggestionsMigration).toContain("auth.role() = 'authenticated'");
+    expect(songSuggestionCatalogMigration).toContain(
+      "auth.role() = 'authenticated'"
+    );
     expect(songSuggestionsMigration).toContain("song_title text");
     expect(songSuggestionsMigration).toContain("voicing text");
     expect(songSuggestionsMigration).toContain("arranger_name text");
     expect(songSuggestionsMigration).toContain("grant execute");
+    expect(songSuggestionCatalogMigration).toContain("grant execute");
     expect(songSuggestionsMigration).not.toContain("returns table (\n  user_id");
+    expect(songSuggestionCatalogMigration).not.toContain(
+      "returns table (\n  user_id"
+    );
   });
 });
