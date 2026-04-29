@@ -7,7 +7,7 @@ import {
   maxFeedbackMessageLength,
   type FeedbackType,
 } from "@/lib/feedback";
-import { helpSections, quickStartSteps } from "@/lib/helpContent";
+import { feedbackHelpCopy, helpGuideSections } from "@/lib/helpContent";
 import { getCurrentUser } from "@/lib/profileStore";
 import { useEffect, useState } from "react";
 
@@ -103,14 +103,14 @@ export default function HelpPage() {
           <p className="text-sm font-semibold uppercase text-cyan-300">
             Help
           </p>
-          <h1 className="mt-3 text-4xl font-bold tracking-tight">
-            Get started quickly
+          <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+            How to use What Can We Sing
           </h1>
-          <p className="mt-3 max-w-2xl text-slate-300">
+          <p className="mt-3 max-w-3xl text-base leading-7 text-slate-300">
             What Can We Sing helps a pickup quartet quickly answer the question:
             what can we sing together right now?
           </p>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
+          <p className="mt-3 max-w-3xl text-base leading-7 text-slate-300">
             Each singer adds the songs they know, the voicing, the parts they
             can sing, and how confident they feel. When singers join the same
             quartet, the app compares everyone&apos;s repertoire and shows songs
@@ -118,32 +118,44 @@ export default function HelpPage() {
           </p>
         </header>
 
-        <section className="mt-8 rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-5">
-          <h2 className="text-2xl font-semibold">Quick start</h2>
-          <ol className="mt-4 space-y-3">
-            {quickStartSteps.map((step, index) => (
-              <li key={step} className="flex gap-3 text-slate-100">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-cyan-300 text-sm font-bold text-slate-950">
-                  {index + 1}
-                </span>
-                <span className="pt-1">{step}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section className="mt-8 grid gap-4 sm:grid-cols-2">
-          {helpSections.map((section) => (
+        <section className="mt-8 space-y-6">
+          {helpGuideSections.map((section) => (
             <article
               key={section.title}
-              className="rounded-xl border border-white/10 bg-white/10 p-5"
+              className="rounded-2xl border border-white/10 bg-white/10 p-5 sm:p-6"
             >
-              <h2 className="text-lg font-semibold text-white">
+              <p className="text-sm font-semibold uppercase text-cyan-300">
+                {section.eyebrow}
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">
                 {section.title}
               </h2>
-              <div className="mt-2 space-y-3 text-sm leading-6 text-slate-300">
-                {section.body.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
+              <p className="mt-3 text-base leading-7 text-slate-300">
+                {section.intro}
+              </p>
+
+              <div className="mt-5 space-y-5">
+                {section.topics.map((topic) => (
+                  <section
+                    key={topic.title}
+                    className="rounded-xl border border-white/10 bg-slate-950/40 p-4"
+                  >
+                    <h3 className="text-lg font-semibold text-slate-100">
+                      {topic.title}
+                    </h3>
+                    <div className="mt-2 space-y-3 text-base leading-7 text-slate-300">
+                      {topic.body.map((paragraph) => (
+                        <p key={paragraph}>{paragraph}</p>
+                      ))}
+                    </div>
+                    {topic.bullets && (
+                      <ul className="mt-3 list-disc space-y-2 pl-5 text-base leading-7 text-slate-300">
+                        {topic.bullets.map((bullet) => (
+                          <li key={bullet}>{bullet}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
                 ))}
               </div>
             </article>
@@ -154,9 +166,7 @@ export default function HelpPage() {
           <div>
             <h2 className="text-2xl font-semibold">Send feedback</h2>
             <p className="mt-2 text-sm leading-6 text-slate-300">
-              Report a bug, describe confusing behavior, or suggest an
-              improvement. A short note about what you were trying to do and
-              what happened is usually enough.
+              {feedbackHelpCopy}
             </p>
           </div>
 
