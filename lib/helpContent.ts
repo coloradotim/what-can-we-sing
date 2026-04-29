@@ -10,10 +10,16 @@ export type HelpTopic = {
 };
 
 export type HelpGuideSection = {
+  id: string;
   eyebrow: string;
   title: string;
   intro: string;
   topics: HelpTopic[];
+};
+
+export type HelpNavItem = {
+  id: string;
+  label: string;
 };
 
 export const quickStartSteps = [
@@ -26,6 +32,7 @@ export const quickStartSteps = [
 
 export const helpGuideSections: HelpGuideSection[] = [
   {
+    id: "first-time-setup",
     eyebrow: "First Time Setup",
     title: "Get Singing Quickly",
     intro:
@@ -48,6 +55,7 @@ export const helpGuideSections: HelpGuideSection[] = [
     ],
   },
   {
+    id: "repertoire",
     eyebrow: "Repertoire",
     title: "Manage The Songs You Know",
     intro:
@@ -110,6 +118,65 @@ export const helpGuideSections: HelpGuideSection[] = [
     ],
   },
   {
+    id: "starting-a-quartet",
+    eyebrow: "Starting A Quartet",
+    title: "Start A Quartet For The Group",
+    intro:
+      "Use Start when you want to create the quartet for the group. The app gives you a code, QR code, and shareable link so the other singers can join from their phones.",
+    topics: [
+      {
+        title: "What Start Does",
+        body: [
+          "Start creates a quartet session and gives it a short code. Other singers can enter the code, scan the QR code, or open the shared link to join.",
+          "You are part of the quartet you start. Your saved repertoire is used along with the other singers’ repertoire to find matches, so add at least a few songs first.",
+        ],
+      },
+      {
+        title: "After Singers Join",
+        body: [
+          "Once singers join, the app compares the current quartet members’ saved repertoire snapshots. A quartet is full when four singers have joined.",
+          "Starting a quartet does not permanently change anyone else’s repertoire. It only creates a shared place where the group can compare what each singer already has saved.",
+        ],
+      },
+      {
+        title: "Fixing Something After Starting",
+        body: [
+          "If you notice a missing song, wrong part, confidence issue, arranger detail, or display name problem, you can still edit your repertoire or name after starting and return to the quartet.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "joining-a-quartet",
+    eyebrow: "Joining A Quartet",
+    title: "Join A Quartet Someone Else Started",
+    intro:
+      "Use Join when another singer has already started a quartet. Enter the code they give you, scan the QR code, or open the shared link.",
+    topics: [
+      {
+        title: "What Join Uses",
+        body: [
+          "When you join, the app uses your saved repertoire to look for songs the group can sing together. Joining does not add songs to your repertoire or change the songs you already saved.",
+          "If your repertoire is empty or missing common songs, the group may see fewer matches until you add or update entries.",
+        ],
+      },
+      {
+        title: "Signing In and Rejoining",
+        body: [
+          "If the app asks you to sign in or set a display name, do that first so the quartet can identify you and use your saved songs.",
+          "If you leave and later rejoin with the same code or link while there is room, rejoining behaves like joining normally.",
+        ],
+      },
+      {
+        title: "When The Quartet Is Full",
+        body: [
+          "A quartet is full at four singers. If the quartet is full, the app will keep you from joining until someone leaves or is removed.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "quartet-matches",
     eyebrow: "Quartet Matches",
     title: "Understand What Your Pick-Up Quartet Can Sing",
     intro:
@@ -143,6 +210,15 @@ export const helpGuideSections: HelpGuideSection[] = [
           "Personal notes can appear in details to remind you about your own version or caveats.",
         ],
       },
+    ],
+  },
+  {
+    id: "managing-a-quartet",
+    eyebrow: "Managing A Quartet",
+    title: "Update, Leave, Or Rejoin A Quartet",
+    intro:
+      "Quartet membership and match results come from the current quartet data. Use the quartet controls when someone updates repertoire, changes names, leaves, rejoins, or needs to be removed.",
+    topics: [
       {
         title: "Managing The Quartet",
         body: [
@@ -159,6 +235,16 @@ export const helpGuideSections: HelpGuideSection[] = [
       },
     ],
   },
+];
+
+export const helpNavItems: HelpNavItem[] = [
+  { id: "first-time-setup", label: "First time setup" },
+  { id: "repertoire", label: "Repertoire" },
+  { id: "starting-a-quartet", label: "Starting a quartet" },
+  { id: "joining-a-quartet", label: "Joining a quartet" },
+  { id: "quartet-matches", label: "Quartet matches" },
+  { id: "managing-a-quartet", label: "Managing a quartet" },
+  { id: "feedback", label: "Feedback" },
 ];
 
 export const feedbackHelpCopy =
