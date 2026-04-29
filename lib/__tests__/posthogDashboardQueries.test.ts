@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { queryForInsight } from "../../scripts/posthog/sync-dashboards.mjs";
+import {
+  insightRefreshEndpoint,
+  queryForInsight,
+} from "../../scripts/posthog/sync-dashboards.mjs";
 
 describe("PostHog dashboard query generation", () => {
   it("uses PostHog query breakdowns for event-property trend breakdowns", () => {
@@ -59,5 +62,11 @@ describe("PostHog dashboard query generation", () => {
         ],
       },
     });
+  });
+
+  it("refreshes saved insight results in dashboard context after sync", () => {
+    expect(insightRefreshEndpoint("400013", 1521699, 12345)).toBe(
+      "/api/environments/400013/insights/12345/?refresh=true&refresh_method=force_blocking&dashboard_id_context=1521699"
+    );
   });
 });

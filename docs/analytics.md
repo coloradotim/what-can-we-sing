@@ -111,6 +111,9 @@ The sync script is idempotent by dashboard and insight name:
   the intended presentation: line graphs for time-series trends, bold numbers
   for single health counters, and bar-value charts for route/category/browser
   breakdowns
+- after every create or update, the sync script force-refreshes the saved
+  insight in the dashboard context so dashboard tiles have rendered results
+  without needing each card to be opened manually
 - API keys are read from environment variables only
 
 The personal API key needs PostHog dashboard and insight read/write scopes.
