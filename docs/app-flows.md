@@ -62,6 +62,12 @@ has an active quartet, the app refreshes that user's
 `session_participants.repertoire` snapshot so quartet results derive from the
 database snapshot instead of stale local component state.
 
+When adding repertoire, song-title autocomplete suggestions come from distinct
+song identities already entered in `user_repertoire` plus optional reference
+rows in `song_suggestion_catalog`. These suggestions only prefill the form.
+Users can ignore them, edit all fields, or enter a song that is not in the
+catalog.
+
 ## Matching
 
 Matching uses the current `session_participants` rows. A valid quartet match

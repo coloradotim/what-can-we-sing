@@ -111,7 +111,7 @@ export async function getMyRepertoire() {
 
 export async function searchRepertoireSongSuggestions(
   query: string,
-  limit = 6
+  limit = 10
 ): Promise<SongSuggestion[]> {
   const { data, error } = await supabase.rpc(
     "search_repertoire_song_suggestions",

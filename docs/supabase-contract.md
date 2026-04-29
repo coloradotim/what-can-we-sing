@@ -109,17 +109,51 @@ Required database contract:
   private `sung_song_events` row in one database operation.
 - `public.search_repertoire_song_suggestions(p_query text, p_limit integer)`
   is a security-definer RPC available only to authenticated users. It returns
-  distinct global song identity suggestions from all repertoire rows:
-  `song_title`, `voicing`, and `arranger_name`. It must not return `user_id`,
-  singer names, notes, parts, confidence, timestamps, or other per-user
-  repertoire details. Blank `arranger_name` values remain `null`/blank in app
-  display and are distinct from a literal entered value such as `Unknown`.
+  distinct global song identity suggestions from all repertoire rows and
+  reference rows from `song_suggestion_catalog`: `song_title`, `voicing`, and
+  `arranger_name`. It must not return `user_id`, singer names, notes, parts,
+  confidence, timestamps, or other per-user repertoire details. Blank
+  `arranger_name` values remain `null`/blank in app display and are distinct
+  from a literal entered value such as `Unknown`.
 
 Established by migrations:
 - `20260428060000_supabase_contract_alignment.sql`
 - `20260428142000_add_part_confidences_to_repertoire.sql`
 - `20260428145000_add_repertoire_sung_metadata.sql`
 - `20260428223000_add_global_song_suggestions.sql`
+
+### `song_suggestion_catalog`
+
+Purpose: optional autocomplete reference data for song entry, imported from
+`data/song_suggestion_catalog.psv`.
+
+Code:
+- Imported by `scripts/import-song-suggestions.mjs`
+- Read only through `public.search_repertoire_song_suggestions`
+- Parsed/deduplicated by `lib/__tests__/songSuggestionCatalogImport.test.ts`
+
+Expected context:
+- Server/local import script with `SUPABASE_SERVICE_ROLE_KEY`
+- Browser authenticated users through the security-definer suggestion RPC only
+
+Required database contract:
+- `id uuid primary key`
+- `title text not null`
+- `normalized_title text not null`
+- `voicing text not null`
+- `arranger text`
+- `normalized_arranger text`
+- `source text not null default 'Barbershop Connections'`
+- `created_at timestamptz not null default now()`
+- Unique index on `(normalized_title, voicing, coalesce(normalized_arranger, ''))`
+- Index on `normalized_title`
+- Trigram index on `title`
+- RLS enabled; no direct browser table access is required
+- Catalog rows are suggestions only and must never be inserted into
+  `user_repertoire` unless a user explicitly saves a repertoire item
+
+Established by migrations:
+- `20260429060000_add_song_suggestion_catalog.sql`
 
 ### `sessions`
 
