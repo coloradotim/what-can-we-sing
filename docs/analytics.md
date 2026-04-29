@@ -93,6 +93,43 @@ POSTHOG_ENVIRONMENT_ID=... \
 npm run posthog:dashboards:sync
 ```
 
+For a narrow local test loop, sync only one or two sandbox cards instead of the
+full managed dashboard set:
+
+```sh
+POSTHOG_PERSONAL_API_KEY=phx_... \
+POSTHOG_HOST=https://us.posthog.com \
+POSTHOG_ENVIRONMENT_ID=400013 \
+npm run posthog:dashboards:sync -- --sandbox --only top-routes,analytics-client-ready
+```
+
+This creates or updates `What Can We Sing - Dashboard Sync Sandbox` with
+`Sandbox - ...` insight names so production dashboard cards are not overwritten
+while testing query shape and display settings.
+
+Inspect a saved dashboard or insight directly from PostHog:
+
+```sh
+POSTHOG_PERSONAL_API_KEY=phx_... \
+POSTHOG_HOST=https://us.posthog.com \
+POSTHOG_ENVIRONMENT_ID=400013 \
+npm run posthog:dashboards:inspect -- --dashboard "What Can We Sing - Product Health"
+
+POSTHOG_PERSONAL_API_KEY=phx_... \
+POSTHOG_HOST=https://us.posthog.com \
+POSTHOG_ENVIRONMENT_ID=400013 \
+npm run posthog:dashboards:inspect -- --insight "Top routes"
+```
+
+Compare a repo-managed insight against a manually edited working insight:
+
+```sh
+POSTHOG_PERSONAL_API_KEY=phx_... \
+POSTHOG_HOST=https://us.posthog.com \
+POSTHOG_ENVIRONMENT_ID=400013 \
+npm run posthog:dashboards:compare -- --left "Top routes" --right "Manual working Top routes"
+```
+
 `POSTHOG_PROJECT_ID` is accepted as a fallback name for older PostHog docs, but
 `POSTHOG_ENVIRONMENT_ID` matches the current PostHog dashboard and insight API
 paths.
@@ -102,14 +139,19 @@ The sync script is idempotent by dashboard and insight name:
 - existing dashboards are patched by exact name
 - existing insights are patched by exact name
 - missing dashboards and insights are created
+- `--only insight-key-1,insight-key-2` limits sync to selected insight keys
+- `--sandbox` writes selected cards to the dashboard sync sandbox and prefixes
+  insight names with `Sandbox -`
 - insights are created with PostHog query objects rather than legacy insight
   filters
 - event-property breakdowns are generated with PostHog query `breakdowns`
   entries, for example the `Top routes` card groups `app_route_viewed` by the
   `route` event property
+- trend insights are saved as PostHog visualization nodes that wrap their
+  source trend/funnel query, matching the shape created by the PostHog UI
 - trend insights include explicit display types so dashboard cards sync into
   the intended presentation: line graphs for time-series trends, bold numbers
-  for single health counters, and bar-value charts for route/category/browser
+  for single health counters, and bar charts for route/category/browser
   breakdowns
 - after every create or update, the sync script force-refreshes the saved
   insight in the dashboard context so dashboard tiles have rendered results
