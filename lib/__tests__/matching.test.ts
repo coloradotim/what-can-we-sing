@@ -222,16 +222,122 @@ describe("findMatches", () => {
         title: "Why Try to Change Me",
         normalizedTitle: "whytrytochangeme",
         singers: [
-          { displayName: "T", part: "Tenor", confidence: null },
-          { displayName: "L", part: "Lead", confidence: null },
-          { displayName: "Bari", part: "Baritone", confidence: null },
+          {
+            displayName: "T",
+            part: "Tenor",
+            confidence: null,
+            arrangerName: null,
+          },
+          {
+            displayName: "L",
+            part: "Lead",
+            confidence: null,
+            arrangerName: null,
+          },
+          {
+            displayName: "Bari",
+            part: "Baritone",
+            confidence: null,
+            arrangerName: null,
+          },
         ],
       },
       {
         title: "Why Try To Change Me Now",
         normalizedTitle: "whytrytochangemenow",
         singers: [
-          { displayName: "Bass", part: "Bass", confidence: null },
+          {
+            displayName: "Bass",
+            part: "Bass",
+            confidence: null,
+            arrangerName: null,
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("keeps arranger values attached to fuzzy title variant singer rows", () => {
+    const entries: SingerEntry[] = [
+      {
+        userId: "1",
+        displayName: "Tenor",
+        songTitle: "Why Try To Change Me",
+        voicing: "TTBB",
+        arrangerName: "Cay Outerbridge",
+        partsKnown: ["Tenor"],
+      },
+      {
+        userId: "2",
+        displayName: "Lead",
+        songTitle: "Why Try To Change Me Now",
+        voicing: "TTBB",
+        arrangerName: null,
+        partsKnown: ["Lead"],
+      },
+      {
+        userId: "3",
+        displayName: "Bari",
+        songTitle: "Why Try To Change Me Now",
+        voicing: "TTBB",
+        arrangerName: "",
+        partsKnown: ["Baritone"],
+      },
+      {
+        userId: "4",
+        displayName: "Bass",
+        songTitle: "Why Try to Change Me Now",
+        voicing: "TTBB",
+        arrangerName: "Unknown",
+        partsKnown: ["Bass"],
+      },
+    ];
+
+    const matches = findMatches(entries);
+
+    expect(matches).toHaveLength(1);
+    expect(matches[0].titleMatchType).toBe("fuzzy");
+    expect(matches[0].titleVariants).toEqual([
+      {
+        title: "Why Try To Change Me",
+        normalizedTitle: "whytrytochangeme",
+        singers: [
+          {
+            displayName: "Tenor",
+            part: "Tenor",
+            confidence: null,
+            arrangerName: "Cay Outerbridge",
+          },
+        ],
+      },
+      {
+        title: "Why Try To Change Me Now",
+        normalizedTitle: "whytrytochangemenow",
+        singers: [
+          {
+            displayName: "Lead",
+            part: "Lead",
+            confidence: null,
+            arrangerName: null,
+          },
+          {
+            displayName: "Bari",
+            part: "Baritone",
+            confidence: null,
+            arrangerName: null,
+          },
+        ],
+      },
+      {
+        title: "Why Try to Change Me Now",
+        normalizedTitle: "whytrytochangemenow",
+        singers: [
+          {
+            displayName: "Bass",
+            part: "Bass",
+            confidence: null,
+            arrangerName: "Unknown",
+          },
         ],
       },
     ]);

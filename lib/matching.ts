@@ -64,6 +64,7 @@ export type MatchTitleVariantSinger = {
   displayName: string;
   part: Part;
   confidence: Confidence | null;
+  arrangerName: string | null;
 };
 
 type InternalMatchResult = MatchResult & {
@@ -307,6 +308,7 @@ function buildTitleVariants(
       displayName: entry.displayName,
       part: assignedPart,
       confidence: confidenceForPart(entry, assignedPart),
+      arrangerName: entry.arrangerName?.trim() || null,
     };
 
     if (existing) {
