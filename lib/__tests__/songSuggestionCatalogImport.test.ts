@@ -56,6 +56,83 @@ No Arranger Song|TTBB|
     ]);
   });
 
+  it("expands comma-separated voicings into one row per supported voicing", () => {
+    const rows = parseSongSuggestionCatalog(`Song Title|Voicing|Arranger
+'C' is for cookie|TTBB, SSAA, SATB|Jay Dougherty
+Unsupported Song|TTBB, XYZ|Test Arranger
+`);
+
+    expect(rows).toEqual([
+      {
+        title: "'C' is for cookie",
+        normalized_title: "c is for cookie",
+        voicing: "SATB",
+        arranger: "Jay Dougherty",
+        normalized_arranger: "jay dougherty",
+        source: "Barbershop Connections",
+      },
+      {
+        title: "'C' is for cookie",
+        normalized_title: "c is for cookie",
+        voicing: "SSAA",
+        arranger: "Jay Dougherty",
+        normalized_arranger: "jay dougherty",
+        source: "Barbershop Connections",
+      },
+      {
+        title: "'C' is for cookie",
+        normalized_title: "c is for cookie",
+        voicing: "TTBB",
+        arranger: "Jay Dougherty",
+        normalized_arranger: "jay dougherty",
+        source: "Barbershop Connections",
+      },
+      {
+        title: "Unsupported Song",
+        normalized_title: "unsupported song",
+        voicing: "TTBB",
+        arranger: "Test Arranger",
+        normalized_arranger: "test arranger",
+        source: "Barbershop Connections",
+      },
+    ]);
+  });
+
+  it("deduplicates expanded voicing rows by normalized title, voicing, and arranger", () => {
+    const rows = parseSongSuggestionCatalog(`Song Title|Voicing|Arranger
+Mamselle|TTBB, SATB|Lou Perry
+Mam'selle|SATB|Lou Perry
+Mamselle|ttbb|Lou Perry
+`);
+
+    expect(rows).toEqual([
+      {
+        title: "Mam'selle",
+        normalized_title: "mam selle",
+        voicing: "SATB",
+        arranger: "Lou Perry",
+        normalized_arranger: "lou perry",
+        source: "Barbershop Connections",
+      },
+      {
+        title: "Mamselle",
+        normalized_title: "mamselle",
+        voicing: "SATB",
+        arranger: "Lou Perry",
+        normalized_arranger: "lou perry",
+        source: "Barbershop Connections",
+      },
+      {
+        title: "Mamselle",
+        normalized_title: "mamselle",
+        voicing: "TTBB",
+        arranger: "Lou Perry",
+        normalized_arranger: "lou perry",
+        source: "Barbershop Connections",
+      },
+    ]);
+  });
+
   it("keeps the generated catalog source in the expected format", () => {
     expect(catalogSource.startsWith("Song Title|Voicing|Arranger\n")).toBe(true);
     const parsedRows = parseSongSuggestionCatalog(catalogSource);

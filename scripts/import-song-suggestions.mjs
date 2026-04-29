@@ -13,6 +13,7 @@ const defaultCatalogPath = path.join(
   "data/song_suggestion_catalog.psv"
 );
 const batchSize = 500;
+const supportedVoicings = new Set(["TTBB", "SATB", "SSAA"]);
 
 export function normalizeSearchText(value) {
   return value
@@ -26,6 +27,13 @@ export function normalizeSearchText(value) {
 function cleanText(value) {
   const trimmed = value.trim();
   return trimmed || null;
+}
+
+function splitSupportedVoicings(value) {
+  return value
+    .split(",")
+    .map((voicing) => voicing.trim().toUpperCase())
+    .filter((voicing) => supportedVoicings.has(voicing));
 }
 
 export function parseSongSuggestionCatalog(contents) {
@@ -46,25 +54,28 @@ export function parseSongSuggestionCatalog(contents) {
 
     const [titleValue, voicingValue, arrangerValue] = columns;
     const title = cleanText(titleValue);
-    const voicing = cleanText(voicingValue);
+    const voicings = splitSupportedVoicings(voicingValue);
     const arranger = cleanText(arrangerValue);
 
-    if (!title || !voicing) continue;
+    if (!title || voicings.length === 0) continue;
 
     const normalizedTitle = normalizeSearchText(title);
     const normalizedArranger = arranger ? normalizeSearchText(arranger) : null;
-    const key = [normalizedTitle, voicing, normalizedArranger ?? ""].join("|");
 
-    if (deduped.has(key)) continue;
+    for (const voicing of voicings) {
+      const key = [normalizedTitle, voicing, normalizedArranger ?? ""].join("|");
 
-    deduped.set(key, {
-      title,
-      normalized_title: normalizedTitle,
-      voicing,
-      arranger,
-      normalized_arranger: normalizedArranger,
-      source: "Barbershop Connections",
-    });
+      if (deduped.has(key)) continue;
+
+      deduped.set(key, {
+        title,
+        normalized_title: normalizedTitle,
+        voicing,
+        arranger,
+        normalized_arranger: normalizedArranger,
+        source: "Barbershop Connections",
+      });
+    }
   }
 
   return Array.from(deduped.values()).sort((a, b) => {

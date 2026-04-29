@@ -84,6 +84,8 @@ The Supabase project should have the current production schema applied:
 - `song_suggestion_catalog` stores optional reference suggestions imported from
   `data/song_suggestion_catalog.psv`. It is used only for autocomplete; catalog
   rows are not added to anyone's repertoire unless a user chooses to save one.
+  Import expands comma-separated voicing values into one row per supported
+  voicing (`TTBB`, `SSAA`, `SATB`).
 
 The app/database contract is documented in
 [docs/supabase-contract.md](docs/supabase-contract.md). Any PR that changes
@@ -102,8 +104,9 @@ supabase db push
 If the project is not linked locally, run `supabase link --project-ref <project-ref>`
 first, then `supabase db push`.
 
-To refresh the optional song suggestion catalog after migrations are applied,
-run the import script with a server-side Supabase service role key:
+To refresh the optional song suggestion catalog after migrations are applied, or
+after the catalog import behavior changes, run the import script with a
+server-side Supabase service role key:
 
 ```bash
 SUPABASE_SERVICE_ROLE_KEY=... npm run song-suggestions:import

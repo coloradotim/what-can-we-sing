@@ -51,6 +51,13 @@ const songSuggestionCatalogMigration = readFileSync(
   ),
   "utf8"
 );
+const songSuggestionSupportedVoicingMigration = readFileSync(
+  join(
+    repoRoot,
+    "supabase/migrations/20260429162000_limit_song_suggestions_to_supported_voicings.sql"
+  ),
+  "utf8"
+);
 
 describe("Supabase contract guardrails", () => {
   const tables = [
@@ -172,6 +179,24 @@ describe("Supabase contract guardrails", () => {
     expect(songSuggestionsMigration).not.toContain("returns table (\n  user_id");
     expect(songSuggestionCatalogMigration).not.toContain(
       "returns table (\n  user_id"
+    );
+    expect(contract).toContain(
+      "single voicing values: `TTBB`, `SATB`, and `SSAA`"
+    );
+    expect(contract).toContain(
+      "Import expands comma-separated source voicings"
+    );
+    expect(songSuggestionSupportedVoicingMigration).toContain(
+      "song_suggestion_catalog_supported_voicing_chk"
+    );
+    expect(songSuggestionSupportedVoicingMigration).toContain(
+      "voicing in ('TTBB', 'SATB', 'SSAA')"
+    );
+    expect(songSuggestionSupportedVoicingMigration).toContain(
+      "user_repertoire.voicing in ('TTBB', 'SATB', 'SSAA')"
+    );
+    expect(songSuggestionSupportedVoicingMigration).toContain(
+      "song_suggestion_catalog.voicing in ('TTBB', 'SATB', 'SSAA')"
     );
   });
 });
