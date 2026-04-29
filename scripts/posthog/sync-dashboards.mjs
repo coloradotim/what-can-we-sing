@@ -14,6 +14,7 @@ const checkOnly = args.has("--check");
 const inspectMode = args.has("--inspect");
 const compareMode = args.has("--compare");
 const sandboxMode = args.has("--sandbox");
+const skipRefresh = args.has("--skip-refresh");
 const trendDisplayTypes = new Set([
   "ActionsLineGraph",
   "ActionsTable",
@@ -527,6 +528,28 @@ async function upsertInsight(environment, dashboardId, insight, tags) {
   });
 }
 
+export function insightRefreshEndpoint(environment, dashboardId, insightId) {
+  const params = new URLSearchParams({
+    refresh: "true",
+    refresh_method: "force_blocking",
+    dashboard_id_context: String(dashboardId),
+  });
+
+  return `/api/environments/${environment}/insights/${insightId}/?${params.toString()}`;
+}
+
+async function refreshInsightResult(environment, dashboardId, insight) {
+  const refreshed = await posthogFetch(
+    insightRefreshEndpoint(environment, dashboardId, insight.id)
+  );
+
+  if (!refreshed) {
+    throw new Error(`Insight ${insight.name} did not return refresh metadata.`);
+  }
+
+  return refreshed;
+}
+
 async function main() {
   const spec = await readSpec();
 
@@ -581,8 +604,18 @@ async function main() {
     console.log(`Synced dashboard: ${dashboardSpec.name}`);
 
     for (const insight of dashboardSpec.insights) {
-      await upsertInsight(environment, dashboard.id, insight, tags);
+      const savedInsight = await upsertInsight(
+        environment,
+        dashboard.id,
+        insight,
+        tags
+      );
       console.log(`  Synced insight: ${insight.name}`);
+
+      if (!skipRefresh) {
+        await refreshInsightResult(environment, dashboard.id, savedInsight);
+        console.log(`  Refreshed insight result: ${insight.name}`);
+      }
     }
   }
 }

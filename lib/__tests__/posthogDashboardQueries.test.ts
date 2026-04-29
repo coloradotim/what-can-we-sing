@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  insightRefreshEndpoint,
   queryForInsight,
   sandboxDashboardFromSpec,
   selectInsightEntries,
@@ -129,5 +130,11 @@ describe("PostHog dashboard query generation", () => {
       name: "Sandbox - Top routes",
       breakdown: "route",
     });
+  });
+
+  it("refreshes saved insight results in dashboard context after sync", () => {
+    expect(insightRefreshEndpoint("400013", 1521699, 12345)).toBe(
+      "/api/environments/400013/insights/12345/?refresh=true&refresh_method=force_blocking&dashboard_id_context=1521699"
+    );
   });
 });
