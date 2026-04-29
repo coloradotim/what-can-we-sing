@@ -1,9 +1,14 @@
 import {
   requiredPartsForVoicing,
+  type MatchTitleVariant,
+  type MatchTitleVariantSinger,
   type MatchResult,
 } from "@/lib/matching";
 import { partAbbreviation } from "@/lib/partAbbreviations";
-import { noArrangerEnteredLabel } from "@/lib/arrangerDisplay";
+import {
+  arrangerDisplayName,
+  noArrangerEnteredLabel,
+} from "@/lib/arrangerDisplay";
 
 type MatchCardProps = {
   match: MatchResult;
@@ -14,6 +19,21 @@ type MatchCardProps = {
   onToggle: () => void;
   onMarkAsSung?: () => void;
 };
+
+function uniqueArrangerLabels(singers: MatchTitleVariantSinger[]) {
+  return Array.from(
+    new Set(singers.map((singer) => arrangerDisplayName(singer.arrangerName)))
+  );
+}
+
+function variantKey(variant: MatchTitleVariant) {
+  return `${variant.title}-${variant.singers
+    .map(
+      (singer) =>
+        `${singer.displayName}-${singer.part}-${singer.arrangerName ?? ""}`
+    )
+    .join("|")}`;
+}
 
 const categoryStyles: Record<
   MatchResult["category"],
@@ -55,6 +75,9 @@ export function MatchCard({
     Boolean(match.arrangerVariantNote) ||
     personalNotes.length > 0 ||
     isRecentlySung;
+  const hasTitleVariantDetails = Boolean(match.titleVariants?.length);
+  const shouldShowEntryArrangers =
+    match.arrangerNames.length > 1 || match.hasMissingArrangerInfo;
 
   return (
     <details
@@ -129,20 +152,34 @@ export function MatchCard({
                 <span className="font-semibold text-white">{abbreviation}:</span>{" "}
                 {isMissing
                   ? "Missing"
-                  : singers.map((singer) => singer.displayName).join(", ")}
+                  : singers
+                      .map((singer) => {
+                        if (!shouldShowEntryArrangers) {
+                          return singer.displayName;
+                        }
+
+                        return `${singer.displayName} (Arranger: ${arrangerDisplayName(
+                          singer.arrangerName
+                        )})`;
+                      })
+                      .join(", ")}
               </p>
             );
           })}
         </div>
 
-        {(match.arrangerNames.length > 0 || match.hasMissingArrangerInfo) && (
-          <p className="mt-3">
-            <span className="font-semibold text-white">Arranger:</span>{" "}
-            {[...match.arrangerNames, match.hasMissingArrangerInfo ? noArrangerEnteredLabel : null]
-              .filter((name): name is string => Boolean(name))
-              .join(", ")}
-          </p>
-        )}
+        {!hasTitleVariantDetails &&
+          (match.arrangerNames.length > 0 || match.hasMissingArrangerInfo) && (
+            <p className="mt-3">
+              <span className="font-semibold text-white">Arranger:</span>{" "}
+              {[
+                ...match.arrangerNames,
+                match.hasMissingArrangerInfo ? noArrangerEnteredLabel : null,
+              ]
+                .filter((name): name is string => Boolean(name))
+                .join(", ")}
+            </p>
+          )}
 
         {match.arrangerVariantNote && (
           <p className="mt-2 text-sm text-slate-300">
@@ -165,23 +202,40 @@ export function MatchCard({
                 .join(" / ")}
             </p>
             <div className="mt-3 space-y-3">
-              {match.titleVariants.map((variant) => (
-                <div key={variant.title}>
-                  <p className="font-semibold text-white">"{variant.title}"</p>
-                  <ul className="mt-1 space-y-1">
-                    {variant.singers.map((singer) => (
-                      <li
-                        key={`${variant.title}-${singer.displayName}-${singer.part}`}
-                        className="text-xs text-amber-50/90"
-                      >
-                        {singer.displayName} -{" "}
-                        {partAbbreviation(match.voicing, singer.part)}
-                        {singer.confidence ? ` - ${singer.confidence}` : ""}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+              {match.titleVariants.map((variant) => {
+                const arrangerLabels = uniqueArrangerLabels(variant.singers);
+                const showVariantArranger = arrangerLabels.length === 1;
+
+                return (
+                  <div key={variantKey(variant)}>
+                    <p className="font-semibold text-white">
+                      "{variant.title}"
+                    </p>
+                    {showVariantArranger && (
+                      <p className="mt-0.5 text-xs text-amber-50/80">
+                        Arranger: {arrangerLabels[0]}
+                      </p>
+                    )}
+                    <ul className="mt-1 space-y-1">
+                      {variant.singers.map((singer) => (
+                        <li
+                          key={`${variant.title}-${singer.displayName}-${singer.part}-${singer.arrangerName ?? ""}`}
+                          className="text-xs text-amber-50/90"
+                        >
+                          {singer.displayName} -{" "}
+                          {partAbbreviation(match.voicing, singer.part)}
+                          {singer.confidence ? ` - ${singer.confidence}` : ""}
+                          {!showVariantArranger
+                            ? ` - Arranger: ${arrangerDisplayName(
+                                singer.arrangerName
+                              )}`
+                            : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
             </div>
             <p className="mt-3 text-xs text-amber-50/80">
               If these are the same song, consider updating repertoire titles

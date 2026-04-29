@@ -1,0 +1,115 @@
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+import type { MatchResult, Part, SingerEntry } from "@/lib/matching";
+import { MatchCard } from "./MatchCard";
+
+function singer(
+  patch: Partial<SingerEntry> & { displayName: string; part: Part }
+): SingerEntry {
+  return {
+    userId: patch.userId ?? patch.displayName,
+    displayName: patch.displayName,
+    songTitle: patch.songTitle ?? "Why Try to Change Me Now",
+    voicing: patch.voicing ?? "TTBB",
+    arrangerName: patch.arrangerName,
+    partsKnown: [patch.part],
+    confidence: patch.confidence ?? "Good to Go",
+  };
+}
+
+function renderMatch(match: MatchResult) {
+  return renderToStaticMarkup(
+    <MatchCard
+      match={match}
+      isExpanded
+      onToggle={() => undefined}
+    />
+  );
+}
+
+describe("MatchCard", () => {
+  it("shows arrangers with fuzzy title variant groups instead of a generic summary", () => {
+    const html = renderMatch({
+      songTitle: "Why Try to Change Me Now",
+      voicing: "TTBB",
+      arrangerNames: ["Cay Outerbridge"],
+      hasMissingArrangerInfo: true,
+      category: "possible",
+      missingParts: [],
+      assignments: {},
+      warnings: [],
+      score: 0,
+      titleMatchType: "fuzzy",
+      titleVariants: [
+        {
+          title: "Why Try To Change Me",
+          normalizedTitle: "whytrytochangeme",
+          singers: [
+            {
+              displayName: "Tenor Singer",
+              part: "Tenor",
+              confidence: "A Little Rusty",
+              arrangerName: "Cay Outerbridge",
+            },
+          ],
+        },
+        {
+          title: "Why Try To Change Me Now",
+          normalizedTitle: "whytrytochangemenow",
+          singers: [
+            {
+              displayName: "Lead Singer",
+              part: "Lead",
+              confidence: "Good to Go",
+              arrangerName: null,
+            },
+            {
+              displayName: "Bari Singer",
+              part: "Baritone",
+              confidence: "Good to Go",
+              arrangerName: null,
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(html).toContain("Potential title match");
+    expect(html).toContain("Arranger: Cay Outerbridge");
+    expect(html).toContain("Arranger: No arranger entered");
+    expect(html).not.toContain("Cay Outerbridge, No arranger entered");
+  });
+
+  it("shows per-singer arrangers when the same displayed title has mixed arranger states", () => {
+    const lead = singer({
+      userId: "lead",
+      displayName: "Lead Singer",
+      part: "Lead",
+      arrangerName: "Unknown",
+    });
+    const bass = singer({
+      userId: "bass",
+      displayName: "Bass Singer",
+      part: "Bass",
+      arrangerName: null,
+    });
+
+    const html = renderMatch({
+      songTitle: "Shared Title",
+      voicing: "TTBB",
+      arrangerNames: ["Unknown"],
+      hasMissingArrangerInfo: true,
+      category: "ready",
+      missingParts: [],
+      assignments: {
+        Lead: [lead],
+        Bass: [bass],
+      },
+      warnings: [],
+      score: 0,
+    });
+
+    expect(html).toContain("Lead Singer (Arranger: Unknown)");
+    expect(html).toContain("Bass Singer (Arranger: No arranger entered)");
+  });
+});
