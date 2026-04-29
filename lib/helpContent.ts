@@ -40,7 +40,7 @@ export const helpGuideSections: HelpGuideSection[] = [
         bullets: [...quickStartSteps],
       },
       {
-        title: "Keep setup lightweight",
+        title: "Don't overthink entering all of your songs",
         body: [
           "Start with songs you are likely to sing soon. You can add more repertoire later, and if you are already in a quartet, repertoire edits refresh your active quartet snapshot so matches can update.",
         ],
@@ -49,21 +49,21 @@ export const helpGuideSections: HelpGuideSection[] = [
   },
   {
     eyebrow: "Repertoire",
-    title: "Manage What You Know",
+    title: "Manage The Songs You Know",
     intro:
       "The Repertoire page stores your songs, voicings, parts, confidence, arranger information, notes, and recently sung history.",
     topics: [
       {
-        title: "Song title autocomplete",
+        title: "Song Title Autocomplete",
         body: [
           "Start typing to see suggestions. Suggestions are optional — you can always enter your own song title if the song is not listed or if your title is different.",
           "Selecting a suggestion can prefill title, voicing, and arranger. You can still edit the fields before saving.",
         ],
       },
       {
-        title: "How suggestions are shared",
+        title: "How Suggestions Are Shared",
         body: [
-          "When you add a song, its title, voicing, and arranger can help future singers find the same song faster. Adding a song does not add it to anyone else’s repertoire.",
+          "When you add a song, the title, voicing, and arranger you enter can help future singers find the same song faster. Adding a song does not add it to anyone else’s repertoire.",
           "Suggestions do not expose private user details such as user IDs, singer names, notes, parts, confidence, timestamps, or your full personal repertoire.",
         ],
       },
@@ -75,7 +75,7 @@ export const helpGuideSections: HelpGuideSection[] = [
         ],
       },
       {
-        title: "Parts and confidence",
+        title: "Parts and Confidence",
         body: [
           "Select every part you can sing for that arrangement and set your confidence for each part.",
           "A singer may know multiple parts, but in a quartet match each singer can only cover one required part. The app looks for distinct singers covering the required parts.",
@@ -85,7 +85,7 @@ export const helpGuideSections: HelpGuideSection[] = [
         title: "Arranger",
         body: [
           "Arranger is helpful when the same song exists in multiple arrangements. It gives the quartet context, but missing arranger information does not automatically prevent a match.",
-          "Leaving arranger blank means No arranger entered. Typing Unknown is treated as an entered value and stays visible as Unknown.",
+          "Leaving arranger blank simply means no arranger entered or you don't know the arranger. Typing \"Unknown\" is treated as an entered value and stays visible as Unknown.",
         ],
       },
       {
@@ -95,23 +95,23 @@ export const helpGuideSections: HelpGuideSection[] = [
         ],
       },
       {
-        title: "Recently sung",
+        title: "Recently Sung",
         body: [
           "Recently sung helps you remember what you have sung lately. It can help you sort or filter your repertoire, but it does not remove the song from your repertoire or from possible matches.",
         ],
       },
       {
-        title: "Sorting and filtering",
+        title: "Sorting and Filtering",
         body: [
           "Use search to filter by title. You can sort by title, newest or oldest added, sung recently, or least recently sung.",
-          "You can filter by voicing, part, and Never sung. Active filters appear above the song list and can be cleared together.",
+          "You can filter by voicing, part, and Never Sung. Active filters appear above the song list and can be cleared together.",
         ],
       },
     ],
   },
   {
     eyebrow: "Quartet Matches",
-    title: "Understand What The Group Can Sing",
+    title: "Understand What Your Pick-Up Quartet Can Sing",
     intro:
       "The quartet page compares the current participant snapshots and groups matches by how ready they are to sing.",
     topics: [
@@ -123,35 +123,35 @@ export const helpGuideSections: HelpGuideSection[] = [
         ],
       },
       {
-        title: "Possible matches",
+        title: "Possible Matches",
         body: [
           "Possible matches are not necessarily bad. They may involve slightly different titles, missing arranger information, or possible arrangement differences.",
           "The quartet should quickly confirm the details before singing.",
         ],
       },
       {
-        title: "What matters most",
+        title: "What Matters Most",
         body: [
           "The strongest signals are voicing, required part coverage, and distinct singers for the required parts. Different voicings are not combined.",
           "Title variants, arranger differences, missing arranger information, confidence, and notes are context to help the quartet decide quickly. They are not all automatic blockers.",
         ],
       },
       {
-        title: "Match details",
+        title: "Match Details",
         body: [
           "Open a match to see who is covering which part, what is missing if anything, which title variants are involved, and which arranger values singers entered.",
           "Personal notes can appear in details to remind you about your own version or caveats.",
         ],
       },
       {
-        title: "Managing the quartet",
+        title: "Managing The Quartet",
         body: [
           "When the quartet is full, use Manage to see quartet members, edit repertoire, change your name, or leave the quartet.",
           "If a song title, voicing, part, arranger, notes, or confidence looks wrong, update it from Repertoire. If the name shown to others is wrong, use Change name.",
         ],
       },
       {
-        title: "Leaving and rejoining",
+        title: "Leaving and Rejoining",
         body: [
           "Leaving removes you from the active quartet. If there is room and you still have the code or link, you can rejoin normally.",
           "If another singer removes you, your screen should stop treating that quartet as active.",
