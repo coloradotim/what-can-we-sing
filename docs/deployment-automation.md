@@ -36,14 +36,12 @@ manually with `workflow_dispatch`.
 The workflow:
 - installs the Supabase CLI
 - verifies required GitHub Actions secrets are present
-- links the intended Supabase project
-- runs `supabase --yes db push`
-- fails visibly if linking or migration deployment fails
+- runs `supabase --yes db push` against the configured database URL
+- fails visibly if migration deployment fails
 
 Required GitHub Actions secrets:
 - `SUPABASE_ACCESS_TOKEN`: Supabase personal access token for CI
-- `SUPABASE_PROJECT_ID`: production Supabase project ref
-- `SUPABASE_DB_PASSWORD`: production database password
+- `SUPABASE_DB_URL`: production Supabase session-pooler database URI used by `supabase db push`
 - `NEXT_PUBLIC_SUPABASE_URL`: used by the app build in CI
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: used by the app build in CI
 
