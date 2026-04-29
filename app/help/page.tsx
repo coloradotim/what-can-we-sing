@@ -1,6 +1,6 @@
 "use client";
 
-import { AppNav } from "@/components/AppNav";
+import { PublicAwareAppNav } from "@/components/PublicAwareAppNav";
 import { trackEvent } from "@/lib/analytics";
 import {
   feedbackTypes,
@@ -97,7 +97,7 @@ export default function HelpPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-5 py-8 text-white">
       <div className="mx-auto max-w-4xl">
-        <AppNav />
+        <PublicAwareAppNav />
 
         <header className="mt-8">
           <p className="text-sm font-semibold uppercase text-cyan-300">

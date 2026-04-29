@@ -36,8 +36,33 @@ const secondaryNavItems = [
   },
 ];
 
-export function AppNav() {
+type AppNavProps = {
+  variant?: "app" | "public";
+};
+
+export function AppNav({ variant = "app" }: AppNavProps) {
   const pathname = usePathname();
+
+  if (variant === "public") {
+    return (
+      <nav
+        aria-label="Main navigation"
+        className="rounded-2xl border border-white/10 bg-white/10 p-3"
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <a href="/" className="text-sm font-bold uppercase text-cyan-300">
+            What Can We Sing
+          </a>
+          <a
+            href="/login"
+            className="rounded-xl bg-cyan-300 px-4 py-2 text-center text-sm font-semibold text-slate-950 hover:bg-cyan-200"
+          >
+            Log in or sign up
+          </a>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav

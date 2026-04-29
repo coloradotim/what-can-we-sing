@@ -8,9 +8,9 @@ const privacyPage = readFileSync(
 );
 
 describe("privacy page copy", () => {
-  it("uses the shared app navigation", () => {
-    expect(privacyPage).toContain('import { AppNav }');
-    expect(privacyPage).toContain("<AppNav />");
+  it("uses auth-aware public navigation", () => {
+    expect(privacyPage).toContain('import { PublicAwareAppNav }');
+    expect(privacyPage).toContain("<PublicAwareAppNav />");
   });
 
   it("discloses account, repertoire, quartet, feedback, analytics, and providers", () => {
