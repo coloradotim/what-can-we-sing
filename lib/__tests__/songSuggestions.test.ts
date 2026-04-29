@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getSongSuggestions } from "../songSuggestions";
+import {
+  getSongSuggestions,
+  songSuggestionSubtitle,
+} from "../songSuggestions";
 
 describe("getSongSuggestions", () => {
   const rows = [
@@ -70,7 +73,9 @@ describe("getSongSuggestions", () => {
   });
 
   it("keeps blank arranger distinct from literal Unknown and entered names", () => {
-    expect(getSongSuggestions(rows, "heart")).toEqual([
+    const suggestions = getSongSuggestions(rows, "heart");
+
+    expect(suggestions).toEqual([
       {
         songTitle: "Heart of My Heart",
         voicing: "TTBB",
@@ -86,6 +91,11 @@ describe("getSongSuggestions", () => {
         voicing: "TTBB",
         arrangerName: "Unknown",
       },
+    ]);
+    expect(suggestions.map(songSuggestionSubtitle)).toEqual([
+      "TTBB · No arranger entered",
+      "TTBB · Joe Arranger",
+      "TTBB · Unknown",
     ]);
   });
 });

@@ -1,15 +1,12 @@
+import { AppNav } from "@/components/AppNav";
+
 export default function PrivacyPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-3xl">
-        <a
-          href="/"
-          className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
-        >
-          What Can We Sing
-        </a>
+        <AppNav />
 
-        <h1 className="mt-4 text-4xl font-bold tracking-tight">Privacy</h1>
+        <h1 className="mt-8 text-4xl font-bold tracking-tight">Privacy</h1>
         <p className="mt-3 text-lg text-slate-300">
           What Can We Sing is built to help singers compare repertoire in the
           room. This page explains what information the app uses, what other

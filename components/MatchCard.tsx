@@ -52,6 +52,7 @@ export function MatchCard({
     match.warnings.length > 0 ||
     match.arrangerNames.length > 0 ||
     match.hasMissingArrangerInfo ||
+    Boolean(match.arrangerVariantNote) ||
     personalNotes.length > 0 ||
     isRecentlySung;
 
@@ -140,6 +141,12 @@ export function MatchCard({
             {[...match.arrangerNames, match.hasMissingArrangerInfo ? noArrangerEnteredLabel : null]
               .filter((name): name is string => Boolean(name))
               .join(", ")}
+          </p>
+        )}
+
+        {match.arrangerVariantNote && (
+          <p className="mt-2 text-sm text-slate-300">
+            {match.arrangerVariantNote}
           </p>
         )}
 

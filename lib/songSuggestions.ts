@@ -1,4 +1,5 @@
 import type { Voicing } from "@/lib/matching";
+import { arrangerDisplayName } from "./arrangerDisplay";
 
 export type SongSuggestionSource = {
   song_title: string;
@@ -11,6 +12,14 @@ export type SongSuggestion = {
   voicing: Voicing;
   arrangerName: string;
 };
+
+export function songSuggestionArrangerLabel(suggestion: SongSuggestion) {
+  return arrangerDisplayName(suggestion.arrangerName);
+}
+
+export function songSuggestionSubtitle(suggestion: SongSuggestion) {
+  return `${suggestion.voicing} · ${songSuggestionArrangerLabel(suggestion)}`;
+}
 
 const validVoicings: Voicing[] = ["TTBB", "SATB", "SSAA"];
 

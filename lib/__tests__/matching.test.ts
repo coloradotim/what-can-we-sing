@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   arrangementCheckNote,
   arrangerConflictNote,
+  arrangerVariantNote,
   findMatches,
   normalizeConfidence,
   possibleSameSongNote,
@@ -94,6 +95,29 @@ describe("findMatches", () => {
     expect(matches[0].arrangerNames).toEqual(["Arranger One", "Arranger Two"]);
     expect(matches[0].warnings).toContain(arrangerConflictNote);
     expect(matches[0].warnings).toContain(arrangementCheckNote);
+  });
+
+  it("surfaces likely arranger name variants without a conflict warning", () => {
+    const entries: SingerEntry[] = [
+      { userId: "1", displayName: "A", songTitle: "Variant Song", voicing: "TTBB", arrangerName: "Cay Outerbridge", partsKnown: ["Tenor"] },
+      { userId: "2", displayName: "B", songTitle: "Variant Song", voicing: "TTBB", arrangerName: "C. Outerbridge", partsKnown: ["Lead"] },
+      { userId: "3", displayName: "C", songTitle: "Variant Song", voicing: "TTBB", arrangerName: "Outerbridge", partsKnown: ["Baritone"] },
+      { userId: "4", displayName: "D", songTitle: "Variant Song", voicing: "TTBB", arrangerName: "Cay Outerbridge", partsKnown: ["Bass"] },
+    ];
+
+    const matches = findMatches(entries);
+
+    expect(matches[0].category).toBe("ready");
+    expect(matches[0].arrangerNames).toEqual([
+      "Cay Outerbridge",
+      "C. Outerbridge",
+      "Outerbridge",
+    ]);
+    expect(matches[0].arrangerVariantNote).toBe(
+      arrangerVariantNote(matches[0].arrangerNames)
+    );
+    expect(matches[0].warnings).not.toContain(arrangerConflictNote);
+    expect(matches[0].warnings).not.toContain(arrangementCheckNote);
   });
 
   it("keeps a complete match ready when some arrangers are missing", () => {

@@ -1,4 +1,5 @@
 import { isLikelySameSongTitle } from "./fuzzySongTitles";
+import { areLikelySameArrangerGroup } from "./arrangerDisplay";
 
 export type Voicing = "TTBB" | "SATB" | "SSAA";
 
@@ -43,6 +44,7 @@ export type MatchResult = {
   voicing: Voicing;
   arrangerNames: string[];
   hasMissingArrangerInfo: boolean;
+  arrangerVariantNote?: string;
   category: "ready" | "possible" | "one_part_missing";
   missingParts: Part[];
   assignments: Partial<Record<Part, SingerEntry[]>>;
@@ -72,6 +74,9 @@ export const arrangementCheckNote =
   "Consider double-checking that everyone is singing the same arrangement.";
 export const arrangerConflictNote =
   "Different arranger names were entered for this song.";
+export function arrangerVariantNote(arrangerNames: string[]) {
+  return `Arranger names look similar: ${arrangerNames.join(", ")}. Confirm with the quartet.`;
+}
 
 export function possibleSameSongNote(firstTitle: string, secondTitle: string) {
   return `Possible same song: Is "${firstTitle}" the same as "${secondTitle}"?`;
@@ -259,12 +264,21 @@ function hasMissingArrangerInfo(group: SingerEntry[]) {
   return group.some((e) => !e.arrangerName?.trim());
 }
 
+function arrangerVariantNoteForGroup(knownArrangers: string[]) {
+  if (knownArrangers.length <= 1) return undefined;
+  if (!areLikelySameArrangerGroup(knownArrangers)) return undefined;
+
+  return arrangerVariantNote(knownArrangers);
+}
+
 function arrangementWarningsForGroup(knownArrangers: string[]) {
   const hasMultipleArrangers = knownArrangers.length > 1;
+  const hasConflictingArrangers =
+    hasMultipleArrangers && !areLikelySameArrangerGroup(knownArrangers);
 
   const warnings = [];
 
-  if (hasMultipleArrangers) warnings.push(arrangerConflictNote);
+  if (hasConflictingArrangers) warnings.push(arrangerConflictNote);
   if (warnings.length > 0) warnings.push(arrangementCheckNote);
 
   return warnings;
@@ -331,6 +345,7 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
     const knownArrangers = knownArrangersForGroup(group);
     const warnings = arrangementWarningsForGroup(knownArrangers);
     const missingArrangerInfo = hasMissingArrangerInfo(group);
+    const arrangerVariant = arrangerVariantNoteForGroup(knownArrangers);
 
     if (fullAssignment) {
       const confidence = confidenceWarning(fullAssignment);
@@ -341,6 +356,7 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
         voicing,
         arrangerNames: knownArrangers,
         hasMissingArrangerInfo: missingArrangerInfo,
+        arrangerVariantNote: arrangerVariant,
         category: "ready",
         missingParts: [],
         assignments: buildAssignments(fullAssignment),
@@ -381,6 +397,7 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
         voicing,
         arrangerNames: knownArrangers,
         hasMissingArrangerInfo: missingArrangerInfo,
+        arrangerVariantNote: arrangerVariant,
         category: "one_part_missing",
         missingParts: [bestNearMatch.missingPart],
         assignments: buildAssignments(bestNearMatch.assignment),
@@ -435,6 +452,7 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
         ...arrangementWarningsForGroup(knownArrangers),
       ];
       const missingArrangerInfo = hasMissingArrangerInfo(group);
+      const arrangerVariant = arrangerVariantNoteForGroup(knownArrangers);
       const confidence = confidenceWarning(fullAssignment);
       if (confidence) warnings.push(confidence);
 
@@ -443,6 +461,7 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
         voicing: first.voicing,
         arrangerNames: knownArrangers,
         hasMissingArrangerInfo: missingArrangerInfo,
+        arrangerVariantNote: arrangerVariant,
         category: "possible",
         missingParts: [],
         assignments: buildAssignments(fullAssignment),

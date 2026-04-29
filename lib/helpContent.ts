@@ -49,7 +49,8 @@ export const helpSections: HelpSection[] = [
   {
     title: "Possible Matches",
     body: [
-      "Sometimes the app may show a possible match instead of a clean match. This can happen when song titles are slightly different, arranger information is missing, or the same song may exist in more than one arrangement.",
+      "Sometimes the app may show a possible match instead of a clean match. This can happen when song titles are slightly different or the same song may exist in more than one arrangement.",
+      "Missing arranger information is shown as context, not as a problem. Similar arranger names such as a full name, first initial, or last name only may be shown so the quartet can quickly confirm they refer to the same arranger.",
       "Use the match details to compare what each singer has entered. If the titles or arrangement details do not match, check with the quartet before singing.",
     ],
   },

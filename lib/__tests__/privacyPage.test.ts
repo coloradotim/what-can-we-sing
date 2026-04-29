@@ -8,6 +8,11 @@ const privacyPage = readFileSync(
 );
 
 describe("privacy page copy", () => {
+  it("uses the shared app navigation", () => {
+    expect(privacyPage).toContain('import { AppNav }');
+    expect(privacyPage).toContain("<AppNav />");
+  });
+
   it("discloses account, repertoire, quartet, feedback, analytics, and providers", () => {
     expect(privacyPage).toContain("email address");
     expect(privacyPage).toContain("We do not show your email address");
