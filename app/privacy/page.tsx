@@ -1,10 +1,10 @@
-import { AppNav } from "@/components/AppNav";
+import { PublicAwareAppNav } from "@/components/PublicAwareAppNav";
 
 export default function PrivacyPage() {
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-10 text-white">
       <div className="mx-auto max-w-3xl">
-        <AppNav />
+        <PublicAwareAppNav />
 
         <h1 className="mt-8 text-4xl font-bold tracking-tight">Privacy</h1>
         <p className="mt-3 text-lg text-slate-300">
