@@ -34,11 +34,7 @@ describe("deployment automation guardrails", () => {
   });
 
   it("keeps production Supabase credentials in GitHub Actions secrets", () => {
-    for (const secretName of [
-      "SUPABASE_ACCESS_TOKEN",
-      "SUPABASE_DB_PASSWORD",
-      "SUPABASE_PROJECT_ID",
-    ]) {
+    for (const secretName of ["SUPABASE_ACCESS_TOKEN", "SUPABASE_DB_URL"]) {
       expect(migrationWorkflow).toContain(`secrets.${secretName}`);
       expect(deploymentDocs).toContain(secretName);
     }
