@@ -24,7 +24,10 @@ import {
   updateRepertoireItem,
   type RepertoireRow,
 } from "@/lib/repertoireStore";
-import type { SongSuggestion } from "@/lib/songSuggestions";
+import {
+  songSuggestionSubtitle,
+  type SongSuggestion,
+} from "@/lib/songSuggestions";
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 import { refreshActiveQuartetSnapshot } from "@/lib/activeQuartetSnapshot";
 import { arrangerDisplayName } from "@/lib/arrangerDisplay";
@@ -1096,9 +1099,7 @@ export default function RepertoireManager() {
                               {suggestion.songTitle}
                             </span>
                             <span className="mt-1 block text-xs text-slate-300">
-                              {suggestion.voicing}
-                              {" · "}
-                              {arrangerDisplayName(suggestion.arrangerName)}
+                              {songSuggestionSubtitle(suggestion)}
                             </span>
                           </button>
                         ))}

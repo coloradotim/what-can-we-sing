@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { arrangerDisplayName, hasArrangerEntered } from "../arrangerDisplay";
+import {
+  areLikelySameArranger,
+  arrangerDisplayName,
+  hasArrangerEntered,
+  normalizeArrangerName,
+} from "../arrangerDisplay";
 
 describe("arranger display helpers", () => {
   it("labels blank arranger values as not entered", () => {
@@ -18,5 +23,24 @@ describe("arranger display helpers", () => {
   it("trims entered arranger names for display", () => {
     expect(arrangerDisplayName("  Joe Arranger  ")).toBe("Joe Arranger");
     expect(hasArrangerEntered("  Joe Arranger  ")).toBe(true);
+  });
+
+  it("normalizes capitalization, punctuation, and spacing", () => {
+    expect(normalizeArrangerName("  C.   Outerbridge ")).toBe("c outerbridge");
+  });
+
+  it("recognizes cautious likely arranger variants", () => {
+    expect(areLikelySameArranger("Cay Outerbridge", "C. Outerbridge")).toBe(
+      true
+    );
+    expect(areLikelySameArranger("Cay Outerbridge", "Outerbridge")).toBe(true);
+    expect(areLikelySameArranger("Outerbridge", "C. Outerbridge")).toBe(true);
+  });
+
+  it("does not collapse clearly different arranger names", () => {
+    expect(areLikelySameArranger("Cay Outerbridge", "David Wright")).toBe(
+      false
+    );
+    expect(areLikelySameArranger("David Wright", "Doug Wright")).toBe(false);
   });
 });

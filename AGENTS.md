@@ -10,7 +10,9 @@ The app is for practical, in-the-room decision-making, not archival repertoire m
 - TTBB parts: Tenor, Lead, Baritone, Bass.
 - SATB parts: Soprano, Alto, Tenor, Bass.
 - SSAA parts: Soprano 1, Soprano 2, Alto 1, Alto 2.
-- Same title + same voicing can be grouped, but different arrangers or missing arrangers should be flagged as possible matches, not ignored.
+- Same title + same voicing can be grouped. Different explicit arranger names
+  should be flagged for confirmation, while missing arranger information should
+  be shown as context rather than treated as a problem.
 - Do not combine different voicings.
 - Repertoire is cloud-backed in Supabase.
 - Sessions store participant repertoire snapshots; repertoire add/edit/delete
@@ -31,7 +33,8 @@ The app is for practical, in-the-room decision-making, not archival repertoire m
 - A singer may know multiple parts to the same arrangement, but a single valid quartet assignment cannot use one singer for more than one part.
 - Barbershop songs may exist in multiple arrangements. Title alone is not always enough.
 - Arranger is optional because singers often do not know it, but when arrangers differ, the app should warn users rather than silently treat the arrangements as identical.
-- Missing arranger should not block matching; it should create a “possible match / confirm arrangement” warning.
+- Missing arranger should not block matching and should be shown as missing
+  information, not as an arrangement problem.
 - The app should be forgiving of imperfect data and help singers decide quickly, not enforce a perfect catalog.
 
 ## Part abbreviations (UI standard)
