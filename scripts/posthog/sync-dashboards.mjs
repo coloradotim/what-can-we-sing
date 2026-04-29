@@ -19,7 +19,6 @@ const trendDisplayTypes = new Set([
   "ActionsTable",
   "ActionsPie",
   "ActionsBar",
-  "ActionsBarValue",
   "WorldMap",
   "BoldNumber",
 ]);
@@ -231,7 +230,7 @@ function breakdownsForInsight(insight) {
   ];
 }
 
-export function queryForInsight(insight) {
+function sourceQueryForInsight(insight) {
   const query = {
     kind: insight.type === "funnel" ? "FunnelsQuery" : "TrendsQuery",
     dateRange: {
@@ -258,6 +257,13 @@ export function queryForInsight(insight) {
   }
 
   return query;
+}
+
+export function queryForInsight(insight) {
+  return {
+    kind: "InsightVizNode",
+    source: sourceQueryForInsight(insight),
+  };
 }
 
 async function posthogFetch(endpoint, options = {}) {
@@ -313,6 +319,7 @@ function compactQuery(query) {
     trendsFilter: query.trendsFilter,
     funnelsFilter: query.funnelsFilter,
     interval: query.interval,
+    source: query.source ? compactQuery(query.source) : undefined,
   };
 }
 

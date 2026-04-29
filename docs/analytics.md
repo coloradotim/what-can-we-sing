@@ -147,9 +147,11 @@ The sync script is idempotent by dashboard and insight name:
 - event-property breakdowns are generated with PostHog query `breakdowns`
   entries, for example the `Top routes` card groups `app_route_viewed` by the
   `route` event property
+- trend insights are saved as PostHog visualization nodes that wrap their
+  source trend/funnel query, matching the shape created by the PostHog UI
 - trend insights include explicit display types so dashboard cards sync into
   the intended presentation: line graphs for time-series trends, bold numbers
-  for single health counters, and bar-value charts for route/category/browser
+  for single health counters, and bar charts for route/category/browser
   breakdowns
 - API keys are read from environment variables only
 

@@ -90,12 +90,12 @@ describe("PostHog dashboard spec", () => {
       )
     ).toMatchObject({
       "analytics-client-ready": "BoldNumber",
-      "feedback-submissions": "ActionsBarValue",
-      "top-routes": "ActionsBarValue",
-      "join-by-route": "ActionsBarValue",
-      "repertoire-updates": "ActionsBarValue",
-      "join-errors": "ActionsBarValue",
-      "leave-flow-by-browser": "ActionsBarValue",
+      "feedback-submissions": "ActionsBar",
+      "top-routes": "ActionsBar",
+      "join-by-route": "ActionsBar",
+      "repertoire-updates": "ActionsBar",
+      "join-errors": "ActionsBar",
+      "leave-flow-by-browser": "ActionsBar",
     });
   });
 });
