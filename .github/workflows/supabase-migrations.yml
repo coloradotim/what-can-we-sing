@@ -41,8 +41,18 @@ jobs:
           test -n "$SUPABASE_DB_PASSWORD"
           test -n "$SUPABASE_PROJECT_ID"
 
-      - name: Link production Supabase project
-        run: supabase link --project-ref "$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD" --skip-pooler
+      - name: Build IPv4 pooler database URL
+        run: |
+          set -euo pipefail
+          DB_PASSWORD_ENCODED="$(python3 - <<'PY'
+          import os
+          import urllib.parse
+          print(urllib.parse.quote(os.environ['SUPABASE_DB_PASSWORD'], safe=''))
+          PY
+          )"
+          DB_URL="postgresql://postgres.${SUPABASE_PROJECT_ID}:${DB_PASSWORD_ENCODED}@aws-1-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require"
+          echo "::add-mask::$DB_URL"
+          echo "SUPABASE_DB_URL=$DB_URL" >> "$GITHUB_ENV"
 
       - name: Apply migrations
-        run: supabase --yes db push
+        run: supabase --yes db push --db-url "$SUPABASE_DB_URL"
