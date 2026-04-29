@@ -32,10 +32,7 @@ jobs:
 
       - uses: supabase/setup-cli@v2
         with:
-          # Use the beta CLI so we can bypass the connection pooler. The
-          # pooler has repeatedly failed SASL auth during db push even after
-          # refreshing the DB password secret.
-          version: beta
+          version: latest
 
       - name: Verify required secrets
         run: |
