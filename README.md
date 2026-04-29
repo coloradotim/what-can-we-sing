@@ -91,8 +91,9 @@ The app/database contract is documented in
 [docs/supabase-contract.md](docs/supabase-contract.md). Any PR that changes
 Supabase usage must update that contract, migrations, and tests or test notes.
 
-Database migrations live in `supabase/migrations`. In production, migrations are
-deployed by GitHub Actions after a migration PR is merged to `main`; see
+Database migrations live in `supabase/migrations`. In production, the
+`Production Deploy` GitHub Actions workflow applies migrations before deploying
+the Vercel app; see
 [docs/deployment-automation.md](docs/deployment-automation.md). For local
 development or emergency fallback, apply unapplied migrations to the linked
 Supabase project with:
