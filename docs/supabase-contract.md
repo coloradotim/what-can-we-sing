@@ -114,7 +114,8 @@ Required database contract:
   `arranger_name`. It must not return `user_id`, singer names, notes, parts,
   confidence, timestamps, or other per-user repertoire details. Blank
   `arranger_name` values remain `null`/blank in app display and are distinct
-  from a literal entered value such as `Unknown`.
+  from a literal entered value such as `Unknown`. It returns only supported
+  single voicing values: `TTBB`, `SATB`, and `SSAA`.
 
 Established by migrations:
 - `20260428060000_supabase_contract_alignment.sql`
@@ -148,12 +149,16 @@ Required database contract:
 - Unique index on `(normalized_title, voicing, coalesce(normalized_arranger, ''))`
 - Index on `normalized_title`
 - Trigram index on `title`
+- Supported voicings are `TTBB`, `SATB`, and `SSAA`
 - RLS enabled; no direct browser table access is required
+- Import expands comma-separated source voicings into one row per supported
+  voicing and ignores unsupported voicing values
 - Catalog rows are suggestions only and must never be inserted into
   `user_repertoire` unless a user explicitly saves a repertoire item
 
 Established by migrations:
 - `20260429060000_add_song_suggestion_catalog.sql`
+- `20260429162000_limit_song_suggestions_to_supported_voicings.sql`
 
 ### `sessions`
 
