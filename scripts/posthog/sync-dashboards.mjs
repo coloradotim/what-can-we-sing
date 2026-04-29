@@ -11,6 +11,15 @@ const specPath = path.join(repoRoot, "analytics/posthog/dashboards.json");
 
 const args = new Set(process.argv.slice(2));
 const checkOnly = args.has("--check");
+const trendDisplayTypes = new Set([
+  "ActionsLineGraph",
+  "ActionsTable",
+  "ActionsPie",
+  "ActionsBar",
+  "ActionsBarValue",
+  "WorldMap",
+  "BoldNumber",
+]);
 
 function requiredEnv(name) {
   const value = process.env[name];
@@ -79,6 +88,15 @@ function validateSpec(spec) {
 
       if (!["trend", "funnel"].includes(insight.type)) {
         throw new Error(`Unsupported insight type for ${insight.key}.`);
+      }
+
+      if (
+        insight.type === "trend" &&
+        (!insight.display || !trendDisplayTypes.has(insight.display))
+      ) {
+        throw new Error(
+          `Trend insight ${insight.key} must include a supported display.`
+        );
       }
 
       if (insight.breakdown && insight.breakdowns) {
@@ -168,6 +186,12 @@ export function queryForInsight(insight) {
 
   if (insight.interval) {
     query.interval = insight.interval;
+  }
+
+  if (insight.type === "trend" && insight.display) {
+    query.trendsFilter = {
+      display: insight.display,
+    };
   }
 
   const breakdowns = breakdownsForInsight(insight);

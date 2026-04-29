@@ -15,6 +15,7 @@ const dashboardSpec = JSON.parse(
       key: string;
       name: string;
       type: string;
+      display?: string;
       series: Array<{ event: string }>;
     }>;
   }>;
@@ -72,5 +73,29 @@ describe("PostHog dashboard spec", () => {
     for (const event of dashboardEvents) {
       expect(emittedEvents.has(event)).toBe(true);
     }
+  });
+
+  it("sets an intentional display for every managed trend insight", () => {
+    const trendInsights = dashboardSpec.dashboards.flatMap((dashboard) =>
+      dashboard.insights.filter((insight) => insight.type === "trend")
+    );
+
+    expect(trendInsights.every((insight) => Boolean(insight.display))).toBe(
+      true
+    );
+
+    expect(
+      Object.fromEntries(
+        trendInsights.map((insight) => [insight.key, insight.display])
+      )
+    ).toMatchObject({
+      "analytics-client-ready": "BoldNumber",
+      "feedback-submissions": "ActionsBarValue",
+      "top-routes": "ActionsBarValue",
+      "join-by-route": "ActionsBarValue",
+      "repertoire-updates": "ActionsBarValue",
+      "join-errors": "ActionsBarValue",
+      "leave-flow-by-browser": "ActionsBarValue",
+    });
   });
 });
