@@ -3,6 +3,7 @@ import {
   helpGuideSections,
   helpSections,
   feedbackHelpCopy,
+  helpNavItems,
   quickStartSteps,
 } from "../helpContent";
 
@@ -45,7 +46,19 @@ describe("help content", () => {
     expect(helpGuideSections.map((section) => section.title)).toEqual([
       "Get Singing Quickly",
       "Manage The Songs You Know",
+      "Start A Quartet For The Group",
+      "Join A Quartet Someone Else Started",
       "Understand What Your Pick-Up Quartet Can Sing",
+      "Update, Leave, Or Rejoin A Quartet",
+    ]);
+
+    expect(helpGuideSections.map((section) => section.id)).toEqual([
+      "first-time-setup",
+      "repertoire",
+      "starting-a-quartet",
+      "joining-a-quartet",
+      "quartet-matches",
+      "managing-a-quartet",
     ]);
 
     expect(guideText).toContain("First Time Setup");
@@ -66,6 +79,13 @@ describe("help content", () => {
   });
 
   it("explains quartet match details and management", () => {
+    expect(guideText).toContain("Start creates a quartet session");
+    expect(guideText).toContain("code, QR code, and shareable link");
+    expect(guideText).toContain("You are part of the quartet you start");
+    expect(guideText).toContain("Starting a quartet does not permanently change");
+    expect(guideText).toContain("Use Join when another singer");
+    expect(guideText).toContain("Joining does not add songs");
+    expect(guideText).toContain("If the quartet is full");
     expect(guideText).toContain("Ready to Sing");
     expect(guideText).toContain("Possible matches");
     expect(guideText).toContain("voicing, required part coverage");
@@ -77,5 +97,26 @@ describe("help content", () => {
     expect(guideText).toContain("edit repertoire");
     expect(guideText).toContain("Leaving removes you from the active quartet");
     expect(guideText).toContain("you can rejoin normally");
+  });
+
+  it("provides compact table of contents links for every major help section", () => {
+    expect(helpNavItems).toEqual([
+      { id: "first-time-setup", label: "First time setup" },
+      { id: "repertoire", label: "Repertoire" },
+      { id: "starting-a-quartet", label: "Starting a quartet" },
+      { id: "joining-a-quartet", label: "Joining a quartet" },
+      { id: "quartet-matches", label: "Quartet matches" },
+      { id: "managing-a-quartet", label: "Managing a quartet" },
+      { id: "feedback", label: "Feedback" },
+    ]);
+
+    const sectionIds = new Set([
+      ...helpGuideSections.map((section) => section.id),
+      "feedback",
+    ]);
+
+    for (const item of helpNavItems) {
+      expect(sectionIds.has(item.id)).toBe(true);
+    }
   });
 });

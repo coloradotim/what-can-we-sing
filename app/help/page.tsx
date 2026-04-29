@@ -7,7 +7,11 @@ import {
   maxFeedbackMessageLength,
   type FeedbackType,
 } from "@/lib/feedback";
-import { feedbackHelpCopy, helpGuideSections } from "@/lib/helpContent";
+import {
+  feedbackHelpCopy,
+  helpGuideSections,
+  helpNavItems,
+} from "@/lib/helpContent";
 import { getCurrentUser } from "@/lib/profileStore";
 import { useEffect, useState } from "react";
 
@@ -118,11 +122,32 @@ export default function HelpPage() {
           </p>
         </header>
 
+        <nav
+          aria-label="Help page sections"
+          className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-4"
+        >
+          <h2 className="text-sm font-semibold uppercase text-slate-300">
+            On this page
+          </h2>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {helpNavItems.map((item) => (
+              <a
+                key={item.id}
+                href={`#${item.id}`}
+                className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-2 text-sm font-medium text-cyan-100 hover:border-cyan-200 hover:bg-cyan-300/20"
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+        </nav>
+
         <section className="mt-8 space-y-6">
           {helpGuideSections.map((section) => (
             <article
               key={section.title}
-              className="rounded-2xl border border-white/10 bg-white/10 p-5 sm:p-6"
+              id={section.id}
+              className="scroll-mt-6 rounded-2xl border border-white/10 bg-white/10 p-5 sm:p-6"
             >
               <p className="text-sm font-semibold uppercase text-cyan-300">
                 {section.eyebrow}
@@ -162,7 +187,10 @@ export default function HelpPage() {
           ))}
         </section>
 
-        <section className="mt-10 rounded-2xl border border-white/10 bg-white/10 p-5">
+        <section
+          id="feedback"
+          className="mt-10 scroll-mt-6 rounded-2xl border border-white/10 bg-white/10 p-5"
+        >
           <div>
             <h2 className="text-2xl font-semibold">Send feedback</h2>
             <p className="mt-2 text-sm leading-6 text-slate-300">
