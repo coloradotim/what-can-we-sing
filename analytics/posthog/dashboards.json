@@ -63,7 +63,7 @@
           "name": "Feedback submissions",
           "description": "Feedback sent successfully by category.",
           "type": "trend",
-          "display": "ActionsBarValue",
+          "display": "ActionsBar",
           "dateFrom": "-30d",
           "breakdown": "category",
           "series": [{ "event": "feedback_submitted" }]
@@ -73,7 +73,7 @@
           "name": "Top routes",
           "description": "Route visits with join codes normalized to /join/[code].",
           "type": "trend",
-          "display": "ActionsBarValue",
+          "display": "ActionsBar",
           "dateFrom": "-30d",
           "breakdown": "route",
           "series": [{ "event": "app_route_viewed" }]
@@ -135,7 +135,7 @@
           "name": "Create vs join route",
           "description": "Quartet joins by route context.",
           "type": "trend",
-          "display": "ActionsBarValue",
+          "display": "ActionsBar",
           "dateFrom": "-30d",
           "breakdown": "route",
           "series": [{ "event": "quartet_joined" }]
@@ -152,7 +152,7 @@
           "name": "Repertoire updates",
           "description": "Add, edit, and delete activity.",
           "type": "trend",
-          "display": "ActionsBarValue",
+          "display": "ActionsBar",
           "dateFrom": "-30d",
           "breakdown": "action",
           "series": [{ "event": "repertoire_updated" }]
@@ -204,7 +204,7 @@
           "name": "Join errors",
           "description": "Quartet join failures by reason.",
           "type": "trend",
-          "display": "ActionsBarValue",
+          "display": "ActionsBar",
           "dateFrom": "-30d",
           "breakdown": "reason",
           "series": [{ "event": "quartet_join_failed" }]
@@ -214,7 +214,7 @@
           "name": "Leave errors",
           "description": "Quartet leave failures by source.",
           "type": "trend",
-          "display": "ActionsBarValue",
+          "display": "ActionsBar",
           "dateFrom": "-30d",
           "breakdown": "source",
           "series": [{ "event": "quartet_leave_failed" }]
@@ -224,7 +224,7 @@
           "name": "Repertoire update errors",
           "description": "Repertoire update failures by action.",
           "type": "trend",
-          "display": "ActionsBarValue",
+          "display": "ActionsBar",
           "dateFrom": "-30d",
           "breakdown": "action",
           "series": [{ "event": "repertoire_update_failed" }]
@@ -234,7 +234,7 @@
           "name": "Feedback errors",
           "description": "Feedback send failures.",
           "type": "trend",
-          "display": "ActionsBarValue",
+          "display": "ActionsBar",
           "dateFrom": "-30d",
           "breakdown": "category",
           "series": [{ "event": "feedback_failed" }]
@@ -244,7 +244,7 @@
           "name": "Mark sung errors",
           "description": "Failures when marking a match as recently sung.",
           "type": "trend",
-          "display": "ActionsBarValue",
+          "display": "ActionsBar",
           "dateFrom": "-30d",
           "breakdown": "voicing",
           "series": [{ "event": "song_mark_sung_failed" }]
@@ -261,7 +261,7 @@
           "name": "Leave flow by browser",
           "description": "Leave clicks, confirmations, successes, and failures by browser.",
           "type": "trend",
-          "display": "ActionsBarValue",
+          "display": "ActionsBar",
           "dateFrom": "-30d",
           "breakdown": "$browser",
           "series": [
@@ -276,7 +276,7 @@
           "name": "Join flow by device",
           "description": "Join attempts, successes, and failures by device type.",
           "type": "trend",
-          "display": "ActionsBarValue",
+          "display": "ActionsBar",
           "dateFrom": "-30d",
           "breakdown": "$device_type",
           "series": [
@@ -290,7 +290,7 @@
           "name": "Key actions on browser/OS combinations",
           "description": "Useful for Brave on iOS and Chrome on Mac compatibility checks.",
           "type": "trend",
-          "display": "ActionsBarValue",
+          "display": "ActionsBar",
           "dateFrom": "-30d",
           "breakdown": "$browser",
           "series": [
