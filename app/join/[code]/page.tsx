@@ -1102,8 +1102,16 @@ export default function JoinSessionPage() {
     );
   }
 
-  function renderParticipantRow(participant: DbParticipant) {
+  function renderParticipantRow(
+    participant: DbParticipant,
+    options: { showCurrentParticipantActions?: boolean } = {}
+  ) {
     const isCurrentParticipant = participant.user_id === currentUserId;
+    const showCurrentParticipantActions =
+      options.showCurrentParticipantActions ?? true;
+    const showActions =
+      canManageParticipants &&
+      (!isCurrentParticipant || showCurrentParticipantActions);
 
     return (
       <div
@@ -1117,20 +1125,25 @@ export default function JoinSessionPage() {
                 participant,
                 profileDisplayNamesByUserId
               )}
+              {isCurrentParticipant && (
+                <span className="ml-2 rounded-full bg-cyan-300/15 px-2 py-0.5 text-xs font-semibold text-cyan-100">
+                  You
+                </span>
+              )}
             </p>
             <p className="text-sm text-slate-300">
               {participant.repertoire.length} songs loaded
             </p>
           </div>
 
-          {canManageParticipants && (
+          {showActions && (
             <div className="flex flex-wrap gap-2">
               {isCurrentParticipant && (
                 <a
                   href="/settings"
                   className="w-fit rounded-lg border border-cyan-300/30 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-300/10"
                 >
-                  Change my display name
+                  Change name
                 </a>
               )}
               <button
@@ -1146,10 +1159,10 @@ export default function JoinSessionPage() {
                 {isCurrentParticipant
                   ? leaving
                     ? "Leaving..."
-                    : "Leave quartet"
+                    : "Leave"
                   : removingParticipantId === participant.id
                     ? "Removing..."
-                    : "Remove from quartet"}
+                    : "Remove"}
               </button>
             </div>
           )}
@@ -1340,52 +1353,64 @@ export default function JoinSessionPage() {
             )}
 
             {isQuartetFull && (
-              <section className="mt-5 rounded-2xl border border-white/10 bg-white/10 p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-200">
-                      Quartet is full
-                    </p>
+              <details className="group mt-4 rounded-2xl border border-white/10 bg-white/10 p-3 open:p-4">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                  <p className="min-w-0 truncate text-sm font-semibold text-slate-200">
+                    Quartet full
+                    <span className="px-1 text-slate-500">·</span>
                     {isCurrentUserParticipant ? (
-                      <p className="mt-1 text-sm text-slate-400">
-                        You are singing as{" "}
-                        <span className="font-semibold text-cyan-200">
+                      <>
+                        Singing as{" "}
+                        <span className="text-cyan-200">
                           {currentParticipantDisplayName}
                         </span>
-                        .
-                      </p>
+                      </>
                     ) : (
-                      <p className="mt-1 text-sm text-slate-400">
-                        This quartet already has four singers.
-                      </p>
+                      <span>{participants.length} singers</span>
                     )}
-                  </div>
+                  </p>
+                  <span className="shrink-0 rounded-lg border border-cyan-300/30 px-3 py-1.5 text-sm font-semibold text-cyan-200 group-open:bg-cyan-300/10">
+                    Manage
+                  </span>
+                </summary>
 
+                <div className="mt-4 border-t border-white/10 pt-4">
                   {isCurrentUserParticipant && (
                     <div className="flex flex-wrap gap-2">
                       <a
                         href="/repertoire"
                         className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-white/10"
                       >
-                        Edit repertoire
+                        Edit Repertoire
                       </a>
                       <a
                         href="/settings"
                         className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-white/10"
                       >
-                        Change my display name
+                        Change name
                       </a>
                       <button
                         onClick={requestLeaveQuartet}
                         disabled={leaving || !sessionId}
                         className="rounded-xl bg-rose-200 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-rose-100 disabled:opacity-40"
                       >
-                        {leaving ? "Leaving..." : "Leave quartet"}
+                        {leaving ? "Leaving..." : "Leave Quartet"}
                       </button>
                     </div>
                   )}
+
+                  <div className="mt-4">
+                    <h2 className="text-lg font-semibold">Members</h2>
+                    <div className="mt-3 space-y-3">
+                      {participants.map((participant) =>
+                        renderParticipantRow(participant, {
+                          showCurrentParticipantActions: false,
+                        })
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </section>
+              </details>
             )}
 
             {!isQuartetFull && (
@@ -1449,13 +1474,15 @@ export default function JoinSessionPage() {
                       </p>
                     )}
 
-                    {participants.map(renderParticipantRow)}
+                    {participants.map((participant) =>
+                      renderParticipantRow(participant)
+                    )}
                   </div>
                 </div>
               </>
             )}
 
-            <div className={isQuartetFull ? "mt-6" : "mt-10"}>
+            <div className={isQuartetFull ? "mt-4" : "mt-10"}>
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <h2 className="text-2xl font-semibold">Matches</h2>
@@ -1518,24 +1545,6 @@ export default function JoinSessionPage() {
                 )}
               </div>
             </div>
-
-            {isQuartetFull && (
-              <details className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
-                <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">
-                  Quartet members
-                </summary>
-
-                <div className="mt-4 border-t border-white/10 pt-4">
-                  <div>
-                    <h2 className="text-lg font-semibold">Participants</h2>
-
-                    <div className="mt-4 space-y-3">
-                      {participants.map(renderParticipantRow)}
-                    </div>
-                  </div>
-                </div>
-              </details>
-            )}
           </>
         )}
       </div>
