@@ -9,13 +9,13 @@ const joinPage = readFileSync(
 
 describe("quartet manage panel markup", () => {
   it("keeps the full-quartet status compact with manage actions and members", () => {
-    expect(joinPage).toContain("Quartet full");
     expect(joinPage).toContain("Singing as");
     expect(joinPage).toContain("Manage");
     expect(joinPage).toContain("Members");
     expect(joinPage).toContain("Edit Repertoire");
     expect(joinPage).toContain("Leave Quartet");
     expect(joinPage).toContain("showCurrentParticipantActions: false");
+    expect(joinPage).not.toContain("Quartet full");
     expect(joinPage).not.toContain("Quartet is full");
     expect(joinPage).not.toContain("Quartet members");
     expect(joinPage).not.toContain("Change my display name");
