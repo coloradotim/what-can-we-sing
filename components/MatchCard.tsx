@@ -3,6 +3,7 @@ import {
   type MatchResult,
 } from "@/lib/matching";
 import { partAbbreviation } from "@/lib/partAbbreviations";
+import { noArrangerEnteredLabel } from "@/lib/arrangerDisplay";
 
 type MatchCardProps = {
   match: MatchResult;
@@ -50,6 +51,7 @@ export function MatchCard({
     Boolean(match.titleVariants?.length) ||
     match.warnings.length > 0 ||
     match.arrangerNames.length > 0 ||
+    match.hasMissingArrangerInfo ||
     personalNotes.length > 0 ||
     isRecentlySung;
 
@@ -132,10 +134,12 @@ export function MatchCard({
           })}
         </div>
 
-        {match.arrangerNames.length > 0 && (
+        {(match.arrangerNames.length > 0 || match.hasMissingArrangerInfo) && (
           <p className="mt-3">
             <span className="font-semibold text-white">Arranger:</span>{" "}
-            {match.arrangerNames.join(", ")}
+            {[...match.arrangerNames, match.hasMissingArrangerInfo ? noArrangerEnteredLabel : null]
+              .filter((name): name is string => Boolean(name))
+              .join(", ")}
           </p>
         )}
 

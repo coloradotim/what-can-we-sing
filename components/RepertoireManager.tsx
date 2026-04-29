@@ -27,6 +27,7 @@ import {
 import type { SongSuggestion } from "@/lib/songSuggestions";
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 import { refreshActiveQuartetSnapshot } from "@/lib/activeQuartetSnapshot";
+import { arrangerDisplayName } from "@/lib/arrangerDisplay";
 
 const voicings: Voicing[] = ["TTBB", "SATB", "SSAA"];
 
@@ -992,11 +993,9 @@ export default function RepertoireManager() {
                             {partAbbreviation(item.voicing, part)} · {confidence}
                           </span>
                         ))}
-                        {item.arranger_name && (
-                          <span className="truncate text-slate-400">
-                            Arr. {item.arranger_name}
-                          </span>
-                        )}
+                        <span className="truncate text-slate-400">
+                          Arr. {arrangerDisplayName(item.arranger_name)}
+                        </span>
                       </div>
                       {item.notes && (
                         <p className="mt-1 line-clamp-2 text-xs text-slate-400">
@@ -1098,9 +1097,8 @@ export default function RepertoireManager() {
                             </span>
                             <span className="mt-1 block text-xs text-slate-300">
                               {suggestion.voicing}
-                              {suggestion.arrangerName
-                                ? ` · ${suggestion.arrangerName}`
-                                : " · Arranger unknown"}
+                              {" · "}
+                              {arrangerDisplayName(suggestion.arrangerName)}
                             </span>
                           </button>
                         ))}

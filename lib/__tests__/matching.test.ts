@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   arrangementCheckNote,
+  arrangerConflictNote,
   findMatches,
   normalizeConfidence,
   possibleSameSongNote,
@@ -90,6 +91,8 @@ describe("findMatches", () => {
     const matches = findMatches(entries);
 
     expect(matches[0].category).toBe("ready");
+    expect(matches[0].arrangerNames).toEqual(["Arranger One", "Arranger Two"]);
+    expect(matches[0].warnings).toContain(arrangerConflictNote);
     expect(matches[0].warnings).toContain(arrangementCheckNote);
   });
 
@@ -104,7 +107,26 @@ describe("findMatches", () => {
     const matches = findMatches(entries);
 
     expect(matches[0].category).toBe("ready");
-    expect(matches[0].warnings).toContain(arrangementCheckNote);
+    expect(matches[0].arrangerNames).toEqual(["Known Arranger"]);
+    expect(matches[0].hasMissingArrangerInfo).toBe(true);
+    expect(matches[0].warnings).not.toContain(arrangementCheckNote);
+  });
+
+  it("treats literal Unknown as an entered arranger distinct from blank", () => {
+    const entries: SingerEntry[] = [
+      { userId: "1", displayName: "A", songTitle: "Unknown Credit Song", voicing: "TTBB", arrangerName: "Unknown", partsKnown: ["Tenor"] },
+      { userId: "2", displayName: "B", songTitle: "Unknown Credit Song", voicing: "TTBB", arrangerName: "Unknown", partsKnown: ["Lead"] },
+      { userId: "3", displayName: "C", songTitle: "Unknown Credit Song", voicing: "TTBB", arrangerName: "", partsKnown: ["Baritone"] },
+      { userId: "4", displayName: "D", songTitle: "Unknown Credit Song", voicing: "TTBB", arrangerName: "Unknown", partsKnown: ["Bass"] },
+    ];
+
+    const matches = findMatches(entries);
+
+    expect(matches[0].category).toBe("ready");
+    expect(matches[0].arrangerNames).toEqual(["Unknown"]);
+    expect(matches[0].hasMissingArrangerInfo).toBe(true);
+    expect(matches[0].warnings).not.toContain(arrangerConflictNote);
+    expect(matches[0].warnings).not.toContain(arrangementCheckNote);
   });
 
   it("uses SATB required parts", () => {

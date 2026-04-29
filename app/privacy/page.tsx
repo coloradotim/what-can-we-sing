@@ -63,8 +63,9 @@ export default function PrivacyPage() {
               When you join a quartet, other singers in that quartet may see
               your display name and repertoire-derived information needed for
               matching, such as songs, voicing, parts, confidence, and possible
-              arrangement warnings. This sharing is the core purpose of the app:
-              helping the quartet answer what can we sing together right now.
+              arrangement details or warnings. This sharing is the core purpose
+              of the app: helping the quartet answer what can we sing together
+              right now.
             </p>
             <p className="mt-2 text-slate-300">
               Personal repertoire notes are stored for you and are not included

@@ -112,7 +112,8 @@ Required database contract:
   distinct global song identity suggestions from all repertoire rows:
   `song_title`, `voicing`, and `arranger_name`. It must not return `user_id`,
   singer names, notes, parts, confidence, timestamps, or other per-user
-  repertoire details.
+  repertoire details. Blank `arranger_name` values remain `null`/blank in app
+  display and are distinct from a literal entered value such as `Unknown`.
 
 Established by migrations:
 - `20260428060000_supabase_contract_alignment.sql`
