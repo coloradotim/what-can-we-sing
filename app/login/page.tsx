@@ -115,6 +115,26 @@ export default function LoginPage() {
           </p>
         </section>
 
+        <section className="mt-6 rounded-2xl border border-cyan-300/20 bg-cyan-300/5 px-5 py-4">
+          <p className="text-lg font-semibold text-cyan-100">New here?</p>
+          <p className="mt-2 text-base leading-7 text-slate-300">
+            <a
+              href="/help"
+              className="font-semibold text-cyan-300 hover:text-cyan-200"
+            >
+              Read how the app works
+            </a>{" "}
+            before signing in, or review what data is stored on the{" "}
+            <a
+              href="/privacy"
+              className="font-semibold text-cyan-300 hover:text-cyan-200"
+            >
+              privacy page
+            </a>
+            .
+          </p>
+        </section>
+
         <h2 className="mt-8 text-3xl font-bold">Log in</h2>
         <p className="mt-3 text-slate-300">
           Enter your email and we’ll send you a one-time code. There is no
@@ -181,24 +201,6 @@ export default function LoginPage() {
 
           {message && <p className="mt-4 text-sm text-slate-300">{message}</p>}
         </div>
-
-        <p className="mt-5 text-sm leading-6 text-slate-400">
-          New here?{" "}
-          <a
-            href="/help"
-            className="font-semibold text-cyan-300 hover:text-cyan-200"
-          >
-            Read how the app works
-          </a>
-          . See what data is stored and why on the{" "}
-          <a
-            href="/privacy"
-            className="font-semibold text-cyan-300 hover:text-cyan-200"
-          >
-            privacy page
-          </a>
-          .
-        </p>
       </div>
     </main>
   );

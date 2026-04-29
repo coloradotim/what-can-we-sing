@@ -19,5 +19,16 @@ describe("login intro content", () => {
   it("links new users to help before they sign in", () => {
     expect(loginPage).toContain('href="/help"');
     expect(loginPage).toContain("Read how the app works");
+    expect(loginPage).toContain('href="/privacy"');
+    expect(loginPage).toContain("privacy page");
+    expect(loginPage).toContain("before signing in");
+    expect(loginPage).toContain("text-base leading-7");
+
+    expect(loginPage.indexOf("New here?")).toBeLessThan(
+      loginPage.indexOf("<h2")
+    );
+    expect(loginPage.indexOf("New here?")).toBeGreaterThan(
+      loginPage.indexOf("{loginIntro.signInReason}")
+    );
   });
 });
