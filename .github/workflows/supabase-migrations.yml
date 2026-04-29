@@ -24,8 +24,7 @@ jobs:
 
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
 
     steps:
       - uses: actions/checkout@v4
@@ -38,21 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$SUPABASE_ACCESS_TOKEN"
-          test -n "$SUPABASE_DB_PASSWORD"
-          test -n "$SUPABASE_PROJECT_ID"
-
-      - name: Build IPv4 pooler database URL
-        run: |
-          set -euo pipefail
-          DB_PASSWORD_ENCODED="$(python3 - <<'PY'
-          import os
-          import urllib.parse
-          print(urllib.parse.quote(os.environ['SUPABASE_DB_PASSWORD'], safe=''))
-          PY
-          )"
-          DB_URL="postgresql://postgres.${SUPABASE_PROJECT_ID}:${DB_PASSWORD_ENCODED}@aws-1-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require"
-          echo "::add-mask::$DB_URL"
-          echo "SUPABASE_DB_URL=$DB_URL" >> "$GITHUB_ENV"
+          test -n "$SUPABASE_DB_URL"
 
       - name: Apply migrations
         run: supabase --yes db push --db-url "$SUPABASE_DB_URL"
