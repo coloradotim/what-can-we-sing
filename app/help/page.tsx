@@ -17,6 +17,7 @@ import { getCurrentUser } from "@/lib/profileStore";
 import { useEffect, useState } from "react";
 
 const helpIntroParagraphClass = "mt-3 text-base leading-7 text-slate-300";
+const helpIntroInsetClass = "mx-auto max-w-[calc(100%-2rem)] sm:max-w-[calc(100%-3rem)]";
 
 export default function HelpPage() {
   const [type, setType] = useState<FeedbackType>("General feedback");
@@ -106,7 +107,7 @@ export default function HelpPage() {
       <div className="mx-auto max-w-4xl">
         <PublicAwareAppNav />
 
-        <header className="mt-8">
+        <header className={`mt-8 ${helpIntroInsetClass}`}>
           <p className="text-sm font-semibold uppercase text-cyan-300">
             Help
           </p>
