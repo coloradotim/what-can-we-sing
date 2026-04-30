@@ -31,6 +31,12 @@ import {
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 import { refreshActiveQuartetSnapshot } from "@/lib/activeQuartetSnapshot";
 import { arrangerDisplayName } from "@/lib/arrangerDisplay";
+import {
+  hasDuplicateParts,
+  isRepertoireSongFormValid,
+  rowHasMissingPartOrConfidence,
+  type PartConfidenceFormRow,
+} from "@/lib/repertoireForm";
 
 const voicings: Voicing[] = ["TTBB", "SATB", "SSAA"];
 
@@ -51,17 +57,23 @@ const emptyPartRow = (): PartConfidenceFormRow => ({
   confidence: "",
 });
 
+const requiredFieldClass =
+  "mt-1 w-full rounded-xl border px-4 py-3 text-white outline-none focus:ring-2";
+const requiredCompactFieldClass =
+  "mt-1 w-full rounded-xl border px-3 py-3 text-white outline-none focus:ring-2";
+
+function requiredFieldStateClass(isIncomplete: boolean) {
+  return isIncomplete
+    ? "border-rose-300/70 bg-rose-950/30 ring-rose-300"
+    : "border-white/10 bg-slate-900 ring-cyan-300";
+}
+
 type RepertoireForm = {
   songTitle: string;
   voicing: Voicing;
   arrangerName: string;
   partRows: PartConfidenceFormRow[];
   notes: string;
-};
-
-type PartConfidenceFormRow = {
-  part: Part | "";
-  confidence: Confidence | "";
 };
 
 export default function RepertoireManager() {
@@ -107,17 +119,6 @@ export default function RepertoireManager() {
         part: row.part,
         confidence: row.confidence,
       }));
-  }
-
-  function hasDuplicateParts(rows: PartConfidenceFormRow[]) {
-    const selectedParts = rows
-      .map((row) => row.part)
-      .filter((part): part is Part => Boolean(part));
-    return new Set(selectedParts).size !== selectedParts.length;
-  }
-
-  function rowHasMissingPartOrConfidence(rows: PartConfidenceFormRow[]) {
-    return rows.some((row) => !row.part || !row.confidence);
   }
 
   async function loadRepertoire() {
@@ -568,11 +569,14 @@ export default function RepertoireManager() {
     );
   }
 
-  const canAddSong =
-    Boolean(songTitle.trim()) &&
-    Boolean(voicing) &&
-    !rowHasMissingPartOrConfidence(partRows) &&
-    !hasDuplicateParts(partRows);
+  const canAddSong = isRepertoireSongFormValid(songTitle, voicing, partRows);
+  const canSaveEdit = editForm
+    ? isRepertoireSongFormValid(
+        editForm.songTitle,
+        editForm.voicing,
+        editForm.partRows
+      )
+    : false;
   const repertoireFilters = {
     searchQuery,
     voicing: voicingFilter,
@@ -823,7 +827,10 @@ export default function RepertoireManager() {
                           onChange={(e) =>
                             updateEditForm({ songTitle: e.target.value })
                           }
-                          className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                          aria-invalid={!editForm.songTitle.trim()}
+                          className={`${requiredFieldClass} ${requiredFieldStateClass(
+                            !editForm.songTitle.trim()
+                          )}`}
                         />
                       </label>
 
@@ -896,7 +903,10 @@ export default function RepertoireManager() {
                                     part: e.target.value as Part | "",
                                   })
                                 }
-                                className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                                aria-invalid={!row.part}
+                                className={`${requiredCompactFieldClass} ${requiredFieldStateClass(
+                                  !row.part
+                                )}`}
                               >
                                 <option value="">Choose part</option>
                                 {partsByVoicing[editForm.voicing].map((part) => (
@@ -925,7 +935,10 @@ export default function RepertoireManager() {
                                     confidence: e.target.value as Confidence | "",
                                   })
                                 }
-                                className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                                aria-invalid={!row.confidence}
+                                className={`${requiredCompactFieldClass} ${requiredFieldStateClass(
+                                  !row.confidence
+                                )}`}
                               >
                                 <option value="">Choose confidence</option>
                                 {confidenceLevels.map((level) => (
@@ -962,7 +975,11 @@ export default function RepertoireManager() {
                     <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                       <button
                         onClick={() => saveEdit(item.id)}
-                        disabled={savingEditId === item.id || deletingId === item.id}
+                        disabled={
+                          !canSaveEdit ||
+                          savingEditId === item.id ||
+                          deletingId === item.id
+                        }
                         className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
                       >
                         {savingEditId === item.id ? "Saving..." : "Save changes"}
@@ -1088,7 +1105,10 @@ export default function RepertoireManager() {
                     }}
                     onFocus={() => setSongSuggestionsOpen(true)}
                     autoComplete="off"
-                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                    aria-invalid={!songTitle.trim()}
+                    className={`${requiredFieldClass} ${requiredFieldStateClass(
+                      !songTitle.trim()
+                    )}`}
                   />
                   <p className="mt-1 text-xs text-slate-400">
                     Start typing to see suggestions, or enter your own song
@@ -1156,6 +1176,11 @@ export default function RepertoireManager() {
                       </button>
                     ))}
                   </div>
+                  {!voicing && (
+                    <p className="mt-2 text-sm text-rose-200">
+                      Choose a voicing to continue.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -1180,7 +1205,10 @@ export default function RepertoireManager() {
                                   part: e.target.value as Part | "",
                                 })
                               }
-                              className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                              aria-invalid={!row.part}
+                              className={`${requiredCompactFieldClass} ${requiredFieldStateClass(
+                                !row.part
+                              )}`}
                             >
                               <option value="">Choose part</option>
                               {partsByVoicing[voicing].map((part) => (
@@ -1209,7 +1237,10 @@ export default function RepertoireManager() {
                                   confidence: e.target.value as Confidence | "",
                                 })
                               }
-                              className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                              aria-invalid={!row.confidence}
+                              className={`${requiredCompactFieldClass} ${requiredFieldStateClass(
+                                !row.confidence
+                              )}`}
                             >
                               <option value="">Choose confidence</option>
                               {confidenceLevels.map((level) => (
