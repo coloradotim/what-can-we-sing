@@ -6,6 +6,12 @@ const repoRoot = process.cwd();
 const helpPage = readFileSync(join(repoRoot, "app/help/page.tsx"), "utf8");
 
 describe("help page navigation", () => {
+  it("keeps the intro aligned to the same help container as the nav and sections", () => {
+    expect(helpPage).toContain('className="mx-auto max-w-4xl"');
+    expect(helpPage).toContain("helpIntroParagraphClass");
+    expect(helpPage).not.toContain("max-w-3xl text-base leading-7");
+  });
+
   it("renders a compact on-page navigation from shared help nav items", () => {
     expect(helpPage).toContain("helpNavItems");
     expect(helpPage).toContain("On this page");
