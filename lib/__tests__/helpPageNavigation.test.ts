@@ -18,4 +18,16 @@ describe("help page navigation", () => {
     expect(helpPage).toContain('id="feedback"');
     expect(helpPage).toContain("scroll-mt-6");
   });
+
+  it("links the friendly intro copy to the feedback form", () => {
+    expect(helpPage).toContain("helpWelcomeCopy");
+    expect(helpPage).toContain('href="#feedback"');
+    expect(helpPage).toContain("feedback form");
+  });
+
+  it("auto-selects general feedback for the feedback form", () => {
+    expect(helpPage).toContain(
+      'useState<FeedbackType>("General feedback")'
+    );
+  });
 });

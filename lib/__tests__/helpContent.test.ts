@@ -3,7 +3,9 @@ import {
   helpGuideSections,
   helpSections,
   feedbackHelpCopy,
+  helpFeedbackInvitationCopy,
   helpNavItems,
+  helpWelcomeCopy,
   quickStartSteps,
 } from "../helpContent";
 
@@ -40,6 +42,7 @@ describe("help content", () => {
     expect(sectionText).toContain("Leaving removes you");
     expect(feedbackHelpCopy).toContain("Report a bug");
     expect(feedbackHelpCopy).toContain("confusing behavior");
+    expect(feedbackHelpCopy).toContain("General feedback");
   });
 
   it("is organized into onboarding, repertoire, and quartet guidance", () => {
@@ -118,5 +121,16 @@ describe("help content", () => {
     for (const item of helpNavItems) {
       expect(sectionIds.has(item.id)).toBe(true);
     }
+  });
+
+  it("welcomes general and positive feedback from real singing contexts", () => {
+    expect(helpWelcomeCopy).toContain("great time using What Can We Sing");
+    expect(helpWelcomeCopy).toContain("convention");
+    expect(helpWelcomeCopy).toContain("afterglow");
+    expect(helpWelcomeCopy).toContain("Brigade");
+    expect(helpFeedbackInvitationCopy).toContain("feedback form");
+    expect(feedbackHelpCopy).toContain("just let us know how you are using the app");
+    expect(feedbackHelpCopy).toContain("if it helped at a convention");
+    expect(feedbackHelpCopy).toContain("General feedback");
   });
 });

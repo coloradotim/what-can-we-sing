@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  feedbackTypes,
   formatFeedbackEmailText,
   validateFeedbackSubmission,
 } from "../feedback";
 
 describe("feedback helpers", () => {
+  it("defaults the feedback form toward general feedback", () => {
+    expect(feedbackTypes[0]).toBe("General feedback");
+  });
+
   it("validates and trims feedback submissions", () => {
     expect(
       validateFeedbackSubmission({

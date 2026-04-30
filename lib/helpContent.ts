@@ -247,8 +247,14 @@ export const helpNavItems: HelpNavItem[] = [
   { id: "feedback", label: "Feedback" },
 ];
 
+export const helpWelcomeCopy =
+  "We really hope you have a great time using What Can We Sing, and that it makes your convention, afterglow, or Brigade experience that much more fun and worthwhile.";
+
+export const helpFeedbackInvitationCopy =
+  "If the app helps you, confuses you, or gives you an idea for something better, please send a note using the feedback form at the bottom of this page.";
+
 export const feedbackHelpCopy =
-  "Report a bug, describe confusing behavior, or suggest an improvement. A short note about what you were trying to do and what happened is usually enough.";
+  "Report a bug, describe confusing behavior, suggest an improvement, or just let us know how you are using the app. If you like it, if it helped at a convention, afterglow, or Brigade, or if you have general feedback, choose General feedback and send a quick note. A short note about what you were trying to do and what happened is usually enough.";
 
 export const helpSections: HelpSection[] = helpGuideSections.map((section) => ({
   title: section.title,
