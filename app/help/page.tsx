@@ -16,6 +16,8 @@ import {
 import { getCurrentUser } from "@/lib/profileStore";
 import { useEffect, useState } from "react";
 
+const helpIntroParagraphClass = "mt-3 text-base leading-7 text-slate-300";
+
 export default function HelpPage() {
   const [type, setType] = useState<FeedbackType>("General feedback");
   const [message, setMessage] = useState("");
@@ -111,20 +113,20 @@ export default function HelpPage() {
           <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
             How to use What Can We Sing
           </h1>
-          <p className="mt-3 max-w-3xl text-base leading-7 text-slate-300">
+          <p className={helpIntroParagraphClass}>
             What Can We Sing helps a pickup quartet quickly answer the question:
             what can we sing together right now?
           </p>
-          <p className="mt-3 max-w-3xl text-base leading-7 text-slate-300">
+          <p className={helpIntroParagraphClass}>
             Each singer adds the songs they know, the voicing, the parts they
             can sing, and how confident they feel. When singers join the same
             quartet, the app compares everyone&apos;s repertoire and shows songs
             where the required parts are covered by different people.
           </p>
-          <p className="mt-3 max-w-3xl text-base leading-7 text-slate-300">
+          <p className={helpIntroParagraphClass}>
             {helpWelcomeCopy}
           </p>
-          <p className="mt-3 max-w-3xl text-base leading-7 text-slate-300">
+          <p className={helpIntroParagraphClass}>
             If the app helps you, confuses you, or gives you an idea for
             something better, please send a note using the{" "}
             <a
