@@ -1,7 +1,7 @@
 export const feedbackTypes = [
+  "General feedback",
   "Bug report",
   "Feature idea",
-  "General feedback",
 ] as const;
 
 export type FeedbackType = (typeof feedbackTypes)[number];

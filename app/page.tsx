@@ -149,12 +149,6 @@ export default function Home() {
             >
               {setupPrompt.action}
             </a>
-            <a
-              href="/help"
-              className="ml-3 mt-4 inline-block px-1 py-3 text-sm font-semibold text-cyan-100 hover:text-white"
-            >
-              Help
-            </a>
           </div>
         )}
 
@@ -201,20 +195,6 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm">
-              <a
-                href="/settings"
-                className="font-semibold text-slate-300 hover:text-cyan-200"
-              >
-                Profile
-              </a>
-              <a
-                href="/help"
-                className="font-semibold text-slate-300 hover:text-cyan-200"
-              >
-                Help
-              </a>
-            </div>
           </>
         )}
       </div>

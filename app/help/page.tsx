@@ -11,12 +11,13 @@ import {
   feedbackHelpCopy,
   helpGuideSections,
   helpNavItems,
+  helpWelcomeCopy,
 } from "@/lib/helpContent";
 import { getCurrentUser } from "@/lib/profileStore";
 import { useEffect, useState } from "react";
 
 export default function HelpPage() {
-  const [type, setType] = useState<FeedbackType>("Bug report");
+  const [type, setType] = useState<FeedbackType>("General feedback");
   const [message, setMessage] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
@@ -119,6 +120,20 @@ export default function HelpPage() {
             can sing, and how confident they feel. When singers join the same
             quartet, the app compares everyone&apos;s repertoire and shows songs
             where the required parts are covered by different people.
+          </p>
+          <p className="mt-3 max-w-3xl text-base leading-7 text-slate-300">
+            {helpWelcomeCopy}
+          </p>
+          <p className="mt-3 max-w-3xl text-base leading-7 text-slate-300">
+            If the app helps you, confuses you, or gives you an idea for
+            something better, please send a note using the{" "}
+            <a
+              href="#feedback"
+              className="font-semibold text-cyan-200 hover:text-cyan-100"
+            >
+              feedback form
+            </a>{" "}
+            at the bottom of this page.
           </p>
         </header>
 
