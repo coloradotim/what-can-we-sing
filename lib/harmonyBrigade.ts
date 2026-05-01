@@ -47,6 +47,11 @@ export type HarmonyBrigadeAddInput = {
   partConfidences: PartConfidence[];
 };
 
+export type HarmonyBrigadePartSelections = Record<
+  string,
+  Partial<Record<Part, Confidence>>
+>;
+
 type RawHarmonyBrigadeEvent = {
   id: string;
   year_held: number;
@@ -197,16 +202,10 @@ export function filterHarmonyBrigadeSongs(
   });
 }
 
-export function dedupeHarmonyBrigadeSongs(rows: HarmonyBrigadeEventSong[]) {
-  const uniqueRows = new Map<string, HarmonyBrigadeEventSong>();
-
-  for (const row of rows) {
-    if (!uniqueRows.has(row.song.id)) {
-      uniqueRows.set(row.song.id, row);
-    }
-  }
-
-  return Array.from(uniqueRows.values());
+export function harmonyBrigadeEventSongKey(
+  row: Pick<HarmonyBrigadeEventSong, "event" | "song">
+) {
+  return `${row.event.id}:${row.song.id}`;
 }
 
 export function harmonyBrigadeSelectionDescription(
@@ -289,28 +288,75 @@ export function searchHarmonyBrigadeCandidates(
   });
 }
 
+function confidenceRank(confidence: Confidence) {
+  if (confidence === "Good to Go") return 3;
+  if (confidence === "A Little Rusty") return 2;
+  return 1;
+}
+
+function mergePartConfidences(
+  current: PartConfidence[],
+  next: PartConfidence[]
+) {
+  const merged = new Map<Part, Confidence>();
+
+  for (const item of [...current, ...next]) {
+    const existing = merged.get(item.part);
+    if (!existing || confidenceRank(item.confidence) > confidenceRank(existing)) {
+      merged.set(item.part, item.confidence);
+    }
+  }
+
+  return Array.from(merged.entries()).map(([part, confidence]) => ({
+    part,
+    confidence,
+  }));
+}
+
 export function buildHarmonyBrigadeAddInputs(
   candidates: HarmonyBrigadeCandidate[],
-  selectedIds: Set<string>,
-  part: Part,
-  confidence: Confidence
+  selections: HarmonyBrigadePartSelections
 ): HarmonyBrigadeAddInput[] {
-  return candidates
+  const inputs = new Map<string, HarmonyBrigadeAddInput>();
+
+  for (const row of candidates
     .filter(
       (row) =>
-        selectedIds.has(row.song.id) && row.duplicateStatus === "eligible"
+        Object.keys(selections[harmonyBrigadeEventSongKey(row)] ?? {}).length >
+          0 &&
+        row.duplicateStatus === "eligible"
     )
-    .map((row) => ({
+  ) {
+    const rowSelections = selections[harmonyBrigadeEventSongKey(row)] ?? {};
+    const partConfidences = Object.entries(rowSelections)
+      .filter((entry): entry is [Part, Confidence] => Boolean(entry[1]))
+      .map(([part, confidence]) => ({ part, confidence }));
+
+    if (partConfidences.length === 0) continue;
+
+    const key = exactSongKey({
       songTitle: row.song.songTitle,
-      voicing: HARMONY_BRIGADE_DEFAULT_VOICING,
-      arrangerName: row.song.arranger ?? undefined,
-      partConfidences: [
-        {
-          part,
-          confidence,
-        },
-      ],
-    }));
+      arrangerName: row.song.arranger,
+    });
+
+    const existing = inputs.get(key);
+
+    if (existing) {
+      existing.partConfidences = mergePartConfidences(
+        existing.partConfidences,
+        partConfidences
+      );
+    } else {
+      inputs.set(key, {
+        songTitle: row.song.songTitle,
+        voicing: HARMONY_BRIGADE_DEFAULT_VOICING,
+        arrangerName: row.song.arranger ?? undefined,
+        partConfidences,
+      });
+    }
+  }
+
+  return Array.from(inputs.values());
 }
 
 export async function getHarmonyBrigadeEvents() {

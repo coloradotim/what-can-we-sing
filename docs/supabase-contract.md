@@ -262,6 +262,10 @@ Expected context:
   reference rows.
 - Browser users never write to these reference tables. Adding songs writes only
   to the current user's `user_repertoire`.
+- The UI lists event-song appearances from `harmony_brigade_event_songs`, not
+  only unique songs. If a user selects parts from multiple appearances of the
+  same normalized song + arranger, the app writes one `user_repertoire` row with
+  combined TTBB part confidences.
 
 Required database contract:
 - `harmony_brigade_songs`

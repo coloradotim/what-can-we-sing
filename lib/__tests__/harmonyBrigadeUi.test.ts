@@ -29,9 +29,13 @@ describe("Harmony Brigade repertoire UI", () => {
 
   it("uses singer-facing add language instead of import language", () => {
     expect(repertoireManager).toContain("Review songs before adding");
-    expect(repertoireManager).toContain("Apply your part and confidence");
-    expect(repertoireManager).toContain("Add selected songs");
+    expect(repertoireManager).toContain(
+      "Choose one or more parts for each song you want to add"
+    );
+    expect(repertoireManager).toContain("Not adding");
+    expect(repertoireManager).toContain("part choices");
     expect(repertoireManager).not.toContain("Import Harmony Brigade songs");
+    expect(repertoireManager).not.toContain("Apply your part and confidence");
   });
 
   it("keeps Brigade songs out of normal typeahead suggestions", () => {

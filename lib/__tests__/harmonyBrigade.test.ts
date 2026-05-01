@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { RepertoireRow } from "@/lib/repertoireStore";
 import {
   buildHarmonyBrigadeAddInputs,
-  dedupeHarmonyBrigadeSongs,
   filterHarmonyBrigadeSongs,
   getHarmonyBrigadeBrigadeOptions,
   getHarmonyBrigadeYearOptions,
   HARMONY_BRIGADE_ALL_BRIGADES,
   HARMONY_BRIGADE_ALL_YEARS,
+  harmonyBrigadeEventSongKey,
   harmonyBrigadeSelectionDescription,
   resolveHarmonyBrigadeCandidates,
   type HarmonyBrigadeEvent,
@@ -105,13 +105,15 @@ describe("Harmony Brigade source helpers", () => {
     expect(filterHarmonyBrigadeSongs(rows, 2024, "NCHB")).toEqual([rows[1]]);
   });
 
-  it("dedupes the same song across multiple event appearances", () => {
+  it("preserves the same song across multiple event appearances", () => {
     const rows = [
       eventSong("1", "A", "Arranger", atlantic2024),
       eventSong("1", "A", "Arranger", atlantic2023),
     ];
 
-    expect(dedupeHarmonyBrigadeSongs(rows)).toEqual([rows[0]]);
+    expect(
+      filterHarmonyBrigadeSongs(rows, HARMONY_BRIGADE_ALL_YEARS, "AHB")
+    ).toEqual(rows);
   });
 
   it("uses natural preview copy for selected scope", () => {
@@ -164,7 +166,7 @@ describe("Harmony Brigade source helpers", () => {
     ]);
   });
 
-  it("builds TTBB add inputs with the user's batch part and confidence", () => {
+  it("builds TTBB add inputs with per-song part confidence choices", () => {
     const candidates = resolveHarmonyBrigadeCandidates(
       [
         eventSong("1", "Hello, My Baby", "Joe Liles", atlantic2024),
@@ -176,9 +178,15 @@ describe("Harmony Brigade source helpers", () => {
     expect(
       buildHarmonyBrigadeAddInputs(
         candidates,
-        new Set(["1", "2"]),
-        "Lead",
-        "A Little Rusty"
+        {
+          [harmonyBrigadeEventSongKey(candidates[0])]: {
+            Lead: "A Little Rusty",
+            Baritone: "Good to Go",
+          },
+          [harmonyBrigadeEventSongKey(candidates[1])]: {
+            Bass: "Good to Go",
+          },
+        }
       )
     ).toEqual([
       {
@@ -189,6 +197,48 @@ describe("Harmony Brigade source helpers", () => {
           {
             part: "Lead",
             confidence: "A Little Rusty",
+          },
+          {
+            part: "Baritone",
+            confidence: "Good to Go",
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("merges part confidence choices from duplicate event appearances", () => {
+    const candidates = resolveHarmonyBrigadeCandidates(
+      [
+        eventSong("1", "Hello, My Baby", "Joe Liles", atlantic2024),
+        eventSong("1", "Hello, My Baby", "Joe Liles", atlantic2023),
+      ],
+      []
+    );
+
+    expect(
+      buildHarmonyBrigadeAddInputs(candidates, {
+        [harmonyBrigadeEventSongKey(candidates[0])]: {
+          Lead: "A Little Rusty",
+        },
+        [harmonyBrigadeEventSongKey(candidates[1])]: {
+          Lead: "Good to Go",
+          Bass: "Music Required",
+        },
+      })
+    ).toEqual([
+      {
+        songTitle: "Hello, My Baby",
+        voicing: "TTBB",
+        arrangerName: "Joe Liles",
+        partConfidences: [
+          {
+            part: "Lead",
+            confidence: "Good to Go",
+          },
+          {
+            part: "Bass",
+            confidence: "Music Required",
           },
         ],
       },
