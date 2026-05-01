@@ -37,13 +37,15 @@ migrations in `supabase/migrations`, and tests or test documentation.
 
 ### `profiles`
 
-Purpose: source of truth for display names.
+Purpose: source of truth for display names and lightweight first-run user
+preferences.
 
 Code:
 - Read current profile: `lib/profileStore.ts#getMyProfile`
 - Read participant names by id: `lib/profileStore.ts#getProfilesByIds`
 - Read profile for feedback email context: `app/api/feedback/route.ts`
 - Insert/update own profile: `lib/profileStore.ts#upsertMyProfile`
+- Mark quick-start orientation as seen: `lib/profileStore.ts#markWelcomeSeen`
 - Realtime profile display-name subscription:
   `lib/profileStore.ts#subscribeToProfileDisplayNames`
 
@@ -54,6 +56,7 @@ Expected context:
 Required database contract:
 - `id uuid primary key references auth.users(id) on delete cascade`
 - `display_name text not null`
+- `has_seen_welcome boolean not null default false`
 - RLS enabled.
 - Authenticated users can read profiles.
 - Authenticated users can insert/update only their own profile where
@@ -62,6 +65,7 @@ Required database contract:
 
 Established by migrations:
 - `20260428060000_supabase_contract_alignment.sql`
+- `20260501133000_add_profile_welcome_seen.sql`
 
 ### `user_repertoire`
 

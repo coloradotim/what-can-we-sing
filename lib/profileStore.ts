@@ -4,6 +4,7 @@ import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 export type Profile = {
   id: string;
   display_name: string;
+  has_seen_welcome: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -104,6 +105,42 @@ export async function upsertMyProfile(displayName: string) {
     .upsert({
       id: user.id,
       display_name: displayName,
+      updated_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as Profile;
+}
+
+export async function markWelcomeSeen() {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("You must be logged in.");
+
+  const profile = await getMyProfile();
+
+  if (profile) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({
+        has_seen_welcome: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", user.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as Profile;
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .insert({
+      id: user.id,
+      display_name: "",
+      has_seen_welcome: true,
       updated_at: new Date().toISOString(),
     })
     .select()

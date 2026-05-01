@@ -58,6 +58,13 @@ const songSuggestionSupportedVoicingMigration = readFileSync(
   ),
   "utf8"
 );
+const welcomeSeenMigration = readFileSync(
+  join(
+    repoRoot,
+    "supabase/migrations/20260501133000_add_profile_welcome_seen.sql"
+  ),
+  "utf8"
+);
 
 describe("Supabase contract guardrails", () => {
   const tables = [
@@ -103,6 +110,13 @@ describe("Supabase contract guardrails", () => {
     expect(appFlows).toContain("Source Of Truth");
     expect(appFlows).toContain("Rejoin Quartet");
     expect(appFlows).toContain("Remove Singer");
+  });
+
+  it("documents and migrates the first-login welcome flag", () => {
+    expect(contract).toContain("has_seen_welcome");
+    expect(contract).toContain("markWelcomeSeen");
+    expect(welcomeSeenMigration).toContain("public.profiles");
+    expect(welcomeSeenMigration).toContain("has_seen_welcome boolean");
   });
 
   it("documents the analytics privacy contract", () => {

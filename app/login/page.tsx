@@ -87,7 +87,10 @@ export default function LoginPage() {
         return;
       }
 
-      window.location.href = getPostLoginRedirectPath(window.location.search);
+      const postLoginPath = getPostLoginRedirectPath(window.location.search);
+      const welcomeUrl = new URL("/welcome", window.location.origin);
+      welcomeUrl.searchParams.set("redirect", postLoginPath);
+      window.location.href = `${welcomeUrl.pathname}${welcomeUrl.search}`;
     } catch (err) {
       console.error(err);
       setMessage("Network unavailable. Try again when you have a connection.");
