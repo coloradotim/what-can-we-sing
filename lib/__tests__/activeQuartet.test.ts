@@ -3,6 +3,7 @@ import {
   clearActiveQuartet,
   clearActiveQuartetIfMatches,
   getActiveQuartet,
+  hasQuartetWorkflowHistory,
   isDifferentActiveQuartet,
   setActiveQuartet,
 } from "../activeQuartet";
@@ -37,9 +38,10 @@ describe("active quartet storage", () => {
       code: "ABC123",
       joinedAt: "2026-04-27",
     });
+    expect(hasQuartetWorkflowHistory(storage)).toBe(true);
   });
 
-  it("clears the active quartet", () => {
+  it("clears the active quartet without clearing quartet workflow history", () => {
     const storage = new MemoryStorage();
 
     setActiveQuartet(
@@ -49,6 +51,7 @@ describe("active quartet storage", () => {
     clearActiveQuartet(storage);
 
     expect(getActiveQuartet(storage)).toBeNull();
+    expect(hasQuartetWorkflowHistory(storage)).toBe(true);
   });
 
   it("only clears a matching active quartet", () => {

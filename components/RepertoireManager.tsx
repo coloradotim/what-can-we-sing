@@ -31,6 +31,7 @@ import {
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 import { refreshActiveQuartetSnapshot } from "@/lib/activeQuartetSnapshot";
 import { arrangerDisplayName } from "@/lib/arrangerDisplay";
+import { hasQuartetWorkflowHistory } from "@/lib/activeQuartet";
 import {
   hasDuplicateParts,
   isRepertoireSongFormValid,
@@ -106,6 +107,7 @@ export default function RepertoireManager() {
   const [savingEditId, setSavingEditId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [itemToDelete, setItemToDelete] = useState<RepertoireRow | null>(null);
+  const [hasUsedQuartetWorkflow, setHasUsedQuartetWorkflow] = useState(false);
 
   function completePartConfidences(
     rows: PartConfidenceFormRow[]
@@ -191,6 +193,10 @@ export default function RepertoireManager() {
 
     return () => window.cancelAnimationFrame(frame);
   }, [isAddOpen]);
+
+  useEffect(() => {
+    setHasUsedQuartetWorkflow(hasQuartetWorkflowHistory());
+  }, []);
 
   useEffect(() => {
     if (!songSuggestionsOpen || songTitle.trim().length < 2) {
@@ -406,14 +412,19 @@ export default function RepertoireManager() {
 
       resetAddForm();
       setIsAddOpen(false);
-      setMessage("Song added.");
+      const nextSongCount = items.length + 1;
+      setMessage(
+        !hasUsedQuartetWorkflow && nextSongCount <= 3
+          ? "Song added. Add a few more songs for better matches, or start/join a quartet when you're ready."
+          : "Song added."
+      );
       trackEvent("repertoire_song_added", {
-        song_count: items.length + 1,
+        song_count: nextSongCount,
         parts_known_count: partConfidences.length,
       });
       trackEvent("repertoire_updated", {
         action: "add",
-        song_count: items.length + 1,
+        song_count: nextSongCount,
         parts_known_count: partConfidences.length,
       });
       let snapshotUpdated = true;
@@ -621,6 +632,33 @@ export default function RepertoireManager() {
       : hasSmallRepertoire
         ? "Add a few songs you are likely to sing. Search and filters become useful once you have more songs saved."
         : "Start typing a song title, choose a suggestion if one fits, or add your own title manually.";
+  const showQuartetTeachingCard =
+    !hasUsedQuartetWorkflow && items.length > 0;
+  const quartetTeachingTitle =
+    items.length <= 2
+      ? "Good start - keep building or try a quartet"
+      : "Ready to try it with a quartet?";
+  const quartetTeachingDescription =
+    items.length <= 2
+      ? "The more songs you add, the better your match list will be. But you can start or join a quartet now if you just want to try it."
+      : "You have a few songs saved. Start a quartet and invite other singers, or join a quartet someone else already started. You can always come back and add more songs later.";
+  const quartetTeachingActions =
+    items.length <= 2
+      ? ([
+          { label: "Add another song", kind: "add" },
+          { label: "Start a quartet", href: "/session" },
+          { label: "Join a quartet", href: "/join" },
+        ] as const)
+      : ([
+          { label: "Start a quartet", href: "/session" },
+          { label: "Join a quartet", href: "/join" },
+          { label: "Add another song", kind: "add" },
+        ] as const);
+  const returningUserActions = [
+    { label: "Add another song", kind: "add" },
+    { label: "Start quartet", href: "/session" },
+    { label: "Join quartet", href: "/join" },
+  ] as const;
   const filteredEmptyDescription = [
     voicingFilter,
     partFilter
@@ -781,6 +819,81 @@ export default function RepertoireManager() {
             )}
           </div>
         </section>
+
+        {showQuartetTeachingCard && (
+          <section className="mt-5 rounded-2xl border border-cyan-300/20 bg-slate-900/80 p-5 shadow-lg sm:p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-3xl">
+                <h2 className="text-2xl font-bold tracking-tight text-white">
+                  {quartetTeachingTitle}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  {quartetTeachingDescription}
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row lg:shrink-0">
+                {quartetTeachingActions.map((action, index) =>
+                  "href" in action ? (
+                    <a
+                      key={action.label}
+                      href={action.href}
+                      className={`rounded-xl px-4 py-3 text-center text-sm font-bold ${
+                        index === 0
+                          ? "bg-cyan-300 text-slate-950 hover:bg-cyan-200"
+                          : "bg-white/10 text-cyan-100 hover:bg-white/20"
+                      }`}
+                    >
+                      {action.label}
+                    </a>
+                  ) : (
+                    <button
+                      key={action.label}
+                      type="button"
+                      onClick={openBlankAddModal}
+                      className={`rounded-xl px-4 py-3 text-sm font-bold ${
+                        index === 0
+                          ? "bg-cyan-300 text-slate-950 hover:bg-cyan-200"
+                          : "bg-white/10 text-cyan-100 hover:bg-white/20"
+                      }`}
+                    >
+                      {action.label}
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {hasSavedSongs && !showQuartetTeachingCard && (
+          <section className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-semibold text-slate-300">Next up</p>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                {returningUserActions.map((action) =>
+                  "href" in action ? (
+                    <a
+                      key={action.label}
+                      href={action.href}
+                      className="rounded-xl bg-white/10 px-4 py-3 text-center text-sm font-semibold text-cyan-100 hover:bg-white/20"
+                    >
+                      {action.label}
+                    </a>
+                  ) : (
+                    <button
+                      key={action.label}
+                      type="button"
+                      onClick={openBlankAddModal}
+                      className="rounded-xl bg-white/10 px-4 py-3 text-sm font-semibold text-cyan-100 hover:bg-white/20"
+                    >
+                      {action.label}
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         {hasSavedSongs && (
           <section className="mt-8">
