@@ -47,17 +47,12 @@ describe("getSongSuggestions", () => {
     expect(getSongSuggestions(rows, "m")).toEqual([]);
   });
 
-  it("returns unique title, voicing, and arranger suggestions", () => {
+  it("groups matching title and arranger suggestions across voicings", () => {
     expect(getSongSuggestions(rows, "mam")).toEqual([
       {
         songTitle: "Mam'selle",
-        voicing: "SATB",
         arrangerName: "",
-      },
-      {
-        songTitle: "Mam'selle",
-        voicing: "TTBB",
-        arrangerName: "",
+        voicings: ["TTBB", "SATB"],
       },
     ]);
   });
@@ -66,8 +61,8 @@ describe("getSongSuggestions", () => {
     expect(getSongSuggestions(rows, "speb")).toEqual([
       {
         songTitle: "Why Try to Change Me Now",
-        voicing: "TTBB",
         arrangerName: "SPEBSQSA",
+        voicings: ["TTBB"],
       },
     ]);
   });
@@ -78,24 +73,60 @@ describe("getSongSuggestions", () => {
     expect(suggestions).toEqual([
       {
         songTitle: "Heart of My Heart",
-        voicing: "TTBB",
         arrangerName: "",
+        voicings: ["TTBB"],
       },
       {
         songTitle: "Heart of My Heart",
-        voicing: "TTBB",
         arrangerName: "Joe Arranger",
+        voicings: ["TTBB"],
       },
       {
         songTitle: "Heart of My Heart",
-        voicing: "TTBB",
         arrangerName: "Unknown",
+        voicings: ["TTBB"],
       },
     ]);
     expect(suggestions.map(songSuggestionSubtitle)).toEqual([
-      "TTBB · No arranger entered",
-      "TTBB · Joe Arranger",
-      "TTBB · Unknown",
+      "No arranger entered · TTBB",
+      "Joe Arranger · TTBB",
+      "Unknown · TTBB",
+    ]);
+  });
+
+  it("does not collapse different explicit arrangers together", () => {
+    const suggestions = getSongSuggestions(
+      [
+        {
+          song_title: "Hello, My Baby",
+          voicing: "TTBB",
+          arranger_name: "Joe Liles",
+        },
+        {
+          song_title: "Hello, My Baby",
+          voicing: "SSAA",
+          arranger_name: "Joe Liles",
+        },
+        {
+          song_title: "Hello, My Baby",
+          voicing: "TTBB",
+          arranger_name: "Clay Hine",
+        },
+      ],
+      "hello"
+    );
+
+    expect(suggestions).toEqual([
+      {
+        songTitle: "Hello, My Baby",
+        arrangerName: "Clay Hine",
+        voicings: ["TTBB"],
+      },
+      {
+        songTitle: "Hello, My Baby",
+        arrangerName: "Joe Liles",
+        voicings: ["TTBB", "SSAA"],
+      },
     ]);
   });
 });

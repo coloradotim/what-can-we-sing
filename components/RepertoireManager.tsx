@@ -91,6 +91,9 @@ export default function RepertoireManager() {
   const [songSuggestions, setSongSuggestions] = useState<SongSuggestion[]>([]);
   const [songSuggestionsOpen, setSongSuggestionsOpen] = useState(false);
   const [songSuggestionsLoading, setSongSuggestionsLoading] = useState(false);
+  const [suggestedVoicings, setSuggestedVoicings] = useState<Voicing[] | null>(
+    null
+  );
   const [voicing, setVoicing] = useState<Voicing | "">("");
   const [arrangerName, setArrangerName] = useState("");
   const [notes, setNotes] = useState("");
@@ -236,6 +239,7 @@ export default function RepertoireManager() {
     setSongSuggestions([]);
     setSongSuggestionsLoading(false);
     setSongSuggestionsOpen(false);
+    setSuggestedVoicings(null);
     setVoicing("");
     setArrangerName("");
     setNotes("");
@@ -267,10 +271,21 @@ export default function RepertoireManager() {
     setMessage("");
   }
 
+  function updateSongTitle(value: string) {
+    setSongTitle(value);
+    setSuggestedVoicings(null);
+    setSongSuggestionsOpen(true);
+  }
+
   function selectSongSuggestion(suggestion: SongSuggestion) {
     setSongTitle(suggestion.songTitle);
     setSongSuggestionsOpen(false);
-    setVoicing(suggestion.voicing);
+    setSuggestedVoicings(
+      suggestion.voicings.length > 1 ? suggestion.voicings : null
+    );
+    setVoicing(
+      suggestion.voicings.length === 1 ? (suggestion.voicings[0] ?? "") : ""
+    );
     setArrangerName(suggestion.arrangerName);
     setShowArranger(Boolean(suggestion.arrangerName));
     setPartRows([emptyPartRow()]);
@@ -619,6 +634,7 @@ export default function RepertoireManager() {
     ? partsByVoicing[voicingFilter]
     : Array.from(new Set(voicings.flatMap((v) => partsByVoicing[v])));
   const hasSavedSongs = items.length > 0;
+  const voicingOptions = suggestedVoicings ?? voicings;
   const hasSmallRepertoire = items.length > 0 && items.length <= 3;
   const addSectionTitle =
     items.length === 0
@@ -754,10 +770,7 @@ export default function RepertoireManager() {
               <div className="mt-1 flex flex-col gap-3 sm:flex-row">
                 <input
                   value={songTitle}
-                  onChange={(e) => {
-                    setSongTitle(e.target.value);
-                    setSongSuggestionsOpen(true);
-                  }}
+                  onChange={(e) => updateSongTitle(e.target.value)}
                   onFocus={() => setSongSuggestionsOpen(true)}
                   placeholder="Start typing a song title..."
                   autoComplete="off"
@@ -777,44 +790,55 @@ export default function RepertoireManager() {
             {songSuggestionsOpen && !isAddOpen && songTitle.trim().length >= 2 && (
               <div className="mt-2 overflow-hidden rounded-xl border border-cyan-300/20 bg-slate-900 shadow-xl">
                 <p className="px-3 py-2 text-xs font-semibold uppercase tracking-normal text-slate-400">
-                  Song suggestions
+                  Song suggestions are optional
                 </p>
-                {songSuggestionsLoading ? (
-                  <p className="px-3 py-3 text-sm text-slate-300">
-                    Searching suggestions...
-                  </p>
-                ) : songSuggestions.length > 0 ? (
-                  <div className="divide-y divide-white/10">
-                    {songSuggestions.map((suggestion) => (
-                      <button
-                        key={`page:${suggestion.songTitle}:${suggestion.voicing}:${suggestion.arrangerName}`}
-                        type="button"
-                        onClick={() => selectSongSuggestionAndOpen(suggestion)}
-                        className="w-full px-3 py-3 text-left hover:bg-cyan-300/10 focus:bg-cyan-300/10 focus:outline-none"
-                      >
-                        <span className="block font-semibold text-white">
-                          {suggestion.songTitle}
-                        </span>
-                        <span className="mt-1 block text-xs text-slate-300">
-                          {songSuggestionSubtitle(suggestion)}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="px-3 py-3">
-                    <p className="text-sm text-slate-300">
-                      No suggestion found.
+                <div className="max-h-80 overflow-y-auto sm:max-h-96">
+                  {songSuggestionsLoading ? (
+                    <p className="px-3 py-3 text-sm text-slate-300">
+                      Searching suggestions...
                     </p>
-                    <button
-                      type="button"
-                      onClick={openAddModalWithCurrentTitle}
-                      className="mt-2 rounded-lg bg-cyan-300 px-3 py-2 text-sm font-bold text-slate-950 hover:bg-cyan-200"
-                    >
-                      Add &quot;{songTitle.trim()}&quot; manually
-                    </button>
-                  </div>
-                )}
+                  ) : songSuggestions.length > 0 ? (
+                    <div className="divide-y divide-white/10">
+                      {songSuggestions.map((suggestion) => (
+                        <button
+                          key={`page:${suggestion.songTitle}:${suggestion.voicings.join(":")}:${suggestion.arrangerName}`}
+                          type="button"
+                          onClick={() => selectSongSuggestionAndOpen(suggestion)}
+                          className="w-full px-3 py-3 text-left hover:bg-cyan-300/10 focus:bg-cyan-300/10 focus:outline-none"
+                        >
+                          <span className="block font-semibold text-white">
+                            {suggestion.songTitle}
+                          </span>
+                          <span className="mt-1 block text-xs text-slate-300">
+                            {songSuggestionSubtitle(suggestion)}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="px-3 py-3">
+                      <p className="text-sm text-slate-300">
+                        No suggestion found.
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <div className="border-t border-cyan-300/20 bg-cyan-300/5 p-3">
+                  <p className="text-xs font-semibold uppercase tracking-normal text-cyan-200">
+                    Don&apos;t see your version?
+                  </p>
+                  <button
+                    type="button"
+                    onClick={openAddModalWithCurrentTitle}
+                    className="mt-2 w-full rounded-lg bg-cyan-300 px-3 py-2 text-left text-sm font-bold text-slate-950 hover:bg-cyan-200"
+                  >
+                    Add &quot;{songTitle.trim()}&quot; manually
+                  </button>
+                  <p className="mt-2 text-xs leading-5 text-slate-300">
+                    Choose your own title, voicing, arranger, part, and
+                    confidence.
+                  </p>
+                </div>
               </div>
             )}
           </div>
@@ -1331,10 +1355,7 @@ export default function RepertoireManager() {
                   <input
                     ref={songTitleInputRef}
                     value={songTitle}
-                    onChange={(e) => {
-                      setSongTitle(e.target.value);
-                      setSongSuggestionsOpen(true);
-                    }}
+                    onChange={(e) => updateSongTitle(e.target.value)}
                     onFocus={() => setSongSuggestionsOpen(true)}
                     autoComplete="off"
                     aria-invalid={!songTitle.trim()}
@@ -1349,36 +1370,53 @@ export default function RepertoireManager() {
                   {songSuggestionsOpen && songTitle.trim().length >= 2 && (
                     <div className="mt-2 overflow-hidden rounded-xl border border-cyan-300/20 bg-slate-900">
                       <p className="px-3 py-2 text-xs font-semibold uppercase tracking-normal text-slate-400">
-                        Song suggestions
+                        Song suggestions are optional
                       </p>
-                      {songSuggestionsLoading ? (
-                        <p className="px-3 py-3 text-sm text-slate-300">
-                          Searching suggestions...
+                      <div className="max-h-80 overflow-y-auto sm:max-h-96">
+                        {songSuggestionsLoading ? (
+                          <p className="px-3 py-3 text-sm text-slate-300">
+                            Searching suggestions...
+                          </p>
+                        ) : songSuggestions.length > 0 ? (
+                          <div className="divide-y divide-white/10">
+                            {songSuggestions.map((suggestion) => (
+                              <button
+                                key={`${suggestion.songTitle}:${suggestion.voicings.join(":")}:${suggestion.arrangerName}`}
+                                type="button"
+                                onClick={() => selectSongSuggestion(suggestion)}
+                                className="w-full px-3 py-3 text-left hover:bg-cyan-300/10 focus:bg-cyan-300/10 focus:outline-none"
+                              >
+                                <span className="block font-semibold text-white">
+                                  {suggestion.songTitle}
+                                </span>
+                                <span className="mt-1 block text-xs text-slate-300">
+                                  {songSuggestionSubtitle(suggestion)}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="px-3 py-3 text-sm text-slate-300">
+                            No suggestion found.
+                          </p>
+                        )}
+                      </div>
+                      <div className="border-t border-cyan-300/20 bg-cyan-300/5 p-3">
+                        <p className="text-xs font-semibold uppercase tracking-normal text-cyan-200">
+                          Don&apos;t see your version?
                         </p>
-                      ) : songSuggestions.length > 0 ? (
-                        <div className="divide-y divide-white/10">
-                          {songSuggestions.map((suggestion) => (
-                            <button
-                              key={`${suggestion.songTitle}:${suggestion.voicing}:${suggestion.arrangerName}`}
-                              type="button"
-                              onClick={() => selectSongSuggestion(suggestion)}
-                              className="w-full px-3 py-3 text-left hover:bg-cyan-300/10 focus:bg-cyan-300/10 focus:outline-none"
-                            >
-                              <span className="block font-semibold text-white">
-                                {suggestion.songTitle}
-                              </span>
-                              <span className="mt-1 block text-xs text-slate-300">
-                                {songSuggestionSubtitle(suggestion)}
-                              </span>
-                            </button>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="px-3 py-3 text-sm text-slate-300">
-                          No suggestion found. You can still add this song
-                          manually.
+                        <button
+                          type="button"
+                          onClick={openAddModalWithCurrentTitle}
+                          className="mt-2 w-full rounded-lg bg-cyan-300 px-3 py-2 text-left text-sm font-bold text-slate-950 hover:bg-cyan-200"
+                        >
+                          Add &quot;{songTitle.trim()}&quot; manually
+                        </button>
+                        <p className="mt-2 text-xs leading-5 text-slate-300">
+                          Choose your own title, voicing, arranger, part, and
+                          confidence.
                         </p>
-                      )}
+                      </div>
                     </div>
                   )}
                 </label>
@@ -1386,11 +1424,12 @@ export default function RepertoireManager() {
                 <div>
                   <p className="text-sm font-medium text-slate-300">Voicing</p>
                   <p className="mt-1 text-xs text-slate-400">
-                    Suggestions are optional. You can always type your own title
-                    and choose the correct voicing.
+                    {suggestedVoicings
+                      ? "This suggestion has multiple voicings. Choose the version you know."
+                      : "Suggestions are optional. You can always type your own title and choose the correct voicing."}
                   </p>
                   <div className="mt-2 grid grid-cols-3 gap-2">
-                    {voicings.map((v) => (
+                    {voicingOptions.map((v) => (
                       <button
                         key={v}
                         type="button"
