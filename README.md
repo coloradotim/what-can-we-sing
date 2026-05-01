@@ -93,6 +93,11 @@ The Supabase project should have the current production schema applied:
   Import expands comma-separated voicing values into one row per supported
   voicing (`TTBB`, `SSAA`, `SATB`). The BHS Published Music source CSV and
   refresh process are documented in [docs/imports.md](docs/imports.md).
+- Harmony Brigade source data is stored in `data/harmony_brigade_songs.csv`
+  and built into `data/harmony_brigade_songs.json` for the secondary
+  **Add Harmony Brigade songs** repertoire flow. Those songs default to `TTBB`
+  and are added only to the current user's repertoire after preview and
+  confirmation.
 
 The app/database contract is documented in
 [docs/supabase-contract.md](docs/supabase-contract.md). Any PR that changes
@@ -128,6 +133,13 @@ To refresh the BHS Published Music source data and merge it into
 [docs/imports.md](docs/imports.md). The BHS transform is conservative: it uses
 Product Description as a voicing signal when needed, skips ambiguous rows, and
 splits clearly multi-voicing rows into separate catalog rows.
+
+To refresh the Harmony Brigade data artifact after replacing
+`data/harmony_brigade_songs.csv`, run:
+
+```bash
+npm run harmony-brigade:build-data
+```
 
 ## Analytics
 
