@@ -10,12 +10,21 @@ const repertoireManager = readFileSync(
 describe("Harmony Brigade repertoire UI", () => {
   it("uses Add Harmony Brigade songs as a secondary repertoire action", () => {
     expect(repertoireManager).toContain("More ways to build your repertoire");
+    expect(repertoireManager).toContain("Choose Brigade event");
     expect(repertoireManager).toContain("Add Harmony Brigade songs");
     expect(repertoireManager).toContain("Copy songs from another singer");
     expect(repertoireManager).toContain(
       "Let another singer copy songs from my repertoire"
     );
     expect(repertoireManager).toContain("Source: {HARMONY_BRIGADE_SOURCE}.");
+  });
+
+  it("keeps the secondary tools compact and collapsible", () => {
+    expect(repertoireManager).toContain("aria-controls=\"more-repertoire-tools\"");
+    expect(repertoireManager).toContain("id=\"more-repertoire-tools\"");
+    expect(repertoireManager).toContain("isMoreWaysOpen &&");
+    expect(repertoireManager).toContain("text-base font-bold text-white");
+    expect(repertoireManager).toContain("rounded-xl border border-white/10");
   });
 
   it("uses singer-facing add language instead of import language", () => {
