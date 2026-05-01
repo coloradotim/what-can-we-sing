@@ -1,4 +1,5 @@
 const ACTIVE_QUARTET_STORAGE_KEY = "active-quartet";
+const QUARTET_WORKFLOW_HISTORY_STORAGE_KEY = "quartet-workflow-used";
 export const ACTIVE_QUARTET_CHANGED_EVENT = "active-quartet-changed";
 
 type StorageLike = Pick<Storage, "getItem" | "removeItem" | "setItem">;
@@ -49,7 +50,12 @@ export function setActiveQuartet(
   if (!storage) return;
 
   storage.setItem(ACTIVE_QUARTET_STORAGE_KEY, JSON.stringify(activeQuartet));
+  storage.setItem(QUARTET_WORKFLOW_HISTORY_STORAGE_KEY, "true");
   notifyActiveQuartetChanged();
+}
+
+export function hasQuartetWorkflowHistory(storage = getBrowserStorage()) {
+  return storage?.getItem(QUARTET_WORKFLOW_HISTORY_STORAGE_KEY) === "true";
 }
 
 export function clearActiveQuartet(storage = getBrowserStorage()) {
