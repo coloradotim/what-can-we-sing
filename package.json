@@ -11,6 +11,7 @@
     "posthog:dashboards:inspect": "node scripts/posthog/sync-dashboards.mjs --inspect",
     "posthog:dashboards:compare": "node scripts/posthog/sync-dashboards.mjs --compare",
     "posthog:dashboards:sync": "node scripts/posthog/sync-dashboards.mjs",
+    "admin:delete-user": "node scripts/delete-user.mjs",
     "song-suggestions:import": "node scripts/import-song-suggestions.mjs",
     "test": "vitest",
     "test:run": "vitest run",

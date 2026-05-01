@@ -48,10 +48,15 @@ Code:
 - Mark quick-start orientation as seen: `lib/profileStore.ts#markWelcomeSeen`
 - Realtime profile display-name subscription:
   `lib/profileStore.ts#subscribeToProfileDisplayNames`
+- Admin deletion:
+  `scripts/delete-user.mjs` deletes the user's `profiles` row with the
+  Supabase service-role key during confirmed account deletion.
 
 Expected context:
 - Browser authenticated user for reads and own upsert.
 - Server route with user session for feedback profile read.
+- Local/server admin script with `SUPABASE_SERVICE_ROLE_KEY` for account
+  deletion only.
 
 Required database contract:
 - `id uuid primary key references auth.users(id) on delete cascade`
@@ -84,9 +89,12 @@ Code:
   `public.search_repertoire_song_suggestions`
 - Used by `lib/activeQuartetSnapshot.ts` to refresh the current user's
   `session_participants.repertoire` snapshot.
+- Deleted by `scripts/delete-user.mjs` during confirmed account deletion.
 
 Expected context:
 - Browser authenticated user.
+- Local/server admin script with `SUPABASE_SERVICE_ROLE_KEY` for account
+  deletion only.
 
 Required database contract:
 - `id uuid primary key`
@@ -134,6 +142,8 @@ Purpose: optional autocomplete reference data for song entry, imported from
 
 Code:
 - Imported by `scripts/import-song-suggestions.mjs`
+- Preserved by `scripts/delete-user.mjs`; catalog rows are global suggestions,
+  not user-owned data.
 - Read only through `public.search_repertoire_song_suggestions`
 - Parsed/deduplicated by `lib/__tests__/songSuggestionCatalogImport.test.ts`
 
@@ -175,6 +185,7 @@ Code:
   after participant snapshot upserts.
 - Start quartet flow: `app/session/page.tsx` creates the session before
   inserting the first participant snapshot.
+- Preserved by `scripts/delete-user.mjs`; sessions are shared join-code records.
 
 Expected context:
 - Browser authenticated user.
@@ -214,9 +225,12 @@ Code:
 - Match calculation source:
   `app/join/[code]/page.tsx` builds entries from current participants and calls
   `findMatches`.
+- Deleted by `scripts/delete-user.mjs` during confirmed account deletion.
 
 Expected context:
 - Browser authenticated user.
+- Local/server admin script with `SUPABASE_SERVICE_ROLE_KEY` for account
+  deletion only.
 
 Required database contract:
 - `id uuid primary key`
@@ -249,9 +263,12 @@ Code:
 - Read recent events: `lib/sungSongStore.ts#getRecentSungSongs`
 - Insert event as part of marking repertoire metadata:
   `public.mark_repertoire_sung`
+- Deleted by `scripts/delete-user.mjs` during confirmed account deletion.
 
 Expected context:
 - Browser authenticated user.
+- Local/server admin script with `SUPABASE_SERVICE_ROLE_KEY` for account
+  deletion only.
 
 Required database contract:
 - `id uuid primary key`
@@ -277,6 +294,8 @@ Supabase usage:
 - `app/api/feedback/route.ts` calls `supabase.auth.getUser()`.
 - If a user is authenticated, it reads `profiles.display_name`.
 - No feedback table, RPC, storage bucket, or Supabase function is used.
+- `scripts/delete-user.mjs` therefore has no Supabase feedback rows to delete;
+  delivered email and provider logs are outside the database.
 
 Expected context:
 - Server route with user cookies.
@@ -290,6 +309,11 @@ Expected context:
 - Most app pages require an authenticated user before reading or writing app
   tables.
 - RLS policies are written for the `authenticated` role and `auth.uid()`.
+- Account deletion uses `scripts/delete-user.mjs` from a trusted local/server
+  environment with `SUPABASE_SERVICE_ROLE_KEY`. The service-role key must never
+  be exposed to browser code. The script defaults to dry-run mode, requires an
+  exact email or auth user ID, and requires `--confirm-production` in addition
+  to `--confirm` when `WCWS_ADMIN_ENV=production` or `VERCEL_ENV=production`.
 
 ## Realtime Assumptions
 
