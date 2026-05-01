@@ -26,6 +26,10 @@ migrations in `supabase/migrations`, and tests or test documentation.
 - Repertoire add, edit, delete, and mark-as-sung actions update
   `user_repertoire`. Add/edit/delete actions refresh the active quartet
   `session_participants.repertoire` snapshot when the user is in a quartet.
+- Private repertoire sharing is opt-in. A singer creates a code in
+  `repertoire_shares`; recipients can view only safe song identity fields
+  through `get_shared_repertoire` and must sign in before copying songs into
+  their own `user_repertoire`.
 - Leaving a quartet deletes the current user's `session_participants` row.
 - Removing another singer uses `remove_session_participant_by_id` and deletes
   the selected participant row when the requester is also a current participant
@@ -138,6 +142,51 @@ Established by migrations:
 - `20260428142000_add_part_confidences_to_repertoire.sql`
 - `20260428145000_add_repertoire_sung_metadata.sql`
 - `20260428223000_add_global_song_suggestions.sql`
+
+### `repertoire_shares`
+
+Purpose: opt-in private repertoire share links. A share code lets another
+singer view only song identity fields from the owner's current repertoire so
+they can copy selected songs into their own repertoire.
+
+Code:
+- Create active share: `lib/repertoireSharing.ts#createRepertoireShare`
+- Read own active share: `lib/repertoireSharing.ts#getMyActiveRepertoireShare`
+- Revoke own share: `lib/repertoireSharing.ts#revokeRepertoireShare`
+- Read safe shared repertoire by code:
+  `lib/repertoireSharing.ts#getSharedRepertoire`, through
+  `public.get_shared_repertoire`
+- Recipient copy flow: `components/SharedRepertoireManager.tsx`
+- Sharer controls: `components/RepertoireManager.tsx`
+
+Expected context:
+- Browser authenticated owner for create/read/revoke of own share rows.
+- Anonymous or authenticated browser user for `get_shared_repertoire` by code.
+- Authenticated browser user for copying selected songs into their own
+  `user_repertoire`.
+
+Required database contract:
+- `id uuid primary key`
+- `owner_id uuid not null references auth.users(id) on delete cascade`
+- `code text not null` with six uppercase alphanumeric characters
+- `created_at timestamptz not null default now()`
+- `revoked_at timestamptz`
+- `expires_at timestamptz`
+- Unique index on `code`
+- RLS enabled.
+- Authenticated users can select/insert/update only their own share rows where
+  `owner_id = auth.uid()`.
+- `public.get_shared_repertoire(p_code text)` is a security-definer RPC
+  available to `anon` and `authenticated`. It returns only active,
+  non-expired shares and only these fields: `share_id`, `code`,
+  `owner_display_name`, `song_id`, `song_title`, `voicing`, and
+  `arranger_name`.
+- The shared view must not expose owner email, user IDs, notes, parts,
+  confidence, last-sung history, timestamps, or quartet/session history.
+- Revoked or expired links return no rows.
+
+Established by migrations:
+- `20260501190000_add_repertoire_shares.sql`
 
 ### `song_suggestion_catalog`
 

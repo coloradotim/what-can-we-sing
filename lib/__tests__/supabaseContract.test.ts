@@ -72,6 +72,13 @@ const quartetNudgeDismissalMigration = readFileSync(
   ),
   "utf8"
 );
+const repertoireSharesMigration = readFileSync(
+  join(
+    repoRoot,
+    "supabase/migrations/20260501190000_add_repertoire_shares.sql"
+  ),
+  "utf8"
+);
 
 describe("Supabase contract guardrails", () => {
   const tables = [
@@ -80,7 +87,11 @@ describe("Supabase contract guardrails", () => {
     "sessions",
     "session_participants",
     "sung_song_events",
+    "repertoire_shares",
   ];
+  const baseMigrationTables = tables.filter(
+    (table) => table !== "repertoire_shares"
+  );
 
   it("documents every app-owned Supabase table", () => {
     for (const table of tables) {
@@ -89,7 +100,7 @@ describe("Supabase contract guardrails", () => {
   });
 
   it("keeps schema and RLS policies in migrations for browser-written tables", () => {
-    for (const table of tables) {
+    for (const table of baseMigrationTables) {
       expect(migration).toContain(`public.${table}`);
       expect(migration).toContain(
         `alter table public.${table} enable row level security`
@@ -171,6 +182,28 @@ describe("Supabase contract guardrails", () => {
     expect(sungMetadataMigration).toContain("times_sung_count + 1");
     expect(sungMetadataMigration).toContain("user_id = auth.uid()");
     expect(sungMetadataMigration).toContain("sung_song_events");
+  });
+
+  it("documents and migrates private repertoire share links", () => {
+    expect(contract).toContain("repertoire_shares");
+    expect(contract).toContain("get_shared_repertoire");
+    expect(contract).toContain("six uppercase alphanumeric characters");
+    expect(contract).toContain("must not expose owner email");
+    expect(repertoireSharesMigration).toContain(
+      "create table if not exists public.repertoire_shares"
+    );
+    expect(repertoireSharesMigration).toContain("owner_id = auth.uid()");
+    expect(repertoireSharesMigration).toContain("enable row level security");
+    expect(repertoireSharesMigration).toContain("security definer");
+    expect(repertoireSharesMigration).toContain("grant execute");
+    expect(repertoireSharesMigration).toContain("to anon");
+    expect(repertoireSharesMigration).toContain("song_title");
+    expect(repertoireSharesMigration).toContain("voicing");
+    expect(repertoireSharesMigration).toContain("arranger_name");
+    expect(repertoireSharesMigration).not.toContain("email");
+    expect(repertoireSharesMigration).not.toContain("notes");
+    expect(repertoireSharesMigration).not.toContain("part_confidences");
+    expect(repertoireSharesMigration).not.toContain("last_sung_at");
   });
 
   it("documents and migrates global song identity suggestions", () => {
