@@ -47,7 +47,6 @@ import { arrangerDisplayName } from "@/lib/arrangerDisplay";
 import { hasQuartetWorkflowHistory } from "@/lib/activeQuartet";
 import {
   buildHarmonyBrigadeAddInputs,
-  dedupeHarmonyBrigadeSongs,
   filterHarmonyBrigadeSongs,
   getHarmonyBrigadeBrigadeOptions,
   getHarmonyBrigadeEvents,
@@ -56,11 +55,13 @@ import {
   HARMONY_BRIGADE_ALL_BRIGADES,
   HARMONY_BRIGADE_ALL_YEARS,
   HARMONY_BRIGADE_SOURCE,
+  harmonyBrigadeEventSongKey,
   harmonyBrigadeSelectionDescription,
   resolveHarmonyBrigadeCandidates,
   searchHarmonyBrigadeCandidates,
   type HarmonyBrigadeEvent,
   type HarmonyBrigadeEventSong,
+  type HarmonyBrigadePartSelections,
 } from "@/lib/harmonyBrigade";
 import {
   hasDuplicateParts,
@@ -176,11 +177,8 @@ export default function RepertoireManager() {
   );
   const [harmonyBrigadeSearchQuery, setHarmonyBrigadeSearchQuery] =
     useState("");
-  const [selectedHarmonyBrigadeSongIds, setSelectedHarmonyBrigadeSongIds] =
-    useState<Set<string>>(new Set());
-  const [harmonyBrigadePart, setHarmonyBrigadePart] = useState<Part | "">("");
-  const [harmonyBrigadeConfidence, setHarmonyBrigadeConfidence] =
-    useState<Confidence | "">("");
+  const [harmonyBrigadePartSelections, setHarmonyBrigadePartSelections] =
+    useState<HarmonyBrigadePartSelections>({});
   const [harmonyBrigadeMessage, setHarmonyBrigadeMessage] = useState("");
   const [isHarmonyBrigadeLoading, setIsHarmonyBrigadeLoading] = useState(false);
   const [isAddingHarmonyBrigadeSongs, setIsAddingHarmonyBrigadeSongs] =
@@ -368,7 +366,7 @@ export default function RepertoireManager() {
     setSecondaryRepertoireTool("harmony-brigade");
     setHarmonyBrigadeMessage("");
     setHarmonyBrigadeSearchQuery("");
-    setSelectedHarmonyBrigadeSongIds(new Set());
+    setHarmonyBrigadePartSelections({});
     setIsHarmonyBrigadeLoading(true);
 
     try {
@@ -850,28 +848,33 @@ export default function RepertoireManager() {
     }
   }
 
-  function toggleHarmonyBrigadeSong(songId: string) {
-    setSelectedHarmonyBrigadeSongIds((current) => {
-      const next = new Set(current);
-      if (next.has(songId)) {
-        next.delete(songId);
-      } else {
-        next.add(songId);
-      }
-      return next;
-    });
-  }
+  function updateHarmonyBrigadePartSelection(
+    eventSongKey: string,
+    part: Part,
+    confidence: Confidence | ""
+  ) {
+    setHarmonyBrigadePartSelections((current) => {
+      const next = { ...current };
+      const rowSelection = { ...(next[eventSongKey] ?? {}) };
 
-  function selectAllVisibleHarmonyBrigadeSongs(songIds: string[]) {
-    setSelectedHarmonyBrigadeSongIds((current) => {
-      const next = new Set(current);
-      for (const id of songIds) next.add(id);
+      if (confidence) {
+        rowSelection[part] = confidence;
+      } else {
+        delete rowSelection[part];
+      }
+
+      if (Object.keys(rowSelection).length === 0) {
+        delete next[eventSongKey];
+      } else {
+        next[eventSongKey] = rowSelection;
+      }
+
       return next;
     });
   }
 
   function clearHarmonyBrigadeSelection() {
-    setSelectedHarmonyBrigadeSongIds(new Set());
+    setHarmonyBrigadePartSelections({});
   }
 
   async function addHarmonyBrigadeSongs(
@@ -881,13 +884,6 @@ export default function RepertoireManager() {
 
     if (inputs.length === 0) {
       setHarmonyBrigadeMessage("Choose at least one song to add.");
-      return;
-    }
-
-    if (!harmonyBrigadePart || !harmonyBrigadeConfidence) {
-      setHarmonyBrigadeMessage(
-        "Choose your part and confidence before adding songs."
-      );
       return;
     }
 
@@ -913,7 +909,7 @@ export default function RepertoireManager() {
       }
 
       await loadRepertoire();
-      setSelectedHarmonyBrigadeSongIds(new Set());
+      setHarmonyBrigadePartSelections({});
       setHarmonyBrigadeMessage(
         `${addedCount} ${addedCount === 1 ? "song" : "songs"} added. You can edit parts, confidence, arranger, or delete songs anytime.`
       );
@@ -997,12 +993,10 @@ export default function RepertoireManager() {
   )
     ? harmonyBrigadeBrigade
     : HARMONY_BRIGADE_ALL_BRIGADES;
-  const harmonyBrigadeScopedRows = dedupeHarmonyBrigadeSongs(
-    filterHarmonyBrigadeSongs(
-      harmonyBrigadeRows,
-      harmonyBrigadeYear,
-      selectedHarmonyBrigadeBrigade
-    )
+  const harmonyBrigadeScopedRows = filterHarmonyBrigadeSongs(
+    harmonyBrigadeRows,
+    harmonyBrigadeYear,
+    selectedHarmonyBrigadeBrigade
   );
   const harmonyBrigadeCandidates = resolveHarmonyBrigadeCandidates(
     harmonyBrigadeScopedRows,
@@ -1017,23 +1011,17 @@ export default function RepertoireManager() {
   ).length;
   const harmonyBrigadeAlreadyCount =
     harmonyBrigadeCandidates.length - harmonyBrigadeEligibleCount;
-  const visibleHarmonyBrigadeEligibleIds = visibleHarmonyBrigadeCandidates
-    .filter((row) => row.duplicateStatus === "eligible")
-    .map((row) => row.song.id);
   const selectedHarmonyBrigadeEligibleCount = harmonyBrigadeCandidates.filter(
     (row) =>
       row.duplicateStatus === "eligible" &&
-      selectedHarmonyBrigadeSongIds.has(row.song.id)
+      Object.keys(
+        harmonyBrigadePartSelections[harmonyBrigadeEventSongKey(row)] ?? {}
+      ).length > 0
   ).length;
-  const selectedHarmonyBrigadeAddInputs =
-    harmonyBrigadePart && harmonyBrigadeConfidence
-      ? buildHarmonyBrigadeAddInputs(
-          harmonyBrigadeCandidates,
-          selectedHarmonyBrigadeSongIds,
-          harmonyBrigadePart,
-          harmonyBrigadeConfidence
-        )
-      : [];
+  const selectedHarmonyBrigadeAddInputs = buildHarmonyBrigadeAddInputs(
+    harmonyBrigadeCandidates,
+    harmonyBrigadePartSelections
+  );
   const harmonyBrigadePreviewDescription =
     harmonyBrigadeSelectionDescription(
       harmonyBrigadeYear,
@@ -1041,10 +1029,7 @@ export default function RepertoireManager() {
       harmonyBrigadeCandidates.length,
       harmonyBrigadeEvents
     );
-  const canAddHarmonyBrigadeSongs =
-    selectedHarmonyBrigadeEligibleCount > 0 &&
-    Boolean(harmonyBrigadePart) &&
-    Boolean(harmonyBrigadeConfidence);
+  const canAddHarmonyBrigadeSongs = selectedHarmonyBrigadeAddInputs.length > 0;
   const quartetTeachingTitle =
     items.length <= 2
       ? "Good start - keep building or try a quartet"
@@ -1349,7 +1334,7 @@ export default function RepertoireManager() {
                               ? harmonyBrigadeBrigade
                               : HARMONY_BRIGADE_ALL_BRIGADES
                           );
-                          setSelectedHarmonyBrigadeSongIds(new Set());
+                          setHarmonyBrigadePartSelections({});
                           setHarmonyBrigadeSearchQuery("");
                         }}
                         className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
@@ -1369,7 +1354,7 @@ export default function RepertoireManager() {
                         value={selectedHarmonyBrigadeBrigade}
                         onChange={(event) => {
                           setHarmonyBrigadeBrigade(event.target.value);
-                          setSelectedHarmonyBrigadeSongIds(new Set());
+                          setHarmonyBrigadePartSelections({});
                           setHarmonyBrigadeSearchQuery("");
                         }}
                         className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
@@ -1397,8 +1382,8 @@ export default function RepertoireManager() {
                       in your repertoire.
                     </p>
                     <p className="mt-1 text-sm leading-6 text-slate-300">
-                      Choose the songs you want to add. You can edit individual
-                      songs later.
+                      Choose one or more parts for each song you want to add.
+                      Blank parts will not be added.
                     </p>
 
                     <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -1415,62 +1400,40 @@ export default function RepertoireManager() {
                           className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
                         />
                       </label>
-                      <div className="flex flex-col gap-2 sm:flex-row">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            selectAllVisibleHarmonyBrigadeSongs(
-                              visibleHarmonyBrigadeEligibleIds
-                            )
-                          }
-                          className="rounded-xl bg-white/10 px-4 py-3 text-sm font-bold text-cyan-100 hover:bg-white/20"
-                        >
-                          Select visible
-                        </button>
-                        <button
-                          type="button"
-                          onClick={clearHarmonyBrigadeSelection}
-                          className="rounded-xl bg-white/10 px-4 py-3 text-sm font-bold text-slate-200 hover:bg-white/20"
-                        >
-                          Clear
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={clearHarmonyBrigadeSelection}
+                        className="rounded-xl bg-white/10 px-4 py-3 text-sm font-bold text-slate-200 hover:bg-white/20"
+                      >
+                        Clear choices
+                      </button>
                     </div>
 
                     <div className="mt-4 max-h-80 divide-y divide-white/10 overflow-y-auto rounded-xl border border-white/10">
                       {visibleHarmonyBrigadeCandidates.map((row) => {
                         const isExactDuplicate =
                           row.duplicateStatus === "exact";
-                        const checked = selectedHarmonyBrigadeSongIds.has(
-                          row.song.id
-                        );
+                        const eventSongKey = harmonyBrigadeEventSongKey(row);
+                        const selectedParts =
+                          harmonyBrigadePartSelections[eventSongKey] ?? {};
 
                         return (
-                          <label
-                            key={row.song.id}
-                            className={`flex gap-3 p-3 ${
+                          <div
+                            key={eventSongKey}
+                            className={`grid gap-3 p-3 ${
                               isExactDuplicate
                                 ? "bg-slate-900/80 text-slate-500"
                                 : "bg-slate-900/40 text-slate-100"
                             }`}
                           >
-                            <input
-                              type="checkbox"
-                              checked={checked}
-                              disabled={isExactDuplicate}
-                              onChange={() =>
-                                toggleHarmonyBrigadeSong(row.song.id)
-                              }
-                              className="mt-1 h-4 w-4 rounded border-white/20 bg-slate-950"
-                            />
-                            <span className="min-w-0">
-                              <span className="block font-semibold">
+                            <div className="min-w-0">
+                              <p className="font-semibold">
                                 {isExactDuplicate
                                   ? "Already in your repertoire: "
                                   : ""}
                                 {row.song.songTitle}
-                              </span>
-                              <span className="mt-1 block text-xs leading-5 text-slate-400">
+                              </p>
+                              <p className="mt-1 text-xs leading-5 text-slate-400">
                                 TTBB -{" "}
                                 {row.song.arranger
                                   ? `Arr. ${arrangerDisplayName(row.song.arranger)}`
@@ -1481,64 +1444,51 @@ export default function RepertoireManager() {
                                 {row.song.startingWords
                                   ? ` - Starts "${row.song.startingWords}"`
                                   : ""}
-                              </span>
-                            </span>
-                          </label>
+                              </p>
+                              <p className="mt-1 text-xs leading-5 text-slate-500">
+                                {row.event.eventLabel}
+                                {row.trackNumber
+                                  ? ` - Track ${row.trackNumber}`
+                                  : ""}
+                              </p>
+                            </div>
+
+                            {!isExactDuplicate && (
+                              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                                {partsByVoicing.TTBB.map((part) => (
+                                  <label key={part} className="block">
+                                    <span className="text-xs font-semibold text-slate-300">
+                                      {partButtonLabel("TTBB", part)}
+                                    </span>
+                                    <select
+                                      value={selectedParts[part] ?? ""}
+                                      onChange={(event) =>
+                                        updateHarmonyBrigadePartSelection(
+                                          eventSongKey,
+                                          part,
+                                          event.target.value as Confidence | ""
+                                        )
+                                      }
+                                      className="mt-1 w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-2 text-sm text-white outline-none ring-cyan-300 focus:ring-2"
+                                      aria-label={`${row.song.songTitle} ${partButtonLabel(
+                                        "TTBB",
+                                        part
+                                      )} confidence`}
+                                    >
+                                      <option value="">Not adding</option>
+                                      {confidenceLevels.map((level) => (
+                                        <option key={level} value={level}>
+                                          {level}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </label>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         );
                       })}
-                    </div>
-                  </div>
-
-                  <div className="mt-5 rounded-xl border border-cyan-300/20 bg-cyan-300/10 p-4">
-                    <h3 className="text-xl font-bold">
-                      Apply your part and confidence
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-slate-200">
-                      For these songs, choose the part you usually sing and your
-                      confidence. These settings will be applied to all selected
-                      songs. You can edit individual songs later.
-                    </p>
-                    <div className="mt-4 grid gap-4 md:grid-cols-2">
-                      <label className="block">
-                        <span className="text-sm font-medium text-slate-200">
-                          Part
-                        </span>
-                        <select
-                          value={harmonyBrigadePart}
-                          onChange={(event) =>
-                            setHarmonyBrigadePart(event.target.value as Part | "")
-                          }
-                          className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-                        >
-                          <option value="">Choose part</option>
-                          {partsByVoicing.TTBB.map((part) => (
-                            <option key={part} value={part}>
-                              {partButtonLabel("TTBB", part)}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className="block">
-                        <span className="text-sm font-medium text-slate-200">
-                          Confidence
-                        </span>
-                        <select
-                          value={harmonyBrigadeConfidence}
-                          onChange={(event) =>
-                            setHarmonyBrigadeConfidence(
-                              event.target.value as Confidence | ""
-                            )
-                          }
-                          className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-                        >
-                          <option value="">Choose confidence</option>
-                          {confidenceLevels.map((level) => (
-                            <option key={level} value={level}>
-                              {level}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
                     </div>
                   </div>
                 </>
@@ -1555,9 +1505,14 @@ export default function RepertoireManager() {
                   <p className="text-sm text-slate-300">
                     {selectedHarmonyBrigadeEligibleCount}{" "}
                     {selectedHarmonyBrigadeEligibleCount === 1
-                      ? "song"
-                      : "songs"}{" "}
-                    selected. {harmonyBrigadeAlreadyCount}{" "}
+                      ? "listing has"
+                      : "listings have"}{" "}
+                    part choices. {selectedHarmonyBrigadeAddInputs.length}{" "}
+                    unique{" "}
+                    {selectedHarmonyBrigadeAddInputs.length === 1
+                      ? "song is"
+                      : "songs are"}{" "}
+                    ready to add. {harmonyBrigadeAlreadyCount}{" "}
                     {harmonyBrigadeAlreadyCount === 1 ? "song was" : "songs were"}{" "}
                     already in your repertoire and will not be added again.
                   </p>
@@ -1573,9 +1528,9 @@ export default function RepertoireManager() {
                   >
                     {isAddingHarmonyBrigadeSongs
                       ? "Adding..."
-                      : selectedHarmonyBrigadeEligibleCount > 0
-                        ? `Add ${selectedHarmonyBrigadeEligibleCount} ${
-                            selectedHarmonyBrigadeEligibleCount === 1
+                      : selectedHarmonyBrigadeAddInputs.length > 0
+                        ? `Add ${selectedHarmonyBrigadeAddInputs.length} ${
+                            selectedHarmonyBrigadeAddInputs.length === 1
                               ? "song"
                               : "songs"
                           }`
