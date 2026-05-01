@@ -13,6 +13,8 @@
     "posthog:dashboards:sync": "node scripts/posthog/sync-dashboards.mjs",
     "admin:delete-user": "node scripts/delete-user.mjs",
     "bhs-published-music:import": "node scripts/import-bhs-published-music.mjs",
+    "harmony-brigade:export-source": "node scripts/export-harmony-brigade-source.mjs",
+    "harmony-brigade:import": "node scripts/import-harmony-brigade-songs.mjs",
     "song-suggestions:import": "node scripts/import-song-suggestions.mjs",
     "test": "vitest",
     "test:run": "vitest run",
@@ -37,6 +39,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
     "husky": "^9.1.7",
+    "mysql2": "^3.22.3",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.5"

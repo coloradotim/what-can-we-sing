@@ -103,23 +103,88 @@ it is not stored in `song_suggestion_catalog`.
 
 ## Harmony Brigade Songs
 
-The current Harmony Brigade song-add implementation has been backed out. The
-available source spreadsheet did not include usable Brigade year and
-location/event metadata, so the app cannot yet offer the intended picker without
-misleading users.
+Harmony Brigade data comes from Ross Wilkins' read-only Harmony Brigade MySQL
+history database. The normal WCWS app runtime must not connect to that MySQL
+database. Instead, a local/admin export script creates controlled CSV snapshots,
+and a separate import script loads those snapshots into dedicated Supabase
+reference tables.
 
-No Supabase table, migration, seed data, or production catalog rows were created
-for the removed Harmony Brigade source. The only artifacts were repo-local CSV,
-JSON, helper, UI, and test files, which were removed.
+The inspected upstream objects are:
 
-When a replacement source is available, verify that it contains at least:
+- `SongData`: 477 rows. Contains `SongID`, `SongTitle`, `KeyName`, `Arranger`,
+  `AsSungBy`, `LT_Provider`, `SongStyle`, `SongLength`, `Difficulty`, `Genre`,
+  `Tempo`, and `StartingWords`.
+- `ViewHistory`: 1907 rows. Contains `SongID`, `YearHeld`, `BrigadeAbbr`,
+  `SongTitle`, `KeyName`, `CDTrackNum`, `Arranger`, `AsSungBy`, `LT_Provider`,
+  `SongStyle`, `SongLength`, and `StartingWords`.
+- `ViewSongHistory`: 1907 rows. Contains `SongID`, `YearHeld`, `BrigadeAbbr`,
+  `SongTitle`, and `CDTrackNum`.
+- `WalletCard`: 1907 rows. Contains `SongID`, `SongTitle`, `KeyName`,
+  `StartingWords`, `YearHeld`, `BrigadeAbbr`, and `CD_Order`.
+- `XQ_Brigades`: 15 rows. Contains `BrigadeAbbr`, `BrigadeName`, `MonthHeld`,
+  and `Website`.
+- `AHBClassicsList`: 23 rows. A smaller AHB classics list, not used by the
+  main event-history picker.
 
-- song title
-- voicing, or a reliable source-level voicing rule
-- arranger when known
-- Brigade year or date
-- Brigade location/event
+`ViewHistory` supplies the year and brigade/event scope. `SongData` supplies the
+song identity and metadata. `XQ_Brigades` supplies friendly brigade names.
 
-Reintroducing the feature should include fresh source documentation, parser
-tests, UI tests, and a clear cleanup/migration note if the new source writes to
-Supabase or the suggestion catalog.
+The committed snapshots are:
+
+```text
+data/harmony-brigade/song_data.csv
+data/harmony-brigade/view_history.csv
+data/harmony-brigade/brigades.csv
+```
+
+To refresh the snapshots from the read-only upstream database:
+
+```bash
+HB_MYSQL_PASSWORD=... npm run harmony-brigade:export-source
+```
+
+Optional connection variables are:
+
+```text
+HB_MYSQL_HOST=gud2brabah.com
+HB_MYSQL_PORT=3306
+HB_MYSQL_DATABASE=XQHistory
+HB_MYSQL_USER=XQMember
+HB_MYSQL_PASSWORD=...
+```
+
+The script prints row counts, distinct years, distinct brigade abbreviations,
+and missing arranger count.
+
+After Supabase migrations are applied, import the committed snapshots into the
+Harmony Brigade reference tables:
+
+```bash
+SUPABASE_SERVICE_ROLE_KEY=... npm run harmony-brigade:import
+```
+
+Use a dry run to parse and summarize without writing:
+
+```bash
+npm run harmony-brigade:import -- --dry-run
+```
+
+The import creates or updates:
+
+- `harmony_brigade_songs`
+- `harmony_brigade_events`
+- `harmony_brigade_event_songs`
+
+The user-facing flow appears under **More ways to build your repertoire** as
+**Add Harmony Brigade songs**. Users can choose:
+
+- `All years` or a real `YearHeld` value
+- `All brigades` or a real brigade abbreviation/name from `XQ_Brigades`
+
+Songs default to `TTBB`. Before adding, the user chooses the part they usually
+sing and a confidence value. Adding Harmony Brigade songs writes only to the
+current user's `user_repertoire`; it does not expose the user's Brigade
+selection publicly.
+
+Duplicate detection uses normalized title + `TTBB` + normalized arranger,
+preserving the distinction between a blank arranger and literal `Unknown`.

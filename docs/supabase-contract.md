@@ -239,6 +239,64 @@ Established by migrations:
 - `20260429060000_add_song_suggestion_catalog.sql`
 - `20260429162000_limit_song_suggestions_to_supported_voicings.sql`
 
+### Harmony Brigade Reference Tables
+
+Purpose: read-only reference data for the **Add Harmony Brigade songs** flow.
+The data is exported from Ross Wilkins' read-only MySQL history database into
+repo-managed CSV snapshots under `data/harmony-brigade/`, then imported into
+Supabase with `scripts/import-harmony-brigade-songs.mjs`.
+
+Code:
+- Export source snapshots: `scripts/export-harmony-brigade-source.mjs`
+- Import snapshots: `scripts/import-harmony-brigade-songs.mjs`
+- Browser reads reference rows through `lib/harmonyBrigade.ts`
+- Repertoire UI: `components/RepertoireManager.tsx`
+- Tests: `lib/__tests__/harmonyBrigade.test.ts`,
+  `lib/__tests__/harmonyBrigadeImport.test.mjs`, and
+  `lib/__tests__/harmonyBrigadeUi.test.ts`
+
+Expected context:
+- Local/admin export script connects to Ross's read-only MySQL source.
+- Server/local import script writes with `SUPABASE_SERVICE_ROLE_KEY`.
+- Browser authenticated users have read-only access to Supabase Harmony Brigade
+  reference rows.
+- Browser users never write to these reference tables. Adding songs writes only
+  to the current user's `user_repertoire`.
+
+Required database contract:
+- `harmony_brigade_songs`
+  - `id uuid primary key`
+  - `source_song_id integer not null unique`
+  - `song_title text not null`
+  - `normalized_title text not null`
+  - `arranger text`
+  - `normalized_arranger text`
+  - `default_voicing text not null default 'TTBB'`
+  - optional metadata: `song_key`, `starting_words`, `as_sung_by`,
+    `learning_track_provider`, `song_style`, `song_length`, `difficulty`,
+    `genre`, `tempo`
+  - Check constraint keeps `default_voicing = 'TTBB'`
+- `harmony_brigade_events`
+  - `id uuid primary key`
+  - `year_held integer not null`
+  - `brigade_abbr text not null`
+  - `brigade_name text`
+  - `event_label text not null`
+  - Unique index on `(year_held, brigade_abbr)`
+- `harmony_brigade_event_songs`
+  - `id uuid primary key`
+  - `event_id uuid references harmony_brigade_events(id) on delete cascade`
+  - `song_id uuid references harmony_brigade_songs(id) on delete cascade`
+  - optional `track_number` and `sort_order`
+  - Unique index on `(event_id, song_id)`
+- RLS enabled on all three tables.
+- Authenticated users can select reference rows.
+- No authenticated insert/update/delete policies are granted for reference
+  tables.
+
+Established by migrations:
+- `20260501200000_add_harmony_brigade_reference_tables.sql`
+
 ### `sessions`
 
 Purpose: source of truth for quartet join codes and session activity.
