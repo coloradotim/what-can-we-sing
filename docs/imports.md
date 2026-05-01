@@ -103,45 +103,23 @@ it is not stored in `song_suggestion_catalog`.
 
 ## Harmony Brigade Songs
 
-The Ross Wilkins Harmony Brigade source file is committed at:
+The current Harmony Brigade song-add implementation has been backed out. The
+available source spreadsheet did not include usable Brigade year and
+location/event metadata, so the app cannot yet offer the intended picker without
+misleading users.
 
-```text
-data/harmony_brigade_songs.csv
-```
+No Supabase table, migration, seed data, or production catalog rows were created
+for the removed Harmony Brigade source. The only artifacts were repo-local CSV,
+JSON, helper, UI, and test files, which were removed.
 
-The CSV schema currently provided is:
+When a replacement source is available, verify that it contains at least:
 
-```text
-SongID, SongTitle, KeyName, Arranger, AsSungBy, LT_Provider, SongStyle, SongLength, Difficulty, Genre, Tempo, StartingWords
-```
+- song title
+- voicing, or a reliable source-level voicing rule
+- arranger when known
+- Brigade year or date
+- Brigade location/event
 
-The source does not currently include Brigade year, location, or voicing
-columns. The app therefore exposes the data as a single event bucket:
-
-```text
-Year: All years
-Location / Event: Ross Wilkins song database
-```
-
-Every Harmony Brigade song defaults to `TTBB`. If a future source file includes
-year/location columns, update `scripts/build-harmony-brigade-data.mjs` and
-`lib/harmonyBrigade.ts` so those fields feed the existing Year and Location /
-Event selectors.
-
-To rebuild the app-readable JSON artifact after replacing the CSV, run:
-
-```bash
-npm run harmony-brigade:build-data
-```
-
-This writes:
-
-```text
-data/harmony_brigade_songs.json
-```
-
-The Harmony Brigade add flow is separate from the normal add-song typeahead and
-does not write to Supabase until a signed-in user selects songs, chooses a TTBB
-part and confidence, and confirms the add. Duplicate detection uses normalized
-title + `TTBB` + normalized arranger, preserving the distinction between blank
-arranger and literal `Unknown`.
+Reintroducing the feature should include fresh source documentation, parser
+tests, UI tests, and a clear cleanup/migration note if the new source writes to
+Supabase or the suggestion catalog.
