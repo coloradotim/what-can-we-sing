@@ -77,6 +77,8 @@ type RepertoireForm = {
   notes: string;
 };
 
+type AddSongSource = "suggestion" | "own-title" | null;
+
 export default function RepertoireManager() {
   const songTitleInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
@@ -94,6 +96,7 @@ export default function RepertoireManager() {
   const [suggestedVoicings, setSuggestedVoicings] = useState<Voicing[] | null>(
     null
   );
+  const [addSongSource, setAddSongSource] = useState<AddSongSource>(null);
   const [voicing, setVoicing] = useState<Voicing | "">("");
   const [arrangerName, setArrangerName] = useState("");
   const [notes, setNotes] = useState("");
@@ -240,6 +243,7 @@ export default function RepertoireManager() {
     setSongSuggestionsLoading(false);
     setSongSuggestionsOpen(false);
     setSuggestedVoicings(null);
+    setAddSongSource(null);
     setVoicing("");
     setArrangerName("");
     setNotes("");
@@ -261,6 +265,8 @@ export default function RepertoireManager() {
 
     setSongTitle(songTitle.trim());
     setSongSuggestionsOpen(false);
+    setAddSongSource("own-title");
+    setSuggestedVoicings(null);
     setMessage("");
     setIsAddOpen(true);
   }
@@ -274,6 +280,7 @@ export default function RepertoireManager() {
   function updateSongTitle(value: string) {
     setSongTitle(value);
     setSuggestedVoicings(null);
+    setAddSongSource(null);
     setSongSuggestionsOpen(true);
   }
 
@@ -289,6 +296,7 @@ export default function RepertoireManager() {
     setArrangerName(suggestion.arrangerName);
     setShowArranger(Boolean(suggestion.arrangerName));
     setPartRows([emptyPartRow()]);
+    setAddSongSource("suggestion");
     setMessage("");
   }
 
@@ -635,6 +643,11 @@ export default function RepertoireManager() {
     : Array.from(new Set(voicings.flatMap((v) => partsByVoicing[v])));
   const hasSavedSongs = items.length > 0;
   const voicingOptions = suggestedVoicings ?? voicings;
+  const selectedSongSummaryOpen =
+    isAddOpen &&
+    Boolean(songTitle.trim()) &&
+    Boolean(addSongSource) &&
+    !songSuggestionsOpen;
   const hasSmallRepertoire = items.length > 0 && items.length <= 3;
   const addSectionTitle =
     items.length === 0
@@ -644,10 +657,10 @@ export default function RepertoireManager() {
         : "Add a song";
   const addSectionDescription =
     items.length === 0
-      ? "Start by adding songs you know. Suggestions will appear as you type, and you can always enter your own title if the song is not listed."
+      ? "Start typing a song title. Choose a suggestion if it matches your arrangement, or add your own title."
       : hasSmallRepertoire
         ? "Add a few songs you are likely to sing. Search and filters become useful once you have more songs saved."
-        : "Start typing a song title, choose a suggestion if one fits, or add your own title manually.";
+        : "Start typing a song title. Choose a suggestion if it matches your arrangement, or add your own title.";
   const showQuartetTeachingCard =
     !hasUsedQuartetWorkflow && items.length > 0;
   const quartetTeachingTitle =
@@ -758,7 +771,7 @@ export default function RepertoireManager() {
               onClick={openBlankAddModal}
               className="w-full rounded-xl bg-white/10 px-5 py-3 font-semibold text-cyan-100 hover:bg-white/20 lg:w-auto"
             >
-              Add manually
+              Add song
             </button>
           </div>
 
@@ -782,7 +795,7 @@ export default function RepertoireManager() {
                   disabled={!songTitle.trim()}
                   className="min-h-12 rounded-xl bg-cyan-300 px-5 py-3 font-bold text-slate-950 hover:bg-cyan-200 disabled:opacity-40 sm:w-40"
                 >
-                  Add
+                  Add song
                 </button>
               </div>
             </label>
@@ -832,11 +845,11 @@ export default function RepertoireManager() {
                     onClick={openAddModalWithCurrentTitle}
                     className="mt-2 w-full rounded-lg bg-cyan-300 px-3 py-2 text-left text-sm font-bold text-slate-950 hover:bg-cyan-200"
                   >
-                    Add &quot;{songTitle.trim()}&quot; manually
+                    Add &quot;{songTitle.trim()}&quot; as your own song
                   </button>
                   <p className="mt-2 text-xs leading-5 text-slate-300">
-                    Choose your own title, voicing, arranger, part, and
-                    confidence.
+                    Choose the voicing, arranger, part, and confidence
+                    yourself.
                   </p>
                 </div>
               </div>
@@ -1410,16 +1423,44 @@ export default function RepertoireManager() {
                           onClick={openAddModalWithCurrentTitle}
                           className="mt-2 w-full rounded-lg bg-cyan-300 px-3 py-2 text-left text-sm font-bold text-slate-950 hover:bg-cyan-200"
                         >
-                          Add &quot;{songTitle.trim()}&quot; manually
+                          Add &quot;{songTitle.trim()}&quot; as your own song
                         </button>
                         <p className="mt-2 text-xs leading-5 text-slate-300">
-                          Choose your own title, voicing, arranger, part, and
-                          confidence.
+                          Choose the voicing, arranger, part, and confidence
+                          yourself.
                         </p>
                       </div>
                     </div>
                   )}
                 </label>
+
+                {selectedSongSummaryOpen && (
+                  <div className="rounded-xl border border-cyan-300/20 bg-cyan-300/10 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-normal text-cyan-200">
+                      {addSongSource === "suggestion"
+                        ? "Selected song"
+                        : "Adding your own song title"}
+                    </p>
+                    <h3 className="mt-2 text-lg font-semibold text-white">
+                      {songTitle.trim()}
+                    </h3>
+                    {addSongSource === "suggestion" ? (
+                      <p className="mt-1 text-sm text-slate-300">
+                        {voicing ? `${voicing} · ` : ""}
+                        Arr. {arrangerDisplayName(arrangerName)}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-sm text-slate-300">
+                        Title: {songTitle.trim()}
+                      </p>
+                    )}
+                    <p className="mt-3 text-sm text-cyan-100">
+                      {suggestedVoicings && !voicing
+                        ? "Next: choose the voicing you know."
+                        : "Next: choose the part you sing and your confidence."}
+                    </p>
+                  </div>
+                )}
 
                 <div>
                   <p className="text-sm font-medium text-slate-300">Voicing</p>

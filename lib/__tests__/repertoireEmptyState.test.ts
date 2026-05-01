@@ -13,14 +13,17 @@ describe("repertoire empty state", () => {
     expect(repertoireManager).toContain("Add songs here");
     expect(repertoireManager).toContain("Add a song to your repertoire");
     expect(repertoireManager).toContain("Start typing a song title...");
-    expect(repertoireManager).toContain("Add manually");
+    expect(repertoireManager).toContain("Add song");
+    expect(repertoireManager).not.toContain("Add manually");
   });
 
-  it("uses the primary typeahead to open the add flow from suggestions or manual text", () => {
+  it("uses the primary typeahead to open the add flow from suggestions or own-title text", () => {
     expect(repertoireManager).toContain("searchRepertoireSongSuggestions");
     expect(repertoireManager).toContain("selectSongSuggestionAndOpen");
     expect(repertoireManager).toContain("openAddModalWithCurrentTitle");
-    expect(repertoireManager).toContain('Add &quot;{songTitle.trim()}&quot; manually');
+    expect(repertoireManager).toContain(
+      'Add &quot;{songTitle.trim()}&quot; as your own song'
+    );
   });
 
   it("keeps saved-song filters separate from adding songs", () => {
