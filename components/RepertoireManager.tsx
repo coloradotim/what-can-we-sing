@@ -28,7 +28,9 @@ import {
 import {
   createRepertoireShare,
   getMyActiveRepertoireShare,
+  repertoireCopyRequestMessage,
   revokeRepertoireShare,
+  sharedRepertoirePathFromInput,
   type RepertoireShare,
 } from "@/lib/repertoireSharing";
 import {
@@ -133,6 +135,8 @@ export default function RepertoireManager() {
   const [isRevokingShare, setIsRevokingShare] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
   const [shareQrUrl, setShareQrUrl] = useState("");
+  const [copySourceInput, setCopySourceInput] = useState("");
+  const [copySourceMessage, setCopySourceMessage] = useState("");
 
   function completePartConfidences(
     rows: PartConfidenceFormRow[]
@@ -244,7 +248,7 @@ export default function RepertoireManager() {
         console.error(err);
         if (!cancelled) {
           setShareQrUrl("");
-          setShareMessage("QR code unavailable. Share the code or link instead.");
+          setShareMessage("QR code unavailable. Use the code or link instead.");
         }
       });
 
@@ -685,10 +689,10 @@ export default function RepertoireManager() {
       setShareMessage("");
       const share = await createRepertoireShare();
       setRepertoireShare(share);
-      setShareMessage("Repertoire share link created.");
+      setShareMessage("Copy link/code created.");
     } catch (err) {
       console.error(err);
-      setShareMessage("Could not create share link. Please try again.");
+      setShareMessage("Could not create copy link/code. Please try again.");
     } finally {
       setIsCreatingShare(false);
     }
@@ -699,10 +703,46 @@ export default function RepertoireManager() {
 
     try {
       await navigator.clipboard.writeText(shareLink);
-      setShareMessage("Share link copied.");
+      setShareMessage("Copy link copied.");
     } catch (err) {
       console.error(err);
       setShareMessage("Could not copy automatically. Select and copy the link.");
+    }
+  }
+
+  async function copyShareCode() {
+    if (!repertoireShare) return;
+
+    try {
+      await navigator.clipboard.writeText(repertoireShare.code);
+      setShareMessage("Copy code copied.");
+    } catch (err) {
+      console.error(err);
+      setShareMessage("Could not copy automatically. Select and copy the code.");
+    }
+  }
+
+  function openSharedRepertoire() {
+    const path = sharedRepertoirePathFromInput(copySourceInput);
+    if (!path) {
+      setCopySourceMessage(
+        "Paste a six-character code or a shared repertoire link."
+      );
+      return;
+    }
+
+    window.location.href = path;
+  }
+
+  async function copyRemoteRequestMessage() {
+    try {
+      await navigator.clipboard.writeText(repertoireCopyRequestMessage);
+      setCopySourceMessage("Request message copied.");
+    } catch (err) {
+      console.error(err);
+      setCopySourceMessage(
+        "Could not copy automatically. Select and copy the message."
+      );
     }
   }
 
@@ -714,10 +754,10 @@ export default function RepertoireManager() {
       setShareMessage("");
       await revokeRepertoireShare(repertoireShare.id);
       setRepertoireShare(null);
-      setShareMessage("Repertoire share link revoked.");
+      setShareMessage("Copy link/code revoked.");
     } catch (err) {
       console.error(err);
-      setShareMessage("Could not revoke share link. Please try again.");
+      setShareMessage("Could not revoke copy link/code. Please try again.");
     } finally {
       setIsRevokingShare(false);
     }
@@ -959,84 +999,172 @@ export default function RepertoireManager() {
 
         {hasSavedSongs && (
           <section className="mt-5 rounded-2xl border border-cyan-300/20 bg-slate-900/70 p-5 shadow-lg sm:p-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-              <div className="max-w-3xl">
-                <p className="text-sm font-semibold uppercase tracking-normal text-cyan-200">
-                  Share repertoire
-                </p>
-                <h2 className="mt-2 text-2xl font-bold tracking-tight text-white">
-                  Help another singer copy songs
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-300">
-                  Let another singer view your song titles, voicings, and
-                  arrangers so they can copy songs into their own repertoire.
-                  Notes, parts, confidence, and sung history are not shared.
-                </p>
-              </div>
+            <div className="max-w-3xl">
+              <p className="text-sm font-semibold uppercase tracking-normal text-cyan-200">
+                More ways to build your repertoire
+              </p>
+              <h2 className="mt-2 text-2xl font-bold tracking-tight text-white">
+                Copy songs with another singer
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                Use a private link or code when one singer already has songs
+                entered and another singer wants to copy a few of them.
+              </p>
+            </div>
 
-              <div className="flex flex-col gap-2 lg:min-w-72 lg:shrink-0">
-                {repertoireShare ? (
-                  <>
-                    <p className="text-sm font-semibold text-cyan-100">
-                      Your repertoire share link is active
-                    </p>
-                    <div className="rounded-xl border border-cyan-300/20 bg-cyan-300/10 p-3 text-center">
-                      <p className="text-xs font-semibold uppercase tracking-normal text-cyan-200">
-                        Share code
-                      </p>
-                      <p className="mt-1 text-3xl font-black tracking-[0.2em] text-white">
-                        {repertoireShare.code}
-                      </p>
-                      {shareQrUrl && (
-                        <img
-                          src={shareQrUrl}
-                          alt="QR code for repertoire share link"
-                          className="mx-auto mt-3 h-36 w-36 rounded-xl bg-white p-2"
-                        />
-                      )}
-                    </div>
-                    <p className="text-xs leading-5 text-slate-400">
-                      Anyone with this link can view song titles, voicings, and
-                      arrangers from your repertoire. They cannot edit your
-                      songs.
-                    </p>
-                    <input
-                      value={shareLink}
-                      readOnly
-                      className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-200"
-                      aria-label="Repertoire share link"
-                    />
-                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                      <button
-                        type="button"
-                        onClick={copyShareLink}
-                        className="rounded-xl bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-cyan-200"
-                      >
-                        Copy link
-                      </button>
-                      <button
-                        type="button"
-                        onClick={revokeShareLink}
-                        disabled={isRevokingShare}
-                        className="rounded-xl bg-white/10 px-4 py-3 text-sm font-bold text-slate-200 hover:bg-white/20 disabled:opacity-40"
-                      >
-                        {isRevokingShare ? "Revoking..." : "Revoke link"}
-                      </button>
-                    </div>
-                  </>
-                ) : (
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              <div className="rounded-xl border border-white/10 bg-slate-950/70 p-4">
+                <h3 className="text-xl font-bold text-white">
+                  Copy songs from another singer
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  Paste a shared repertoire link or six-character code, then
+                  choose which songs to copy into your repertoire.
+                </p>
+                <div className="mt-4 flex flex-col gap-2 sm:flex-row lg:flex-col xl:flex-row">
+                  <label className="sr-only" htmlFor="shared-repertoire-code">
+                    Shared repertoire link or code
+                  </label>
+                  <input
+                    id="shared-repertoire-code"
+                    value={copySourceInput}
+                    onChange={(event) => {
+                      setCopySourceInput(event.target.value);
+                      setCopySourceMessage("");
+                    }}
+                    placeholder="Paste link or code"
+                    className="min-h-12 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                  />
                   <button
                     type="button"
-                    onClick={createShareLink}
-                    disabled={isCreatingShare}
-                    className="rounded-xl bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
+                    onClick={openSharedRepertoire}
+                    className="min-h-12 rounded-xl bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-cyan-200"
                   >
-                    {isCreatingShare ? "Creating..." : "Create share link"}
+                    Open shared repertoire
                   </button>
+                </div>
+                <div className="mt-4 space-y-3 text-sm leading-6 text-slate-300">
+                  <p>
+                    Standing together? Ask the other singer to open Repertoire,
+                    choose &quot;Let another singer copy songs from my
+                    repertoire,&quot; and show you the code or QR code.
+                  </p>
+                  <p>
+                    Not together? Copy this request and send it by text or
+                    email.
+                  </p>
+                </div>
+                <div className="mt-3 rounded-xl border border-cyan-300/20 bg-cyan-300/10 p-3">
+                  <p className="text-sm leading-6 text-slate-100">
+                    {repertoireCopyRequestMessage}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={copyRemoteRequestMessage}
+                    className="mt-3 rounded-xl bg-white/10 px-4 py-3 text-sm font-bold text-cyan-100 hover:bg-white/20"
+                  >
+                    Copy request message
+                  </button>
+                </div>
+                {copySourceMessage && (
+                  <p className="mt-3 text-sm text-slate-300">
+                    {copySourceMessage}
+                  </p>
                 )}
-                {shareMessage && (
-                  <p className="text-sm text-slate-300">{shareMessage}</p>
-                )}
+              </div>
+
+              <div className="rounded-xl border border-white/10 bg-slate-950/70 p-4">
+                <h3 className="text-xl font-bold text-white">
+                  Let another singer copy songs from my repertoire
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  Create a private link and code another singer can use to copy
+                  selected song titles, voicings, and arrangers from your
+                  repertoire.
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  They cannot see your notes, confidence, last-sung history, or
+                  email address. They will choose their own part and confidence
+                  before saving anything.
+                </p>
+
+                <div className="mt-4 flex flex-col gap-3">
+                  {repertoireShare ? (
+                    <>
+                      <p className="text-sm font-semibold text-cyan-100">
+                        Your repertoire copy link is ready
+                      </p>
+                      <div className="rounded-xl border border-cyan-300/20 bg-cyan-300/10 p-3 text-center">
+                        <p className="text-xs font-semibold uppercase tracking-normal text-cyan-200">
+                          Copy code
+                        </p>
+                        <p className="mt-1 text-3xl font-black tracking-[0.2em] text-white">
+                          {repertoireShare.code}
+                        </p>
+                        {shareQrUrl && (
+                          <img
+                            src={shareQrUrl}
+                            alt="QR code for repertoire copy link"
+                            className="mx-auto mt-3 h-36 w-36 rounded-xl bg-white p-2"
+                          />
+                        )}
+                      </div>
+                      <p className="text-xs leading-5 text-slate-400">
+                        If you are standing together, show the QR code or code.
+                        If not, send the link or code by text or email. Revoke
+                        the link whenever you are done.
+                      </p>
+                      <input
+                        value={shareLink}
+                        readOnly
+                        className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-sm text-slate-200"
+                        aria-label="Repertoire copy link"
+                      />
+                      <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+                        <button
+                          type="button"
+                          onClick={copyShareLink}
+                          className="rounded-xl bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-cyan-200"
+                        >
+                          Copy link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={copyShareCode}
+                          className="rounded-xl bg-white/10 px-4 py-3 text-sm font-bold text-cyan-100 hover:bg-white/20"
+                        >
+                          Copy code
+                        </button>
+                        <button
+                          type="button"
+                          onClick={revokeShareLink}
+                          disabled={isRevokingShare}
+                          className="rounded-xl bg-white/10 px-4 py-3 text-sm font-bold text-slate-200 hover:bg-white/20 disabled:opacity-40"
+                        >
+                          {isRevokingShare ? "Revoking..." : "Revoke link"}
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm leading-6 text-slate-300">
+                        Standing together? Create the link/code and show the QR
+                        code. Remote? Create it and send the link or code.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={createShareLink}
+                        disabled={isCreatingShare}
+                        className="rounded-xl bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
+                      >
+                        {isCreatingShare ? "Creating..." : "Create link/code"}
+                      </button>
+                    </>
+                  )}
+                  {shareMessage && (
+                    <p className="text-sm text-slate-300">{shareMessage}</p>
+                  )}
+                </div>
               </div>
             </div>
           </section>

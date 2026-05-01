@@ -145,19 +145,21 @@ Established by migrations:
 
 ### `repertoire_shares`
 
-Purpose: opt-in private repertoire share links. A share code lets another
+Purpose: opt-in private repertoire copy links. A copy code lets another
 singer view only song identity fields from the owner's current repertoire so
 they can copy selected songs into their own repertoire.
 
 Code:
-- Create active share: `lib/repertoireSharing.ts#createRepertoireShare`
-- Read own active share: `lib/repertoireSharing.ts#getMyActiveRepertoireShare`
-- Revoke own share: `lib/repertoireSharing.ts#revokeRepertoireShare`
+- Create active copy link/code: `lib/repertoireSharing.ts#createRepertoireShare`
+- Read own active copy link/code:
+  `lib/repertoireSharing.ts#getMyActiveRepertoireShare`
+- Revoke own copy link/code: `lib/repertoireSharing.ts#revokeRepertoireShare`
 - Read safe shared repertoire by code:
   `lib/repertoireSharing.ts#getSharedRepertoire`, through
   `public.get_shared_repertoire`
 - Recipient copy flow: `components/SharedRepertoireManager.tsx`
-- Sharer controls: `components/RepertoireManager.tsx`
+- "Let another singer copy songs from my repertoire" controls:
+  `components/RepertoireManager.tsx`
 
 Expected context:
 - Browser authenticated owner for create/read/revoke of own share rows.

@@ -44,6 +44,26 @@ export type CopyableSharedSong = SharedRepertoireSong & {
   duplicateStatus: "eligible" | "exact" | "possible_arrangement";
 };
 
+export const repertoireCopyRequestMessage =
+  "Can you open What Can We Sing, go to Repertoire, choose 'Let another singer copy songs from my repertoire,' and send me the link or code? I'd like to copy a few songs into my repertoire.";
+
+export function sharedRepertoirePathFromInput(input: string) {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  const directCode = trimmed.toUpperCase();
+  if (/^[A-Z0-9]{6}$/.test(directCode)) {
+    return `/shared-repertoire/${directCode}`;
+  }
+
+  const pathMatch = trimmed.match(
+    /\/shared-repertoire\/([A-Za-z0-9]{6})(?:[/?#]|$)/
+  );
+  if (!pathMatch?.[1]) return null;
+
+  return `/shared-repertoire/${pathMatch[1].toUpperCase()}`;
+}
+
 export function normalizeSharedSongText(value?: string | null) {
   return (value ?? "")
     .trim()
