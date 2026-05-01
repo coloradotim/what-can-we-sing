@@ -40,6 +40,15 @@ describe("repertoire song suggestion UI", () => {
   it("closes suggestions into a selected-song summary", () => {
     expect(repertoireManager).toContain('setAddSongSource("suggestion")');
     expect(repertoireManager).toContain('setAddSongSource("own-title")');
+    expect(repertoireManager).toContain(
+      "const isActivelySearchingSuggestions = !addSongSource && songSuggestionsOpen"
+    );
+    expect(repertoireManager).toContain("function openSongSuggestionsForFocus");
+    expect(repertoireManager).toContain("if (addSongSource) return;");
+    expect(repertoireManager).toContain("onFocus={openSongSuggestionsForFocus}");
+    expect(repertoireManager).toContain(
+      "addSongSource || !songSuggestionsOpen"
+    );
     expect(repertoireManager).toContain("const selectedSongSummaryOpen");
     expect(repertoireManager).toContain("Selected song");
     expect(repertoireManager).toContain("Adding your own song title");
@@ -55,5 +64,10 @@ describe("repertoire song suggestion UI", () => {
     expect(repertoireManager).toContain("Start a quartet");
     expect(repertoireManager).toContain("Join a quartet");
     expect(repertoireManager).toContain("hasDismissedQuartetNudge");
+    expect(repertoireManager).not.toContain("Next up");
+    expect(repertoireManager).not.toContain("returningUserActions");
+    expect(repertoireManager).not.toContain(
+      "hasSavedSongs && !showQuartetTeachingCard"
+    );
   });
 });

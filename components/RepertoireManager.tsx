@@ -214,7 +214,7 @@ export default function RepertoireManager() {
   }, []);
 
   useEffect(() => {
-    if (!songSuggestionsOpen || songTitle.trim().length < 2) {
+    if (addSongSource || !songSuggestionsOpen || songTitle.trim().length < 2) {
       setSongSuggestions([]);
       setSongSuggestionsLoading(false);
       return;
@@ -244,7 +244,7 @@ export default function RepertoireManager() {
       cancelled = true;
       window.clearTimeout(timeout);
     };
-  }, [songSuggestionsOpen, songTitle]);
+  }, [addSongSource, songSuggestionsOpen, songTitle]);
 
   function resetAddForm() {
     setSongTitle("");
@@ -290,6 +290,11 @@ export default function RepertoireManager() {
     setSongTitle(value);
     setSuggestedVoicings(null);
     setAddSongSource(null);
+    setSongSuggestionsOpen(true);
+  }
+
+  function openSongSuggestionsForFocus() {
+    if (addSongSource) return;
     setSongSuggestionsOpen(true);
   }
 
@@ -662,11 +667,12 @@ export default function RepertoireManager() {
     : Array.from(new Set(voicings.flatMap((v) => partsByVoicing[v])));
   const hasSavedSongs = items.length > 0;
   const voicingOptions = suggestedVoicings ?? voicings;
+  const isActivelySearchingSuggestions = !addSongSource && songSuggestionsOpen;
   const selectedSongSummaryOpen =
     isAddOpen &&
     Boolean(songTitle.trim()) &&
     Boolean(addSongSource) &&
-    !songSuggestionsOpen;
+    !isActivelySearchingSuggestions;
   const hasSmallRepertoire = items.length > 0 && items.length <= 3;
   const addSectionTitle =
     items.length === 0
@@ -700,11 +706,6 @@ export default function RepertoireManager() {
           { label: "Start a quartet", href: "/session" },
           { label: "Join a quartet", href: "/join" },
         ] as const);
-  const returningUserActions = [
-    { label: "Add another song", kind: "add" },
-    { label: "Start quartet", href: "/session" },
-    { label: "Join quartet", href: "/join" },
-  ] as const;
   const filteredEmptyDescription = [
     voicingFilter,
     partFilter
@@ -793,7 +794,7 @@ export default function RepertoireManager() {
                 <input
                   value={songTitle}
                   onChange={(e) => updateSongTitle(e.target.value)}
-                  onFocus={() => setSongSuggestionsOpen(true)}
+                  onFocus={openSongSuggestionsForFocus}
                   placeholder="Start typing a song title..."
                   autoComplete="off"
                   className="min-h-12 w-full rounded-xl border border-cyan-300/30 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
@@ -809,7 +810,7 @@ export default function RepertoireManager() {
               </div>
             </label>
 
-            {songSuggestionsOpen && !isAddOpen && songTitle.trim().length >= 2 && (
+            {isActivelySearchingSuggestions && !isAddOpen && songTitle.trim().length >= 2 && (
               <div className="mt-2 overflow-hidden rounded-xl border border-cyan-300/20 bg-slate-900 shadow-xl">
                 <p className="px-3 py-2 text-xs font-semibold uppercase tracking-normal text-slate-400">
                   Song suggestions are optional
@@ -898,36 +899,6 @@ export default function RepertoireManager() {
                 >
                   Dismiss
                 </button>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {hasSavedSongs && !showQuartetTeachingCard && (
-          <section className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm font-semibold text-slate-300">Next up</p>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                {returningUserActions.map((action) =>
-                  "href" in action ? (
-                    <a
-                      key={action.label}
-                      href={action.href}
-                      className="rounded-xl bg-white/10 px-4 py-3 text-center text-sm font-semibold text-cyan-100 hover:bg-white/20"
-                    >
-                      {action.label}
-                    </a>
-                  ) : (
-                    <button
-                      key={action.label}
-                      type="button"
-                      onClick={openBlankAddModal}
-                      className="rounded-xl bg-white/10 px-4 py-3 text-sm font-semibold text-cyan-100 hover:bg-white/20"
-                    >
-                      {action.label}
-                    </button>
-                  )
-                )}
               </div>
             </div>
           </section>
@@ -1370,7 +1341,7 @@ export default function RepertoireManager() {
                     ref={songTitleInputRef}
                     value={songTitle}
                     onChange={(e) => updateSongTitle(e.target.value)}
-                    onFocus={() => setSongSuggestionsOpen(true)}
+                    onFocus={openSongSuggestionsForFocus}
                     autoComplete="off"
                     aria-invalid={!songTitle.trim()}
                     className={`${requiredFieldClass} ${requiredFieldStateClass(
@@ -1381,7 +1352,7 @@ export default function RepertoireManager() {
                     Start typing to see suggestions, or enter your own song
                     title.
                   </p>
-                  {songSuggestionsOpen && songTitle.trim().length >= 2 && (
+                  {isActivelySearchingSuggestions && songTitle.trim().length >= 2 && (
                     <div className="mt-2 overflow-hidden rounded-xl border border-cyan-300/20 bg-slate-900">
                       <p className="px-3 py-2 text-xs font-semibold uppercase tracking-normal text-slate-400">
                         Song suggestions are optional
