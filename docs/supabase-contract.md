@@ -142,14 +142,19 @@ Established by migrations:
 ### `song_suggestion_catalog`
 
 Purpose: optional autocomplete reference data for song entry, imported from
-`data/song_suggestion_catalog.psv`.
+`data/song_suggestion_catalog.psv`. The PSV catalog is maintained from
+controlled metadata sources including `data/bhs_published_music_catalog.csv`;
+see `docs/imports.md`.
 
 Code:
 - Imported by `scripts/import-song-suggestions.mjs`
+- BHS source data is transformed by `scripts/import-bhs-published-music.mjs`
+  before being merged into `data/song_suggestion_catalog.psv`
 - Preserved by `scripts/delete-user.mjs`; catalog rows are global suggestions,
   not user-owned data.
 - Read only through `public.search_repertoire_song_suggestions`
 - Parsed/deduplicated by `lib/__tests__/songSuggestionCatalogImport.test.ts`
+  and `lib/__tests__/bhsPublishedMusicImport.test.mjs`
 
 Expected context:
 - Server/local import script with `SUPABASE_SERVICE_ROLE_KEY`
@@ -171,6 +176,11 @@ Required database contract:
 - RLS enabled; no direct browser table access is required
 - Import expands comma-separated source voicings into one row per supported
   voicing and ignores unsupported voicing values
+- The BHS transform also splits clearly multi-voicing product rows into one row
+  per supported voicing and skips ambiguous, unsupported, non-four-part, or
+  collection products.
+- Product descriptions are used only as import signal for voicing and arranger
+  parsing; full descriptions are not stored in the suggestion catalog.
 - Catalog rows are suggestions only and must never be inserted into
   `user_repertoire` unless a user explicitly saves a repertoire item
 

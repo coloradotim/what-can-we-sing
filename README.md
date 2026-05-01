@@ -85,7 +85,8 @@ The Supabase project should have the current production schema applied:
   `data/song_suggestion_catalog.psv`. It is used only for autocomplete; catalog
   rows are not added to anyone's repertoire unless a user chooses to save one.
   Import expands comma-separated voicing values into one row per supported
-  voicing (`TTBB`, `SSAA`, `SATB`).
+  voicing (`TTBB`, `SSAA`, `SATB`). The BHS Published Music source CSV and
+  refresh process are documented in [docs/imports.md](docs/imports.md).
 
 The app/database contract is documented in
 [docs/supabase-contract.md](docs/supabase-contract.md). Any PR that changes
@@ -115,6 +116,12 @@ SUPABASE_SERVICE_ROLE_KEY=... npm run song-suggestions:import
 
 Use `npm run song-suggestions:import -- --dry-run` to parse and deduplicate the
 catalog file without writing to Supabase.
+
+To refresh the BHS Published Music source data and merge it into
+`data/song_suggestion_catalog.psv`, follow
+[docs/imports.md](docs/imports.md). The BHS transform is conservative: it uses
+Product Description as a voicing signal when needed, skips ambiguous rows, and
+splits clearly multi-voicing rows into separate catalog rows.
 
 ## Analytics
 
