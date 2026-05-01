@@ -79,6 +79,13 @@ const repertoireSharesMigration = readFileSync(
   ),
   "utf8"
 );
+const harmonyBrigadeMigration = readFileSync(
+  join(
+    repoRoot,
+    "supabase/migrations/20260501200000_add_harmony_brigade_reference_tables.sql"
+  ),
+  "utf8"
+);
 
 describe("Supabase contract guardrails", () => {
   const tables = [
@@ -88,9 +95,18 @@ describe("Supabase contract guardrails", () => {
     "session_participants",
     "sung_song_events",
     "repertoire_shares",
+    "harmony_brigade_songs",
+    "harmony_brigade_events",
+    "harmony_brigade_event_songs",
   ];
   const baseMigrationTables = tables.filter(
-    (table) => table !== "repertoire_shares"
+    (table) =>
+      ![
+        "repertoire_shares",
+        "harmony_brigade_songs",
+        "harmony_brigade_events",
+        "harmony_brigade_event_songs",
+      ].includes(table)
   );
 
   it("documents every app-owned Supabase table", () => {
@@ -261,5 +277,35 @@ describe("Supabase contract guardrails", () => {
     expect(songSuggestionSupportedVoicingMigration).toContain(
       "song_suggestion_catalog.voicing in ('TTBB', 'SATB', 'SSAA')"
     );
+  });
+
+  it("documents and migrates Harmony Brigade reference tables", () => {
+    expect(contract).toContain("Harmony Brigade Reference Tables");
+    expect(contract).toContain("scripts/export-harmony-brigade-source.mjs");
+    expect(contract).toContain("scripts/import-harmony-brigade-songs.mjs");
+    expect(contract).toContain("default_voicing = 'TTBB'");
+    expect(contract).toContain("No authenticated insert/update/delete policies");
+    expect(harmonyBrigadeMigration).toContain(
+      "create table if not exists public.harmony_brigade_songs"
+    );
+    expect(harmonyBrigadeMigration).toContain(
+      "create table if not exists public.harmony_brigade_events"
+    );
+    expect(harmonyBrigadeMigration).toContain(
+      "create table if not exists public.harmony_brigade_event_songs"
+    );
+    expect(harmonyBrigadeMigration).toContain("source_song_id integer not null unique");
+    expect(harmonyBrigadeMigration).toContain("year_held integer not null");
+    expect(harmonyBrigadeMigration).toContain("brigade_abbr text not null");
+    expect(harmonyBrigadeMigration).toContain(
+      "harmony_brigade_songs_default_voicing_chk"
+    );
+    expect(harmonyBrigadeMigration).toContain("default_voicing = 'TTBB'");
+    expect(harmonyBrigadeMigration).toContain("enable row level security");
+    expect(harmonyBrigadeMigration).toContain("for select");
+    expect(harmonyBrigadeMigration).toContain("to authenticated");
+    expect(harmonyBrigadeMigration).not.toContain("for insert");
+    expect(harmonyBrigadeMigration).not.toContain("for update");
+    expect(harmonyBrigadeMigration).not.toContain("for delete");
   });
 });

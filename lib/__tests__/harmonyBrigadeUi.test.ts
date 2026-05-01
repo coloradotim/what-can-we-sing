@@ -7,17 +7,16 @@ const repertoireManager = readFileSync(
   "utf8"
 );
 
-describe("Harmony Brigade repertoire UI backout", () => {
-  it("removes the incomplete Harmony Brigade add flow from secondary actions", () => {
+describe("Harmony Brigade repertoire UI", () => {
+  it("uses Add Harmony Brigade songs as a compact secondary action", () => {
     expect(repertoireManager).toContain("More ways to build your repertoire");
     expect(repertoireManager).toContain("Copy songs from another singer");
     expect(repertoireManager).toContain(
       "Let another singer copy songs from my repertoire"
     );
-    expect(repertoireManager).not.toContain("Choose Brigade event");
-    expect(repertoireManager).not.toContain("Add Harmony Brigade songs");
-    expect(repertoireManager).not.toContain("Harmony Brigade event");
-    expect(repertoireManager).not.toContain("HARMONY_BRIGADE_SOURCE");
+    expect(repertoireManager).toContain("Add Harmony Brigade songs");
+    expect(repertoireManager).toContain("Choose Brigade songs");
+    expect(repertoireManager).toContain("HARMONY_BRIGADE_SOURCE");
   });
 
   it("keeps the secondary tools compact and collapsible", () => {
@@ -28,16 +27,16 @@ describe("Harmony Brigade repertoire UI backout", () => {
     expect(repertoireManager).toContain("rounded-xl border border-white/10");
   });
 
-  it("does not expose the removed Brigade picker language", () => {
-    expect(repertoireManager).not.toContain("Review songs before adding");
-    expect(repertoireManager).not.toContain("Apply your part and confidence");
-    expect(repertoireManager).not.toContain("Add selected songs");
+  it("uses singer-facing add language instead of import language", () => {
+    expect(repertoireManager).toContain("Review songs before adding");
+    expect(repertoireManager).toContain("Apply your part and confidence");
+    expect(repertoireManager).toContain("Add selected songs");
     expect(repertoireManager).not.toContain("Import Harmony Brigade songs");
   });
 
-  it("keeps the normal typeahead path independent of removed Brigade data", () => {
+  it("keeps Brigade songs out of normal typeahead suggestions", () => {
     expect(repertoireManager).toContain("searchRepertoireSongSuggestions");
-    expect(repertoireManager).not.toContain("harmonyBrigadeSearchQuery");
+    expect(repertoireManager).toContain("harmonyBrigadeSearchQuery");
     expect(repertoireManager).not.toContain(
       "searchHarmonyBrigadeCandidates(songSuggestions"
     );

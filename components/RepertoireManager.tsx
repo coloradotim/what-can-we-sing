@@ -46,6 +46,23 @@ import { refreshActiveQuartetSnapshot } from "@/lib/activeQuartetSnapshot";
 import { arrangerDisplayName } from "@/lib/arrangerDisplay";
 import { hasQuartetWorkflowHistory } from "@/lib/activeQuartet";
 import {
+  buildHarmonyBrigadeAddInputs,
+  dedupeHarmonyBrigadeSongs,
+  filterHarmonyBrigadeSongs,
+  getHarmonyBrigadeBrigadeOptions,
+  getHarmonyBrigadeEvents,
+  getHarmonyBrigadeEventSongs,
+  getHarmonyBrigadeYearOptions,
+  HARMONY_BRIGADE_ALL_BRIGADES,
+  HARMONY_BRIGADE_ALL_YEARS,
+  HARMONY_BRIGADE_SOURCE,
+  harmonyBrigadeSelectionDescription,
+  resolveHarmonyBrigadeCandidates,
+  searchHarmonyBrigadeCandidates,
+  type HarmonyBrigadeEvent,
+  type HarmonyBrigadeEventSong,
+} from "@/lib/harmonyBrigade";
+import {
   hasDuplicateParts,
   isRepertoireSongFormValid,
   rowHasMissingPartOrConfidence,
@@ -91,7 +108,11 @@ type RepertoireForm = {
 };
 
 type AddSongSource = "suggestion" | "own-title" | null;
-type SecondaryRepertoireTool = "copy-from-singer" | "let-singer-copy" | null;
+type SecondaryRepertoireTool =
+  | "copy-from-singer"
+  | "let-singer-copy"
+  | "harmony-brigade"
+  | null;
 
 export default function RepertoireManager() {
   const songTitleInputRef = useRef<HTMLInputElement>(null);
@@ -141,6 +162,29 @@ export default function RepertoireManager() {
     useState<SecondaryRepertoireTool>(null);
   const [copySourceInput, setCopySourceInput] = useState("");
   const [copySourceMessage, setCopySourceMessage] = useState("");
+  const [harmonyBrigadeEvents, setHarmonyBrigadeEvents] = useState<
+    HarmonyBrigadeEvent[]
+  >([]);
+  const [harmonyBrigadeRows, setHarmonyBrigadeRows] = useState<
+    HarmonyBrigadeEventSong[]
+  >([]);
+  const [harmonyBrigadeYear, setHarmonyBrigadeYear] = useState<string | number>(
+    HARMONY_BRIGADE_ALL_YEARS
+  );
+  const [harmonyBrigadeBrigade, setHarmonyBrigadeBrigade] = useState(
+    HARMONY_BRIGADE_ALL_BRIGADES
+  );
+  const [harmonyBrigadeSearchQuery, setHarmonyBrigadeSearchQuery] =
+    useState("");
+  const [selectedHarmonyBrigadeSongIds, setSelectedHarmonyBrigadeSongIds] =
+    useState<Set<string>>(new Set());
+  const [harmonyBrigadePart, setHarmonyBrigadePart] = useState<Part | "">("");
+  const [harmonyBrigadeConfidence, setHarmonyBrigadeConfidence] =
+    useState<Confidence | "">("");
+  const [harmonyBrigadeMessage, setHarmonyBrigadeMessage] = useState("");
+  const [isHarmonyBrigadeLoading, setIsHarmonyBrigadeLoading] = useState(false);
+  const [isAddingHarmonyBrigadeSongs, setIsAddingHarmonyBrigadeSongs] =
+    useState(false);
 
   function completePartConfidences(
     rows: PartConfidenceFormRow[]
@@ -319,10 +363,38 @@ export default function RepertoireManager() {
     setSecondaryRepertoireTool(tool);
   }
 
+  async function openHarmonyBrigadeSongs() {
+    setIsMoreWaysOpen(true);
+    setSecondaryRepertoireTool("harmony-brigade");
+    setHarmonyBrigadeMessage("");
+    setHarmonyBrigadeSearchQuery("");
+    setSelectedHarmonyBrigadeSongIds(new Set());
+    setIsHarmonyBrigadeLoading(true);
+
+    try {
+      const [events, rows] = await Promise.all([
+        getHarmonyBrigadeEvents(),
+        getHarmonyBrigadeEventSongs(),
+      ]);
+      setHarmonyBrigadeEvents(events);
+      setHarmonyBrigadeRows(rows);
+      setHarmonyBrigadeYear(HARMONY_BRIGADE_ALL_YEARS);
+      setHarmonyBrigadeBrigade(HARMONY_BRIGADE_ALL_BRIGADES);
+    } catch (err) {
+      console.error(err);
+      setHarmonyBrigadeMessage(
+        "Could not load Harmony Brigade songs. Please try again."
+      );
+    } finally {
+      setIsHarmonyBrigadeLoading(false);
+    }
+  }
+
   function closeSecondaryRepertoireTool() {
-    if (isCreatingShare || isRevokingShare) return;
+    if (isCreatingShare || isRevokingShare || isAddingHarmonyBrigadeSongs) return;
 
     setSecondaryRepertoireTool(null);
+    setHarmonyBrigadeMessage("");
   }
 
   function openAddModalWithCurrentTitle() {
@@ -778,6 +850,87 @@ export default function RepertoireManager() {
     }
   }
 
+  function toggleHarmonyBrigadeSong(songId: string) {
+    setSelectedHarmonyBrigadeSongIds((current) => {
+      const next = new Set(current);
+      if (next.has(songId)) {
+        next.delete(songId);
+      } else {
+        next.add(songId);
+      }
+      return next;
+    });
+  }
+
+  function selectAllVisibleHarmonyBrigadeSongs(songIds: string[]) {
+    setSelectedHarmonyBrigadeSongIds((current) => {
+      const next = new Set(current);
+      for (const id of songIds) next.add(id);
+      return next;
+    });
+  }
+
+  function clearHarmonyBrigadeSelection() {
+    setSelectedHarmonyBrigadeSongIds(new Set());
+  }
+
+  async function addHarmonyBrigadeSongs(
+    inputs: ReturnType<typeof buildHarmonyBrigadeAddInputs>
+  ) {
+    if (isAddingHarmonyBrigadeSongs) return;
+
+    if (inputs.length === 0) {
+      setHarmonyBrigadeMessage("Choose at least one song to add.");
+      return;
+    }
+
+    if (!harmonyBrigadePart || !harmonyBrigadeConfidence) {
+      setHarmonyBrigadeMessage(
+        "Choose your part and confidence before adding songs."
+      );
+      return;
+    }
+
+    try {
+      setIsAddingHarmonyBrigadeSongs(true);
+      setHarmonyBrigadeMessage("");
+
+      let addedCount = 0;
+      for (const input of inputs) {
+        await addRepertoireItem(input);
+        addedCount += 1;
+      }
+
+      trackEvent("repertoire_updated", {
+        action: "harmony_brigade_add",
+        song_count: addedCount,
+      });
+
+      try {
+        await refreshActiveQuartetSnapshot();
+      } catch (err) {
+        console.error("Could not update active quartet snapshot", err);
+      }
+
+      await loadRepertoire();
+      setSelectedHarmonyBrigadeSongIds(new Set());
+      setHarmonyBrigadeMessage(
+        `${addedCount} ${addedCount === 1 ? "song" : "songs"} added. You can edit parts, confidence, arranger, or delete songs anytime.`
+      );
+      setMessage(
+        `${addedCount} Harmony Brigade ${addedCount === 1 ? "song" : "songs"} added.`
+      );
+    } catch (err) {
+      console.error(err);
+      trackEvent("repertoire_update_failed", {
+        action: "harmony_brigade_add",
+      });
+      setHarmonyBrigadeMessage("Could not add songs. Please try again.");
+    } finally {
+      setIsAddingHarmonyBrigadeSongs(false);
+    }
+  }
+
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
@@ -833,6 +986,65 @@ export default function RepertoireManager() {
     repertoireShare && typeof window !== "undefined"
       ? `${window.location.origin}/shared-repertoire/${repertoireShare.code}`
       : "";
+  const harmonyBrigadeYearOptions =
+    getHarmonyBrigadeYearOptions(harmonyBrigadeEvents);
+  const harmonyBrigadeBrigadeOptions = getHarmonyBrigadeBrigadeOptions(
+    harmonyBrigadeYear,
+    harmonyBrigadeEvents
+  );
+  const selectedHarmonyBrigadeBrigade = harmonyBrigadeBrigadeOptions.some(
+    (option) => option.value === harmonyBrigadeBrigade
+  )
+    ? harmonyBrigadeBrigade
+    : HARMONY_BRIGADE_ALL_BRIGADES;
+  const harmonyBrigadeScopedRows = dedupeHarmonyBrigadeSongs(
+    filterHarmonyBrigadeSongs(
+      harmonyBrigadeRows,
+      harmonyBrigadeYear,
+      selectedHarmonyBrigadeBrigade
+    )
+  );
+  const harmonyBrigadeCandidates = resolveHarmonyBrigadeCandidates(
+    harmonyBrigadeScopedRows,
+    items
+  );
+  const visibleHarmonyBrigadeCandidates = searchHarmonyBrigadeCandidates(
+    harmonyBrigadeCandidates,
+    harmonyBrigadeSearchQuery
+  );
+  const harmonyBrigadeEligibleCount = harmonyBrigadeCandidates.filter(
+    (row) => row.duplicateStatus === "eligible"
+  ).length;
+  const harmonyBrigadeAlreadyCount =
+    harmonyBrigadeCandidates.length - harmonyBrigadeEligibleCount;
+  const visibleHarmonyBrigadeEligibleIds = visibleHarmonyBrigadeCandidates
+    .filter((row) => row.duplicateStatus === "eligible")
+    .map((row) => row.song.id);
+  const selectedHarmonyBrigadeEligibleCount = harmonyBrigadeCandidates.filter(
+    (row) =>
+      row.duplicateStatus === "eligible" &&
+      selectedHarmonyBrigadeSongIds.has(row.song.id)
+  ).length;
+  const selectedHarmonyBrigadeAddInputs =
+    harmonyBrigadePart && harmonyBrigadeConfidence
+      ? buildHarmonyBrigadeAddInputs(
+          harmonyBrigadeCandidates,
+          selectedHarmonyBrigadeSongIds,
+          harmonyBrigadePart,
+          harmonyBrigadeConfidence
+        )
+      : [];
+  const harmonyBrigadePreviewDescription =
+    harmonyBrigadeSelectionDescription(
+      harmonyBrigadeYear,
+      selectedHarmonyBrigadeBrigade,
+      harmonyBrigadeCandidates.length,
+      harmonyBrigadeEvents
+    );
+  const canAddHarmonyBrigadeSongs =
+    selectedHarmonyBrigadeEligibleCount > 0 &&
+    Boolean(harmonyBrigadePart) &&
+    Boolean(harmonyBrigadeConfidence);
   const quartetTeachingTitle =
     items.length <= 2
       ? "Good start - keep building or try a quartet"
@@ -1074,6 +1286,306 @@ export default function RepertoireManager() {
             </div>
           </div>
         )}
+        {secondaryRepertoireTool === "harmony-brigade" && (
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 px-4 py-6 backdrop-blur">
+            <div className="mx-auto max-w-4xl rounded-2xl border border-cyan-300/20 bg-slate-950 p-5 shadow-2xl shadow-cyan-950/40 sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-sm font-semibold uppercase tracking-normal text-cyan-200">
+                    More ways to build your repertoire
+                  </p>
+                  <h2 className="mt-2 text-3xl font-bold tracking-tight">
+                    Add Harmony Brigade songs
+                  </h2>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+                    Choose a Harmony Brigade year and brigade, then add selected
+                    songs to your repertoire.
+                  </p>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+                    These songs default to TTBB. You&apos;ll choose the part you
+                    usually sing and your confidence before adding them.
+                  </p>
+                  <p className="mt-2 text-sm text-slate-400">
+                    Source: {HARMONY_BRIGADE_SOURCE}.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeSecondaryRepertoireTool}
+                  className="rounded-xl bg-white/10 px-4 py-3 text-sm font-bold text-slate-200 hover:bg-white/20"
+                >
+                  Close
+                </button>
+              </div>
+
+              {isHarmonyBrigadeLoading ? (
+                <p className="mt-5 text-sm text-slate-300">
+                  Loading Harmony Brigade songs...
+                </p>
+              ) : (
+                <>
+                  <div className="mt-5 grid gap-4 md:grid-cols-2">
+                    <label className="block">
+                      <span className="text-sm font-medium text-slate-200">
+                        Year
+                      </span>
+                      <select
+                        value={String(harmonyBrigadeYear)}
+                        onChange={(event) => {
+                          const nextYear =
+                            event.target.value === HARMONY_BRIGADE_ALL_YEARS
+                              ? HARMONY_BRIGADE_ALL_YEARS
+                              : Number(event.target.value);
+                          const nextBrigadeOptions =
+                            getHarmonyBrigadeBrigadeOptions(
+                              nextYear,
+                              harmonyBrigadeEvents
+                            );
+                          setHarmonyBrigadeYear(nextYear);
+                          setHarmonyBrigadeBrigade(
+                            nextBrigadeOptions.some(
+                              (option) => option.value === harmonyBrigadeBrigade
+                            )
+                              ? harmonyBrigadeBrigade
+                              : HARMONY_BRIGADE_ALL_BRIGADES
+                          );
+                          setSelectedHarmonyBrigadeSongIds(new Set());
+                          setHarmonyBrigadeSearchQuery("");
+                        }}
+                        className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                      >
+                        {harmonyBrigadeYearOptions.map((year) => (
+                          <option key={String(year)} value={String(year)}>
+                            {year}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="block">
+                      <span className="text-sm font-medium text-slate-200">
+                        Brigade / Event
+                      </span>
+                      <select
+                        value={selectedHarmonyBrigadeBrigade}
+                        onChange={(event) => {
+                          setHarmonyBrigadeBrigade(event.target.value);
+                          setSelectedHarmonyBrigadeSongIds(new Set());
+                          setHarmonyBrigadeSearchQuery("");
+                        }}
+                        className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                      >
+                        {harmonyBrigadeBrigadeOptions.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="mt-5 rounded-xl border border-white/10 bg-white/5 p-4">
+                    <h3 className="text-xl font-bold">
+                      Review songs before adding
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-300">
+                      {harmonyBrigadePreviewDescription}
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-slate-300">
+                      {harmonyBrigadeEligibleCount} can be added.{" "}
+                      {harmonyBrigadeAlreadyCount}{" "}
+                      {harmonyBrigadeAlreadyCount === 1 ? "is" : "are"} already
+                      in your repertoire.
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-slate-300">
+                      Choose the songs you want to add. You can edit individual
+                      songs later.
+                    </p>
+
+                    <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                      <label className="block md:min-w-80">
+                        <span className="text-sm font-medium text-slate-200">
+                          Search these songs
+                        </span>
+                        <input
+                          value={harmonyBrigadeSearchQuery}
+                          onChange={(event) =>
+                            setHarmonyBrigadeSearchQuery(event.target.value)
+                          }
+                          placeholder="Filter by title, arranger, quartet, or lyrics"
+                          className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                        />
+                      </label>
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            selectAllVisibleHarmonyBrigadeSongs(
+                              visibleHarmonyBrigadeEligibleIds
+                            )
+                          }
+                          className="rounded-xl bg-white/10 px-4 py-3 text-sm font-bold text-cyan-100 hover:bg-white/20"
+                        >
+                          Select visible
+                        </button>
+                        <button
+                          type="button"
+                          onClick={clearHarmonyBrigadeSelection}
+                          className="rounded-xl bg-white/10 px-4 py-3 text-sm font-bold text-slate-200 hover:bg-white/20"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 max-h-80 divide-y divide-white/10 overflow-y-auto rounded-xl border border-white/10">
+                      {visibleHarmonyBrigadeCandidates.map((row) => {
+                        const isExactDuplicate =
+                          row.duplicateStatus === "exact";
+                        const checked = selectedHarmonyBrigadeSongIds.has(
+                          row.song.id
+                        );
+
+                        return (
+                          <label
+                            key={row.song.id}
+                            className={`flex gap-3 p-3 ${
+                              isExactDuplicate
+                                ? "bg-slate-900/80 text-slate-500"
+                                : "bg-slate-900/40 text-slate-100"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              disabled={isExactDuplicate}
+                              onChange={() =>
+                                toggleHarmonyBrigadeSong(row.song.id)
+                              }
+                              className="mt-1 h-4 w-4 rounded border-white/20 bg-slate-950"
+                            />
+                            <span className="min-w-0">
+                              <span className="block font-semibold">
+                                {isExactDuplicate
+                                  ? "Already in your repertoire: "
+                                  : ""}
+                                {row.song.songTitle}
+                              </span>
+                              <span className="mt-1 block text-xs leading-5 text-slate-400">
+                                TTBB -{" "}
+                                {row.song.arranger
+                                  ? `Arr. ${arrangerDisplayName(row.song.arranger)}`
+                                  : "No arranger entered"}
+                                {row.song.asSungBy
+                                  ? ` - As sung by ${row.song.asSungBy}`
+                                  : ""}
+                                {row.song.startingWords
+                                  ? ` - Starts "${row.song.startingWords}"`
+                                  : ""}
+                              </span>
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="mt-5 rounded-xl border border-cyan-300/20 bg-cyan-300/10 p-4">
+                    <h3 className="text-xl font-bold">
+                      Apply your part and confidence
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-200">
+                      For these songs, choose the part you usually sing and your
+                      confidence. These settings will be applied to all selected
+                      songs. You can edit individual songs later.
+                    </p>
+                    <div className="mt-4 grid gap-4 md:grid-cols-2">
+                      <label className="block">
+                        <span className="text-sm font-medium text-slate-200">
+                          Part
+                        </span>
+                        <select
+                          value={harmonyBrigadePart}
+                          onChange={(event) =>
+                            setHarmonyBrigadePart(event.target.value as Part | "")
+                          }
+                          className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                        >
+                          <option value="">Choose part</option>
+                          {partsByVoicing.TTBB.map((part) => (
+                            <option key={part} value={part}>
+                              {partButtonLabel("TTBB", part)}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="block">
+                        <span className="text-sm font-medium text-slate-200">
+                          Confidence
+                        </span>
+                        <select
+                          value={harmonyBrigadeConfidence}
+                          onChange={(event) =>
+                            setHarmonyBrigadeConfidence(
+                              event.target.value as Confidence | ""
+                            )
+                          }
+                          className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                        >
+                          <option value="">Choose confidence</option>
+                          {confidenceLevels.map((level) => (
+                            <option key={level} value={level}>
+                              {level}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {harmonyBrigadeMessage && (
+                <p className="mt-4 text-sm text-slate-300">
+                  {harmonyBrigadeMessage}
+                </p>
+              )}
+
+              {!isHarmonyBrigadeLoading && (
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-slate-300">
+                    {selectedHarmonyBrigadeEligibleCount}{" "}
+                    {selectedHarmonyBrigadeEligibleCount === 1
+                      ? "song"
+                      : "songs"}{" "}
+                    selected. {harmonyBrigadeAlreadyCount}{" "}
+                    {harmonyBrigadeAlreadyCount === 1 ? "song was" : "songs were"}{" "}
+                    already in your repertoire and will not be added again.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      addHarmonyBrigadeSongs(selectedHarmonyBrigadeAddInputs)
+                    }
+                    disabled={
+                      !canAddHarmonyBrigadeSongs || isAddingHarmonyBrigadeSongs
+                    }
+                    className="rounded-xl bg-cyan-300 px-5 py-3 text-sm font-bold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
+                  >
+                    {isAddingHarmonyBrigadeSongs
+                      ? "Adding..."
+                      : selectedHarmonyBrigadeEligibleCount > 0
+                        ? `Add ${selectedHarmonyBrigadeEligibleCount} ${
+                            selectedHarmonyBrigadeEligibleCount === 1
+                              ? "song"
+                              : "songs"
+                          }`
+                        : "Add selected songs"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         <h1 className="mt-4 text-4xl font-bold tracking-tight">My Repertoire</h1>
         <p className="mt-2 text-slate-300">
           Add songs you know, the parts you can sing, and how confident you are.
@@ -1220,7 +1732,7 @@ export default function RepertoireManager() {
                 More ways to build your repertoire
               </span>
               <span className="mt-1 block text-sm leading-6 text-slate-300">
-                Copy songs with another singer using a private link or code.
+                Copy songs with another singer or add Harmony Brigade songs.
               </span>
             </span>
             <span className="shrink-0 rounded-lg bg-white/10 px-3 py-2 text-sm font-bold text-cyan-100">
@@ -1231,7 +1743,7 @@ export default function RepertoireManager() {
           {isMoreWaysOpen && (
             <div
               id="more-repertoire-tools"
-              className="mt-4 grid gap-3 md:grid-cols-2"
+              className="mt-4 grid gap-3 md:grid-cols-3"
             >
               <div className="rounded-xl border border-white/10 bg-slate-950/60 p-3">
                 <h3 className="text-base font-bold text-white">
@@ -1262,6 +1774,23 @@ export default function RepertoireManager() {
                   className="mt-3 rounded-lg bg-white/10 px-3 py-2 text-sm font-bold text-cyan-100 hover:bg-white/20"
                 >
                   {repertoireShare ? "Manage link/code" : "Create link/code"}
+                </button>
+              </div>
+
+              <div className="rounded-xl border border-white/10 bg-slate-950/60 p-3">
+                <h3 className="text-base font-bold text-white">
+                  Add Harmony Brigade songs
+                </h3>
+                <p className="mt-1 text-sm leading-5 text-slate-300">
+                  Choose a Harmony Brigade year and brigade, then review and add
+                  selected songs.
+                </p>
+                <button
+                  type="button"
+                  onClick={openHarmonyBrigadeSongs}
+                  className="mt-3 rounded-lg bg-white/10 px-3 py-2 text-sm font-bold text-cyan-100 hover:bg-white/20"
+                >
+                  Choose Brigade songs
                 </button>
               </div>
 

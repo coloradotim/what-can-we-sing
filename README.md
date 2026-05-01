@@ -93,10 +93,11 @@ The Supabase project should have the current production schema applied:
   Import expands comma-separated voicing values into one row per supported
   voicing (`TTBB`, `SSAA`, `SATB`). The BHS Published Music source CSV and
   refresh process are documented in [docs/imports.md](docs/imports.md).
-- The previous Harmony Brigade song-add source has been removed because its
-  spreadsheet did not include usable year and location/event metadata for the
-  intended picker. No production database rows or migrations were created for
-  that source.
+- Harmony Brigade reference data is maintained from Ross Wilkins' read-only
+  MySQL source through controlled CSV snapshots in `data/harmony-brigade/`.
+  The app reads dedicated Supabase reference tables for the secondary
+  **Add Harmony Brigade songs** repertoire flow. Adding songs writes only to
+  the current user's `user_repertoire`.
 
 The app/database contract is documented in
 [docs/supabase-contract.md](docs/supabase-contract.md). Any PR that changes
@@ -132,6 +133,17 @@ To refresh the BHS Published Music source data and merge it into
 [docs/imports.md](docs/imports.md). The BHS transform is conservative: it uses
 Product Description as a voicing signal when needed, skips ambiguous rows, and
 splits clearly multi-voicing rows into separate catalog rows.
+
+To refresh Harmony Brigade data, export read-only upstream snapshots and then
+import them into the Supabase reference tables after migrations are applied:
+
+```bash
+HB_MYSQL_PASSWORD=... npm run harmony-brigade:export-source
+SUPABASE_SERVICE_ROLE_KEY=... npm run harmony-brigade:import
+```
+
+Use `npm run harmony-brigade:import -- --dry-run` to parse the committed CSV
+snapshots without writing to Supabase.
 
 ## Analytics
 
