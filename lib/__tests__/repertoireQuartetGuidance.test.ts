@@ -28,13 +28,14 @@ describe("repertoire quartet guidance", () => {
     expect(repertoireManager).toContain("Ready to try it with a quartet?");
     expect(repertoireManager).toContain("Start a quartet");
     expect(repertoireManager).toContain("Join a quartet");
-    expect(repertoireManager).toContain("Add another song");
   });
 
-  it("keeps returning-user actions non-instructional", () => {
-    expect(repertoireManager).toContain("Next up");
-    expect(repertoireManager).toContain("returningUserActions");
-    expect(repertoireManager).toContain("!showQuartetTeachingCard");
+  it("removes the quartet nudge entirely after dismissal", () => {
+    expect(repertoireManager).toContain("dismissQuartetTeachingCard");
+    expect(repertoireManager).toContain("dismissQuartetNudge");
+    expect(repertoireManager).not.toContain("Next up");
+    expect(repertoireManager).not.toContain("returningUserActions");
+    expect(repertoireManager).not.toContain("!showQuartetTeachingCard");
   });
 
   it("uses more helpful post-save copy for early users", () => {
