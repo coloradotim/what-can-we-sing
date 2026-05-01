@@ -13,6 +13,7 @@
     "posthog:dashboards:sync": "node scripts/posthog/sync-dashboards.mjs",
     "admin:delete-user": "node scripts/delete-user.mjs",
     "bhs-published-music:import": "node scripts/import-bhs-published-music.mjs",
+    "harmony-brigade:build-data": "node scripts/build-harmony-brigade-data.mjs",
     "song-suggestions:import": "node scripts/import-song-suggestions.mjs",
     "test": "vitest",
     "test:run": "vitest run",
