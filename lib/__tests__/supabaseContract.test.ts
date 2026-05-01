@@ -65,6 +65,13 @@ const welcomeSeenMigration = readFileSync(
   ),
   "utf8"
 );
+const quartetNudgeDismissalMigration = readFileSync(
+  join(
+    repoRoot,
+    "supabase/migrations/20260501154500_add_quartet_nudge_dismissal.sql"
+  ),
+  "utf8"
+);
 
 describe("Supabase contract guardrails", () => {
   const tables = [
@@ -117,6 +124,15 @@ describe("Supabase contract guardrails", () => {
     expect(contract).toContain("markWelcomeSeen");
     expect(welcomeSeenMigration).toContain("public.profiles");
     expect(welcomeSeenMigration).toContain("has_seen_welcome boolean");
+  });
+
+  it("documents and migrates the repertoire quartet nudge dismissal flag", () => {
+    expect(contract).toContain("has_dismissed_quartet_nudge");
+    expect(contract).toContain("dismissQuartetNudge");
+    expect(quartetNudgeDismissalMigration).toContain("public.profiles");
+    expect(quartetNudgeDismissalMigration).toContain(
+      "has_dismissed_quartet_nudge boolean"
+    );
   });
 
   it("documents the analytics privacy contract", () => {

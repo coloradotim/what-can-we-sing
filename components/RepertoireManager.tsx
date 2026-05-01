@@ -28,7 +28,11 @@ import {
   songSuggestionSubtitle,
   type SongSuggestion,
 } from "@/lib/songSuggestions";
-import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
+import {
+  dismissQuartetNudge,
+  getCurrentUser,
+  getMyProfile,
+} from "@/lib/profileStore";
 import { refreshActiveQuartetSnapshot } from "@/lib/activeQuartetSnapshot";
 import { arrangerDisplayName } from "@/lib/arrangerDisplay";
 import { hasQuartetWorkflowHistory } from "@/lib/activeQuartet";
@@ -114,6 +118,8 @@ export default function RepertoireManager() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [itemToDelete, setItemToDelete] = useState<RepertoireRow | null>(null);
   const [hasUsedQuartetWorkflow, setHasUsedQuartetWorkflow] = useState(false);
+  const [hasDismissedQuartetNudge, setHasDismissedQuartetNudge] =
+    useState(false);
 
   function completePartConfidences(
     rows: PartConfidenceFormRow[]
@@ -174,6 +180,9 @@ export default function RepertoireManager() {
           window.location.href = "/settings";
           return;
         }
+        setHasDismissedQuartetNudge(
+          Boolean(profile.has_dismissed_quartet_nudge)
+        );
 
         const data = await getMyRepertoire();
         setItems(data);
@@ -303,6 +312,16 @@ export default function RepertoireManager() {
   function selectSongSuggestionAndOpen(suggestion: SongSuggestion) {
     selectSongSuggestion(suggestion);
     setIsAddOpen(true);
+  }
+
+  async function dismissQuartetTeachingCard() {
+    setHasDismissedQuartetNudge(true);
+
+    try {
+      await dismissQuartetNudge();
+    } catch (err) {
+      console.error("Could not save quartet nudge dismissal", err);
+    }
   }
 
   function startEditing(item: RepertoireRow) {
@@ -662,7 +681,7 @@ export default function RepertoireManager() {
         ? "Add a few songs you are likely to sing. Search and filters become useful once you have more songs saved."
         : "Start typing a song title. Choose a suggestion if it matches your arrangement, or add your own title.";
   const showQuartetTeachingCard =
-    !hasUsedQuartetWorkflow && items.length > 0;
+    !hasDismissedQuartetNudge && !hasUsedQuartetWorkflow && items.length > 0;
   const quartetTeachingTitle =
     items.length <= 2
       ? "Good start - keep building or try a quartet"
@@ -674,14 +693,12 @@ export default function RepertoireManager() {
   const quartetTeachingActions =
     items.length <= 2
       ? ([
-          { label: "Add another song", kind: "add" },
           { label: "Start a quartet", href: "/session" },
           { label: "Join a quartet", href: "/join" },
         ] as const)
       : ([
           { label: "Start a quartet", href: "/session" },
           { label: "Join a quartet", href: "/join" },
-          { label: "Add another song", kind: "add" },
         ] as const);
   const returningUserActions = [
     { label: "Add another song", kind: "add" },
@@ -765,14 +782,6 @@ export default function RepertoireManager() {
                 {addSectionDescription}
               </p>
             </div>
-
-            <button
-              type="button"
-              onClick={openBlankAddModal}
-              className="w-full rounded-xl bg-white/10 px-5 py-3 font-semibold text-cyan-100 hover:bg-white/20 lg:w-auto"
-            >
-              Add song
-            </button>
           </div>
 
           <div className="relative mt-5">
@@ -845,7 +854,7 @@ export default function RepertoireManager() {
                     onClick={openAddModalWithCurrentTitle}
                     className="mt-2 w-full rounded-lg bg-cyan-300 px-3 py-2 text-left text-sm font-bold text-slate-950 hover:bg-cyan-200"
                   >
-                    Add &quot;{songTitle.trim()}&quot; as your own song
+                    Add &quot;{songTitle.trim()}&quot; manually
                   </button>
                   <p className="mt-2 text-xs leading-5 text-slate-300">
                     Choose the voicing, arranger, part, and confidence
@@ -869,34 +878,26 @@ export default function RepertoireManager() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 sm:flex-row lg:shrink-0">
-                {quartetTeachingActions.map((action, index) =>
-                  "href" in action ? (
-                    <a
-                      key={action.label}
-                      href={action.href}
-                      className={`rounded-xl px-4 py-3 text-center text-sm font-bold ${
-                        index === 0
-                          ? "bg-cyan-300 text-slate-950 hover:bg-cyan-200"
-                          : "bg-white/10 text-cyan-100 hover:bg-white/20"
-                      }`}
-                    >
-                      {action.label}
-                    </a>
-                  ) : (
-                    <button
-                      key={action.label}
-                      type="button"
-                      onClick={openBlankAddModal}
-                      className={`rounded-xl px-4 py-3 text-sm font-bold ${
-                        index === 0
-                          ? "bg-cyan-300 text-slate-950 hover:bg-cyan-200"
-                          : "bg-white/10 text-cyan-100 hover:bg-white/20"
-                      }`}
-                    >
-                      {action.label}
-                    </button>
-                  )
-                )}
+                {quartetTeachingActions.map((action, index) => (
+                  <a
+                    key={action.label}
+                    href={action.href}
+                    className={`rounded-xl px-4 py-3 text-center text-sm font-bold ${
+                      index === 0
+                        ? "bg-cyan-300 text-slate-950 hover:bg-cyan-200"
+                        : "bg-white/10 text-cyan-100 hover:bg-white/20"
+                    }`}
+                  >
+                    {action.label}
+                  </a>
+                ))}
+                <button
+                  type="button"
+                  onClick={dismissQuartetTeachingCard}
+                  className="rounded-xl bg-white/10 px-4 py-3 text-sm font-bold text-slate-300 hover:bg-white/20"
+                >
+                  Dismiss
+                </button>
               </div>
             </div>
           </section>
@@ -1423,7 +1424,7 @@ export default function RepertoireManager() {
                           onClick={openAddModalWithCurrentTitle}
                           className="mt-2 w-full rounded-lg bg-cyan-300 px-3 py-2 text-left text-sm font-bold text-slate-950 hover:bg-cyan-200"
                         >
-                          Add &quot;{songTitle.trim()}&quot; as your own song
+                          Add &quot;{songTitle.trim()}&quot; manually
                         </button>
                         <p className="mt-2 text-xs leading-5 text-slate-300">
                           Choose the voicing, arranger, part, and confidence

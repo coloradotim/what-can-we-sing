@@ -15,12 +15,12 @@ describe("repertoire song suggestion UI", () => {
     expect(repertoireManager).toContain("Song suggestions are optional");
     expect(repertoireManager).toContain("Don&apos;t see your version?");
     expect(repertoireManager).toContain(
-      "Add &quot;{songTitle.trim()}&quot; as your own song"
+      'Add &quot;{songTitle.trim()}&quot; manually'
     );
     expect(repertoireManager).toContain(
       "Choose the voicing, arranger, part, and confidence"
     );
-    expect(repertoireManager).not.toContain("Add manually");
+    expect(repertoireManager).not.toContain("as your own song");
     expect(repertoireManager).toContain("max-h-80 overflow-y-auto");
     expect(repertoireManager).toContain("setTimeout(async () =>");
     expect(repertoireManager).toContain("}, 250)");
@@ -46,5 +46,14 @@ describe("repertoire song suggestion UI", () => {
     expect(repertoireManager).toContain(
       "Next: choose the part you sing and your confidence."
     );
+  });
+
+  it("keeps the quartet nudge focused and dismissible", () => {
+    expect(repertoireManager).toContain("dismissQuartetTeachingCard");
+    expect(repertoireManager).toContain("dismissQuartetNudge");
+    expect(repertoireManager).toContain("Dismiss");
+    expect(repertoireManager).toContain("Start a quartet");
+    expect(repertoireManager).toContain("Join a quartet");
+    expect(repertoireManager).toContain("hasDismissedQuartetNudge");
   });
 });
