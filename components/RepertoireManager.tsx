@@ -193,7 +193,7 @@ export default function RepertoireManager() {
   }, [isAddOpen]);
 
   useEffect(() => {
-    if (!isAddOpen || !songSuggestionsOpen || songTitle.trim().length < 2) {
+    if (!songSuggestionsOpen || songTitle.trim().length < 2) {
       setSongSuggestions([]);
       setSongSuggestionsLoading(false);
       return;
@@ -223,7 +223,7 @@ export default function RepertoireManager() {
       cancelled = true;
       window.clearTimeout(timeout);
     };
-  }, [isAddOpen, songSuggestionsOpen, songTitle]);
+  }, [songSuggestionsOpen, songTitle]);
 
   function resetAddForm() {
     setSongTitle("");
@@ -237,7 +237,20 @@ export default function RepertoireManager() {
     setShowArranger(false);
   }
 
-  function openAddModal() {
+  function openBlankAddModal() {
+    resetAddForm();
+    setMessage("");
+    setIsAddOpen(true);
+  }
+
+  function openAddModalWithCurrentTitle() {
+    if (!songTitle.trim()) {
+      openBlankAddModal();
+      return;
+    }
+
+    setSongTitle(songTitle.trim());
+    setSongSuggestionsOpen(false);
     setMessage("");
     setIsAddOpen(true);
   }
@@ -256,6 +269,11 @@ export default function RepertoireManager() {
     setShowArranger(Boolean(suggestion.arrangerName));
     setPartRows([emptyPartRow()]);
     setMessage("");
+  }
+
+  function selectSongSuggestionAndOpen(suggestion: SongSuggestion) {
+    selectSongSuggestion(suggestion);
+    setIsAddOpen(true);
   }
 
   function startEditing(item: RepertoireRow) {
@@ -589,6 +607,20 @@ export default function RepertoireManager() {
   const partFilterOptions = voicingFilter
     ? partsByVoicing[voicingFilter]
     : Array.from(new Set(voicings.flatMap((v) => partsByVoicing[v])));
+  const hasSavedSongs = items.length > 0;
+  const hasSmallRepertoire = items.length > 0 && items.length <= 3;
+  const addSectionTitle =
+    items.length === 0
+      ? "Add your first song"
+      : hasSmallRepertoire
+        ? "Keep building your repertoire"
+        : "Add a song";
+  const addSectionDescription =
+    items.length === 0
+      ? "Start by adding songs you know. Suggestions will appear as you type, and you can always enter your own title if the song is not listed."
+      : hasSmallRepertoire
+        ? "Add a few songs you are likely to sing. Search and filters become useful once you have more songs saved."
+        : "Start typing a song title, choose a suggestion if one fits, or add your own title manually.";
   const filteredEmptyDescription = [
     voicingFilter,
     partFilter
@@ -647,51 +679,110 @@ export default function RepertoireManager() {
 
         {message && <p className="mt-4 text-sm text-slate-300">{message}</p>}
 
-        {items.length === 0 ? (
-          <section className="mt-8 rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-6 shadow-2xl shadow-cyan-950/30 sm:p-8">
-            <p className="text-sm font-semibold uppercase tracking-normal text-cyan-200">
-              First song
-            </p>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight text-white">
-              Add your first song
-            </h2>
-            <p className="mt-3 max-w-3xl text-base leading-7 text-slate-200">
-              Start by adding songs you know. When you add a song, you can
-              choose the voicing, the part or parts you can sing, and how
-              confident you feel.
-            </p>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
-              Song suggestions appear while adding a song. You can still enter
-              your own song title if no suggestion appears.
-            </p>
-            <button
-              type="button"
-              onClick={openAddModal}
-              className="mt-6 w-full rounded-xl bg-cyan-300 px-6 py-4 text-base font-bold text-slate-950 shadow-lg shadow-cyan-950/30 hover:bg-cyan-200 sm:w-auto"
-            >
-              Add Song
-            </button>
-          </section>
-        ) : (
-          <section className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold">Add a song</h2>
-              <p className="mt-1 text-sm text-slate-400">
-                Save a song, voicing, confidence, and the parts you know.
+        <section
+          className={`mt-8 rounded-2xl border p-5 shadow-2xl shadow-cyan-950/20 sm:p-6 ${
+            hasSavedSongs
+              ? "border-white/10 bg-white/5"
+              : "border-cyan-300/30 bg-cyan-300/10"
+          }`}
+        >
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-sm font-semibold uppercase tracking-normal text-cyan-200">
+                Add songs here
+              </p>
+              <h2 className="mt-2 text-3xl font-bold tracking-tight text-white">
+                {addSectionTitle}
+              </h2>
+              <p className="mt-2 text-base leading-7 text-slate-200">
+                {addSectionDescription}
               </p>
             </div>
 
             <button
               type="button"
-              onClick={openAddModal}
-              className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200"
+              onClick={openBlankAddModal}
+              className="w-full rounded-xl bg-white/10 px-5 py-3 font-semibold text-cyan-100 hover:bg-white/20 lg:w-auto"
             >
-              Add Song
+              Add manually
             </button>
-          </section>
-        )}
+          </div>
 
-        {items.length > 0 && (
+          <div className="relative mt-5">
+            <label className="block">
+              <span className="text-sm font-medium text-slate-200">
+                Add a song to your repertoire
+              </span>
+              <div className="mt-1 flex flex-col gap-3 sm:flex-row">
+                <input
+                  value={songTitle}
+                  onChange={(e) => {
+                    setSongTitle(e.target.value);
+                    setSongSuggestionsOpen(true);
+                  }}
+                  onFocus={() => setSongSuggestionsOpen(true)}
+                  placeholder="Start typing a song title..."
+                  autoComplete="off"
+                  className="min-h-12 w-full rounded-xl border border-cyan-300/30 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                />
+                <button
+                  type="button"
+                  onClick={openAddModalWithCurrentTitle}
+                  disabled={!songTitle.trim()}
+                  className="min-h-12 rounded-xl bg-cyan-300 px-5 py-3 font-bold text-slate-950 hover:bg-cyan-200 disabled:opacity-40 sm:w-40"
+                >
+                  Add
+                </button>
+              </div>
+            </label>
+
+            {songSuggestionsOpen && !isAddOpen && songTitle.trim().length >= 2 && (
+              <div className="mt-2 overflow-hidden rounded-xl border border-cyan-300/20 bg-slate-900 shadow-xl">
+                <p className="px-3 py-2 text-xs font-semibold uppercase tracking-normal text-slate-400">
+                  Song suggestions
+                </p>
+                {songSuggestionsLoading ? (
+                  <p className="px-3 py-3 text-sm text-slate-300">
+                    Searching suggestions...
+                  </p>
+                ) : songSuggestions.length > 0 ? (
+                  <div className="divide-y divide-white/10">
+                    {songSuggestions.map((suggestion) => (
+                      <button
+                        key={`page:${suggestion.songTitle}:${suggestion.voicing}:${suggestion.arrangerName}`}
+                        type="button"
+                        onClick={() => selectSongSuggestionAndOpen(suggestion)}
+                        className="w-full px-3 py-3 text-left hover:bg-cyan-300/10 focus:bg-cyan-300/10 focus:outline-none"
+                      >
+                        <span className="block font-semibold text-white">
+                          {suggestion.songTitle}
+                        </span>
+                        <span className="mt-1 block text-xs text-slate-300">
+                          {songSuggestionSubtitle(suggestion)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-3 py-3">
+                    <p className="text-sm text-slate-300">
+                      No suggestion found.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={openAddModalWithCurrentTitle}
+                      className="mt-2 rounded-lg bg-cyan-300 px-3 py-2 text-sm font-bold text-slate-950 hover:bg-cyan-200"
+                    >
+                      Add &quot;{songTitle.trim()}&quot; manually
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+
+        {hasSavedSongs && (
           <section className="mt-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
@@ -703,7 +794,14 @@ export default function RepertoireManager() {
                 </p>
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(12rem,18rem)_11rem_11rem_11rem]">
+              <div
+                className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(12rem,18rem)_11rem_11rem_11rem] ${
+                  hasSmallRepertoire ? "opacity-75" : ""
+                }`}
+              >
+                <p className="text-sm font-semibold text-slate-300 sm:col-span-2 lg:col-span-4">
+                  Filter saved songs
+                </p>
                 <label className="block">
                   <span className="text-sm font-medium text-slate-300">
                     Search my repertoire

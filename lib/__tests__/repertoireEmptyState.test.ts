@@ -8,19 +8,27 @@ const repertoireManager = readFileSync(
 );
 
 describe("repertoire empty state", () => {
-  it("makes Add Song the primary first-run action", () => {
+  it("makes the song-title input the primary first-run action", () => {
     expect(repertoireManager).toContain("Add your first song");
-    expect(repertoireManager).toContain(
-      "Song suggestions appear while adding a song"
-    );
-    expect(repertoireManager).toContain("You can still enter");
-    expect(repertoireManager).toContain("Add Song");
+    expect(repertoireManager).toContain("Add songs here");
+    expect(repertoireManager).toContain("Add a song to your repertoire");
+    expect(repertoireManager).toContain("Start typing a song title...");
+    expect(repertoireManager).toContain("Add manually");
   });
 
-  it("does not show active search and filter controls until songs exist", () => {
-    expect(repertoireManager).toContain("items.length > 0 &&");
+  it("uses the primary typeahead to open the add flow from suggestions or manual text", () => {
+    expect(repertoireManager).toContain("searchRepertoireSongSuggestions");
+    expect(repertoireManager).toContain("selectSongSuggestionAndOpen");
+    expect(repertoireManager).toContain("openAddModalWithCurrentTitle");
+    expect(repertoireManager).toContain('Add &quot;{songTitle.trim()}&quot; manually');
+  });
+
+  it("keeps saved-song filters separate from adding songs", () => {
+    expect(repertoireManager).toContain("hasSavedSongs &&");
+    expect(repertoireManager).toContain("Filter saved songs");
     expect(repertoireManager).toContain("Search my repertoire");
     expect(repertoireManager).toContain("Filter songs you've already added");
+    expect(repertoireManager).toContain('hasSmallRepertoire ? "opacity-75"');
     expect(repertoireManager).not.toContain("Search by title");
   });
 });
