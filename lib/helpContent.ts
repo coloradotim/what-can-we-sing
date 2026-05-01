@@ -65,7 +65,7 @@ export const helpGuideSections: HelpGuideSection[] = [
         title: "Song Title Autocomplete",
         body: [
           "Start typing to see suggestions. Suggestions are optional — you can always enter your own song title if the song is not listed or if your title is different.",
-          "Selecting a suggestion can prefill title, voicing, and arranger. You can still edit the fields before saving.",
+          "Selecting a suggestion can prefill title, voicing, and arranger. If one suggestion covers multiple voicings, choose the voicing you know before saving.",
         ],
       },
       {

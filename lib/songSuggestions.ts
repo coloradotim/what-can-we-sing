@@ -9,8 +9,8 @@ export type SongSuggestionSource = {
 
 export type SongSuggestion = {
   songTitle: string;
-  voicing: Voicing;
   arrangerName: string;
+  voicings: Voicing[];
 };
 
 export function songSuggestionArrangerLabel(suggestion: SongSuggestion) {
@@ -18,7 +18,9 @@ export function songSuggestionArrangerLabel(suggestion: SongSuggestion) {
 }
 
 export function songSuggestionSubtitle(suggestion: SongSuggestion) {
-  return `${suggestion.voicing} · ${songSuggestionArrangerLabel(suggestion)}`;
+  return `${songSuggestionArrangerLabel(suggestion)} · ${suggestion.voicings.join(
+    ", "
+  )}`;
 }
 
 const validVoicings: Voicing[] = ["TTBB", "SATB", "SSAA"];
@@ -31,12 +33,19 @@ function normalizeSearchText(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
-function suggestionKey(suggestion: SongSuggestion) {
+function suggestionKey(
+  suggestion: Pick<SongSuggestion, "songTitle" | "arrangerName">
+) {
   return [
     normalizeSearchText(suggestion.songTitle),
-    suggestion.voicing,
     normalizeSearchText(suggestion.arrangerName),
   ].join(":");
+}
+
+function preferredTitle(current: string, next: string) {
+  if (next.length > current.length) return next;
+  if (next.length < current.length) return current;
+  return current.localeCompare(next) <= 0 ? current : next;
 }
 
 export function getSongSuggestions(
@@ -71,18 +80,47 @@ export function getSongSuggestions(
       continue;
     }
 
-    suggestions.set(suggestionKey(suggestion), suggestion);
+    const key = suggestionKey(suggestion);
+    const existing = suggestions.get(key);
+
+    if (existing) {
+      existing.songTitle = preferredTitle(
+        existing.songTitle,
+        suggestion.songTitle
+      );
+      if (!existing.voicings.includes(suggestion.voicing)) {
+        existing.voicings.push(suggestion.voicing);
+      }
+      continue;
+    }
+
+    suggestions.set(key, {
+      songTitle: suggestion.songTitle,
+      arrangerName: suggestion.arrangerName,
+      voicings: [suggestion.voicing],
+    });
   }
 
   return Array.from(suggestions.values())
+    .map((suggestion) => ({
+      ...suggestion,
+      voicings: validVoicings.filter((voicing) =>
+        suggestion.voicings.includes(voicing)
+      ),
+    }))
     .sort((a, b) => {
       const titleComparison = a.songTitle.localeCompare(b.songTitle);
       if (titleComparison !== 0) return titleComparison;
 
-      const voicingComparison = a.voicing.localeCompare(b.voicing);
+      const arrangerComparison = a.arrangerName.localeCompare(b.arrangerName);
+      if (arrangerComparison !== 0) return arrangerComparison;
+
+      const voicingComparison = a.voicings
+        .join(",")
+        .localeCompare(b.voicings.join(","));
       if (voicingComparison !== 0) return voicingComparison;
 
-      return a.arrangerName.localeCompare(b.arrangerName);
+      return 0;
     })
     .slice(0, limit);
 }
