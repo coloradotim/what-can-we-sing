@@ -73,9 +73,10 @@ The Supabase project should have the current production schema applied:
 - `profiles` stores each user's required `display_name`.
 - `user_repertoire` stores each user's songs, voicing, part/confidence pairs,
   optional arranger name, private notes, and personal sung-count metadata.
-- `repertoire_shares` stores private, revocable, six-character share codes for
-  copying song identity fields. Shared repertoire links expose song title,
-  voicing, and arranger only; recipients choose their own part and confidence.
+- `repertoire_shares` stores private, revocable, six-character copy codes for
+  copying song identity fields from another singer. Copy links expose song
+  title, voicing, and arranger only; recipients choose their own part and
+  confidence.
 - `sessions` stores quartet codes and `last_activity_at` for 24-hour inactivity
   expiration.
 - `session_participants` stores participant repertoire snapshots and is keyed by

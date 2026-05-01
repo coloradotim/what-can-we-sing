@@ -93,7 +93,7 @@ export function SharedRepertoireManager({ code }: { code: string }) {
         );
       } catch (err) {
         console.error(err);
-        setMessage("Could not load shared repertoire. Check the link and try again.");
+        setMessage("Could not load songs to copy. Check the link and try again.");
       } finally {
         setLoading(false);
       }
@@ -220,7 +220,7 @@ export function SharedRepertoireManager({ code }: { code: string }) {
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-        Loading shared repertoire...
+        Loading songs to copy...
       </main>
     );
   }
@@ -232,9 +232,9 @@ export function SharedRepertoireManager({ code }: { code: string }) {
 
         {!share ? (
           <section className="mt-8 rounded-2xl border border-rose-300/20 bg-rose-400/10 p-6">
-            <h1 className="text-3xl font-bold">Shared repertoire unavailable</h1>
+            <h1 className="text-3xl font-bold">Copy link unavailable</h1>
             <p className="mt-3 text-slate-200">
-              This repertoire link may have been revoked, expired, or typed
+              This copy link may have been revoked, expired, or typed
               incorrectly.
             </p>
           </section>
@@ -242,10 +242,10 @@ export function SharedRepertoireManager({ code }: { code: string }) {
           <>
             <section className="mt-8 rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-6">
               <p className="text-sm font-semibold uppercase tracking-normal text-cyan-200">
-                Shared repertoire
+                Copy songs from another singer
               </p>
               <h1 className="mt-3 text-4xl font-bold tracking-tight">
-                {share.ownerDisplayName} shared repertoire with you
+                {share.ownerDisplayName} shared songs with you
               </h1>
               <p className="mt-3 max-w-3xl text-slate-200">
                 {isSignedIn

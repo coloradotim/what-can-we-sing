@@ -5,7 +5,9 @@ process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon-key";
 
 const {
   normalizeSharedSongText,
+  repertoireCopyRequestMessage,
   resolveSharedSongCopyability,
+  sharedRepertoirePathFromInput,
   sharedSongExactKey,
 } = await import("@/lib/repertoireSharing");
 
@@ -88,5 +90,32 @@ describe("repertoire sharing", () => {
     );
 
     expect(resolved[0].duplicateStatus).toBe("eligible");
+  });
+
+  it("opens shared repertoire links from pasted codes or URLs", () => {
+    expect(sharedRepertoirePathFromInput("abc123")).toBe(
+      "/shared-repertoire/ABC123"
+    );
+    expect(
+      sharedRepertoirePathFromInput(
+        "https://www.whatcanwesing.com/shared-repertoire/def456"
+      )
+    ).toBe("/shared-repertoire/DEF456");
+    expect(
+      sharedRepertoirePathFromInput(
+        "https://www.whatcanwesing.com/shared-repertoire/GHI789?from=text"
+      )
+    ).toBe("/shared-repertoire/GHI789");
+    expect(sharedRepertoirePathFromInput("not a code")).toBeNull();
+  });
+
+  it("uses a clear remote request message for copy links and codes", () => {
+    expect(repertoireCopyRequestMessage).toContain(
+      "Let another singer copy songs from my repertoire"
+    );
+    expect(repertoireCopyRequestMessage).toContain("link or code");
+    expect(repertoireCopyRequestMessage).toContain(
+      "copy a few songs into my repertoire"
+    );
   });
 });
