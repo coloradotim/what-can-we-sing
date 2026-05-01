@@ -54,6 +54,10 @@ describe("allowsMissingDisplayName", () => {
     expect(allowsMissingDisplayName("/settings")).toBe(true);
   });
 
+  it("allows welcome so new users can see quick start before display name setup", () => {
+    expect(allowsMissingDisplayName("/welcome")).toBe(true);
+  });
+
   it("does not allow protected app routes", () => {
     expect(allowsMissingDisplayName("/")).toBe(false);
     expect(allowsMissingDisplayName("/session")).toBe(false);

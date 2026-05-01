@@ -13,6 +13,8 @@ export function isPublicAuthPath(pathname: string): boolean {
 export function allowsMissingDisplayName(pathname: string): boolean {
   return (
     isPublicAuthPath(pathname) ||
+    pathname === "/welcome" ||
+    pathname.startsWith("/welcome/") ||
     pathname === "/settings" ||
     pathname.startsWith("/settings/")
   );
