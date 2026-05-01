@@ -1,5 +1,6 @@
 "use client";
 
+import QRCode from "qrcode";
 import { useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/AppNav";
 import { QuartetActionConfirmation } from "@/components/QuartetActionConfirmation";
@@ -24,6 +25,12 @@ import {
   updateRepertoireItem,
   type RepertoireRow,
 } from "@/lib/repertoireStore";
+import {
+  createRepertoireShare,
+  getMyActiveRepertoireShare,
+  revokeRepertoireShare,
+  type RepertoireShare,
+} from "@/lib/repertoireSharing";
 import {
   songSuggestionSubtitle,
   type SongSuggestion,
@@ -120,6 +127,12 @@ export default function RepertoireManager() {
   const [hasUsedQuartetWorkflow, setHasUsedQuartetWorkflow] = useState(false);
   const [hasDismissedQuartetNudge, setHasDismissedQuartetNudge] =
     useState(false);
+  const [repertoireShare, setRepertoireShare] =
+    useState<RepertoireShare | null>(null);
+  const [isCreatingShare, setIsCreatingShare] = useState(false);
+  const [isRevokingShare, setIsRevokingShare] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
+  const [shareQrUrl, setShareQrUrl] = useState("");
 
   function completePartConfidences(
     rows: PartConfidenceFormRow[]
@@ -186,6 +199,7 @@ export default function RepertoireManager() {
 
         const data = await getMyRepertoire();
         setItems(data);
+        setRepertoireShare(await getMyActiveRepertoireShare());
       } catch (err) {
         console.error(err);
         setLoadError(
@@ -212,6 +226,32 @@ export default function RepertoireManager() {
   useEffect(() => {
     setHasUsedQuartetWorkflow(hasQuartetWorkflowHistory());
   }, []);
+
+  useEffect(() => {
+    if (!repertoireShare || typeof window === "undefined") {
+      setShareQrUrl("");
+      return;
+    }
+
+    const shareUrl = `${window.location.origin}/shared-repertoire/${repertoireShare.code}`;
+    let cancelled = false;
+
+    QRCode.toDataURL(shareUrl)
+      .then((qr) => {
+        if (!cancelled) setShareQrUrl(qr);
+      })
+      .catch((err) => {
+        console.error(err);
+        if (!cancelled) {
+          setShareQrUrl("");
+          setShareMessage("QR code unavailable. Share the code or link instead.");
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [repertoireShare]);
 
   useEffect(() => {
     if (addSongSource || !songSuggestionsOpen || songTitle.trim().length < 2) {
@@ -637,6 +677,52 @@ export default function RepertoireManager() {
     }
   }
 
+  async function createShareLink() {
+    if (isCreatingShare) return;
+
+    try {
+      setIsCreatingShare(true);
+      setShareMessage("");
+      const share = await createRepertoireShare();
+      setRepertoireShare(share);
+      setShareMessage("Repertoire share link created.");
+    } catch (err) {
+      console.error(err);
+      setShareMessage("Could not create share link. Please try again.");
+    } finally {
+      setIsCreatingShare(false);
+    }
+  }
+
+  async function copyShareLink() {
+    if (!shareLink) return;
+
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setShareMessage("Share link copied.");
+    } catch (err) {
+      console.error(err);
+      setShareMessage("Could not copy automatically. Select and copy the link.");
+    }
+  }
+
+  async function revokeShareLink() {
+    if (!repertoireShare || isRevokingShare) return;
+
+    try {
+      setIsRevokingShare(true);
+      setShareMessage("");
+      await revokeRepertoireShare(repertoireShare.id);
+      setRepertoireShare(null);
+      setShareMessage("Repertoire share link revoked.");
+    } catch (err) {
+      console.error(err);
+      setShareMessage("Could not revoke share link. Please try again.");
+    } finally {
+      setIsRevokingShare(false);
+    }
+  }
+
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
@@ -688,6 +774,10 @@ export default function RepertoireManager() {
         : "Start typing a song title. Choose a suggestion if it matches your arrangement, or add your own title.";
   const showQuartetTeachingCard =
     !hasDismissedQuartetNudge && !hasUsedQuartetWorkflow && items.length > 0;
+  const shareLink =
+    repertoireShare && typeof window !== "undefined"
+      ? `${window.location.origin}/shared-repertoire/${repertoireShare.code}`
+      : "";
   const quartetTeachingTitle =
     items.length <= 2
       ? "Good start - keep building or try a quartet"
@@ -866,6 +956,91 @@ export default function RepertoireManager() {
             )}
           </div>
         </section>
+
+        {hasSavedSongs && (
+          <section className="mt-5 rounded-2xl border border-cyan-300/20 bg-slate-900/70 p-5 shadow-lg sm:p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-3xl">
+                <p className="text-sm font-semibold uppercase tracking-normal text-cyan-200">
+                  Share repertoire
+                </p>
+                <h2 className="mt-2 text-2xl font-bold tracking-tight text-white">
+                  Help another singer copy songs
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  Let another singer view your song titles, voicings, and
+                  arrangers so they can copy songs into their own repertoire.
+                  Notes, parts, confidence, and sung history are not shared.
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2 lg:min-w-72 lg:shrink-0">
+                {repertoireShare ? (
+                  <>
+                    <p className="text-sm font-semibold text-cyan-100">
+                      Your repertoire share link is active
+                    </p>
+                    <div className="rounded-xl border border-cyan-300/20 bg-cyan-300/10 p-3 text-center">
+                      <p className="text-xs font-semibold uppercase tracking-normal text-cyan-200">
+                        Share code
+                      </p>
+                      <p className="mt-1 text-3xl font-black tracking-[0.2em] text-white">
+                        {repertoireShare.code}
+                      </p>
+                      {shareQrUrl && (
+                        <img
+                          src={shareQrUrl}
+                          alt="QR code for repertoire share link"
+                          className="mx-auto mt-3 h-36 w-36 rounded-xl bg-white p-2"
+                        />
+                      )}
+                    </div>
+                    <p className="text-xs leading-5 text-slate-400">
+                      Anyone with this link can view song titles, voicings, and
+                      arrangers from your repertoire. They cannot edit your
+                      songs.
+                    </p>
+                    <input
+                      value={shareLink}
+                      readOnly
+                      className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-slate-200"
+                      aria-label="Repertoire share link"
+                    />
+                    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={copyShareLink}
+                        className="rounded-xl bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-cyan-200"
+                      >
+                        Copy link
+                      </button>
+                      <button
+                        type="button"
+                        onClick={revokeShareLink}
+                        disabled={isRevokingShare}
+                        className="rounded-xl bg-white/10 px-4 py-3 text-sm font-bold text-slate-200 hover:bg-white/20 disabled:opacity-40"
+                      >
+                        {isRevokingShare ? "Revoking..." : "Revoke link"}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={createShareLink}
+                    disabled={isCreatingShare}
+                    className="rounded-xl bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
+                  >
+                    {isCreatingShare ? "Creating..." : "Create share link"}
+                  </button>
+                )}
+                {shareMessage && (
+                  <p className="text-sm text-slate-300">{shareMessage}</p>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         {showQuartetTeachingCard && (
           <section className="mt-5 rounded-2xl border border-cyan-300/20 bg-slate-900/80 p-5 shadow-lg sm:p-6">
