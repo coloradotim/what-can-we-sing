@@ -647,169 +647,189 @@ export default function RepertoireManager() {
 
         {message && <p className="mt-4 text-sm text-slate-300">{message}</p>}
 
-        <section className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold">Add a song</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              Save a song, voicing, confidence, and the parts you know.
+        {items.length === 0 ? (
+          <section className="mt-8 rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-6 shadow-2xl shadow-cyan-950/30 sm:p-8">
+            <p className="text-sm font-semibold uppercase tracking-normal text-cyan-200">
+              First song
             </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={openAddModal}
-            className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200"
-          >
-            Add song
-          </button>
-        </section>
-
-        <section className="mt-8">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-white">
+              Add your first song
+            </h2>
+            <p className="mt-3 max-w-3xl text-base leading-7 text-slate-200">
+              Start by adding songs you know. When you add a song, you can
+              choose the voicing, the part or parts you can sing, and how
+              confident you feel.
+            </p>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">
+              Song suggestions appear while adding a song. You can still enter
+              your own song title if no suggestion appears.
+            </p>
+            <button
+              type="button"
+              onClick={openAddModal}
+              className="mt-6 w-full rounded-xl bg-cyan-300 px-6 py-4 text-base font-bold text-slate-950 shadow-lg shadow-cyan-950/30 hover:bg-cyan-200 sm:w-auto"
+            >
+              Add Song
+            </button>
+          </section>
+        ) : (
+          <section className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-2xl font-semibold">Songs I know</h2>
+              <h2 className="text-2xl font-semibold">Add a song</h2>
               <p className="mt-1 text-sm text-slate-400">
-                {visibleItems.length === items.length
-                  ? `${items.length} ${items.length === 1 ? "song" : "songs"} saved`
-                  : `${visibleItems.length} of ${items.length} songs shown`}
+                Save a song, voicing, confidence, and the parts you know.
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(12rem,18rem)_11rem_11rem_11rem]">
-              <label className="block">
-                <span className="text-sm font-medium text-slate-300">
-                  Search by title
-                </span>
-                <input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-                />
-              </label>
-              <label className="block">
-                <span className="text-sm font-medium text-slate-300">
-                  Sort
-                </span>
-                <select
-                  value={sortOption}
-                  onChange={(e) =>
-                    setSortOption(e.target.value as RepertoireSortOption)
-                  }
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-                >
-                  <option value="title_asc">Title A-Z</option>
-                  <option value="created_desc">Added newest</option>
-                  <option value="created_asc">Added oldest</option>
-                  <option value="last_sung_desc">Sung recently</option>
-                  <option value="last_sung_asc">Least recently sung</option>
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-sm font-medium text-slate-300">
-                  Voicing
-                </span>
-                <select
-                  value={voicingFilter}
-                  onChange={(e) =>
-                    updateVoicingFilter(e.target.value as Voicing | "")
-                  }
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-                >
-                  <option value="">All voicings</option>
-                  {voicings.map((v) => (
-                    <option key={v} value={v}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                <span className="text-sm font-medium text-slate-300">
-                  Part
-                </span>
-                <select
-                  value={partFilter}
-                  onChange={(e) => setPartFilter(e.target.value as Part | "")}
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-                >
-                  <option value="">All parts</option>
-                  {partFilterOptions.map((part) => (
-                    <option key={part} value={part}>
-                      {voicingFilter ? partButtonLabel(voicingFilter, part) : part}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          </div>
+            <button
+              type="button"
+              onClick={openAddModal}
+              className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200"
+            >
+              Add Song
+            </button>
+          </section>
+        )}
 
-          <div className="mt-3 flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between">
-            <label className="flex items-center gap-3 text-sm font-semibold text-slate-200">
-              <input
-                type="checkbox"
-                checked={neverSungOnly}
-                onChange={(e) => setNeverSungOnly(e.target.checked)}
-                className="h-4 w-4 rounded border-white/20 bg-slate-900 text-cyan-300"
-              />
-              Never sung
-            </label>
-
-            {hasActiveFilters ? (
-              <div className="flex flex-wrap items-center gap-2">
-                {searchQuery.trim() && (
-                  <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
-                    Title: {searchQuery.trim()}
-                  </span>
-                )}
-                {voicingFilter && (
-                  <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
-                    {voicingFilter}
-                  </span>
-                )}
-                {partFilter && (
-                  <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
-                    {voicingFilter
-                      ? partButtonLabel(voicingFilter, partFilter)
-                      : partFilter}
-                  </span>
-                )}
-                {neverSungOnly && (
-                  <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
-                    Never sung
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={clearRepertoireFilters}
-                  className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-200 hover:bg-slate-700"
-                >
-                  Clear filters
-                </button>
-              </div>
-            ) : (
-              <p className="text-sm text-slate-400">No filters active</p>
-            )}
-          </div>
-
-          <div className="mt-4 space-y-2">
-            {items.length === 0 && (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-slate-300">
-                <p className="font-semibold text-white">No songs yet.</p>
-                <p className="mt-1">
-                  Add a song with the part or parts you know. Your
-                  repertoire is what powers quartet matches.
+        {items.length > 0 && (
+          <section className="mt-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold">Songs I know</h2>
+                <p className="mt-1 text-sm text-slate-400">
+                  {visibleItems.length === items.length
+                    ? `${items.length} ${items.length === 1 ? "song" : "songs"} saved`
+                    : `${visibleItems.length} of ${items.length} songs shown`}
                 </p>
               </div>
-            )}
 
-            {items.length > 0 && visibleItems.length === 0 && (
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-                {filteredEmptyDescription
-                  ? `No ${filteredEmptyDescription} songs match these filters.`
-                  : "No songs match these filters."}
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(12rem,18rem)_11rem_11rem_11rem]">
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-300">
+                    Search my repertoire
+                  </span>
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Filter songs you've already added"
+                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-300">
+                    Sort
+                  </span>
+                  <select
+                    value={sortOption}
+                    onChange={(e) =>
+                      setSortOption(e.target.value as RepertoireSortOption)
+                    }
+                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                  >
+                    <option value="title_asc">Title A-Z</option>
+                    <option value="created_desc">Added newest</option>
+                    <option value="created_asc">Added oldest</option>
+                    <option value="last_sung_desc">Sung recently</option>
+                    <option value="last_sung_asc">Least recently sung</option>
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-300">
+                    Voicing
+                  </span>
+                  <select
+                    value={voicingFilter}
+                    onChange={(e) =>
+                      updateVoicingFilter(e.target.value as Voicing | "")
+                    }
+                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                  >
+                    <option value="">All voicings</option>
+                    {voicings.map((v) => (
+                      <option key={v} value={v}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-300">
+                    Part
+                  </span>
+                  <select
+                    value={partFilter}
+                    onChange={(e) => setPartFilter(e.target.value as Part | "")}
+                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                  >
+                    <option value="">All parts</option>
+                    {partFilterOptions.map((part) => (
+                      <option key={part} value={part}>
+                        {voicingFilter
+                          ? partButtonLabel(voicingFilter, part)
+                          : part}
+                      </option>
+                    ))}
+                  </select>
+                </label>
               </div>
-            )}
+            </div>
 
+            <div className="mt-3 flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between">
+              <label className="flex items-center gap-3 text-sm font-semibold text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={neverSungOnly}
+                  onChange={(e) => setNeverSungOnly(e.target.checked)}
+                  className="h-4 w-4 rounded border-white/20 bg-slate-900 text-cyan-300"
+                />
+                Never sung
+              </label>
+
+              {hasActiveFilters ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {searchQuery.trim() && (
+                    <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
+                      Title: {searchQuery.trim()}
+                    </span>
+                  )}
+                  {voicingFilter && (
+                    <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
+                      {voicingFilter}
+                    </span>
+                  )}
+                  {partFilter && (
+                    <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
+                      {voicingFilter
+                        ? partButtonLabel(voicingFilter, partFilter)
+                        : partFilter}
+                    </span>
+                  )}
+                  {neverSungOnly && (
+                    <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
+                      Never sung
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={clearRepertoireFilters}
+                    className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-200 hover:bg-slate-700"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400">No filters active</p>
+              )}
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {visibleItems.length === 0 && (
+                <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+                  {filteredEmptyDescription
+                    ? `No ${filteredEmptyDescription} songs match these filters.`
+                    : "No songs match these filters."}
+                </div>
+              )}
             {visibleItems.map((item) => (
               <div
                 key={item.id}
@@ -1054,6 +1074,7 @@ export default function RepertoireManager() {
             ))}
           </div>
         </section>
+        )}
 
         {isAddOpen && (
           <div
