@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { loadSongSourcesEnv, requiredEnv } from "./song-sources/env.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -87,12 +88,6 @@ export function parseSongSuggestionCatalog(contents) {
   });
 }
 
-function requiredEnv(name) {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing ${name}`);
-  return value;
-}
-
 async function replaceCatalogRows(supabase, rows) {
   const { error: deleteError } = await supabase
     .from("song_suggestion_catalog")
@@ -114,6 +109,7 @@ export async function importSongSuggestionCatalog({
   catalogPath = defaultCatalogPath,
   dryRun = false,
 } = {}) {
+  await loadSongSourcesEnv();
   const contents = await readFile(catalogPath, "utf8");
   const rows = parseSongSuggestionCatalog(contents);
 
@@ -121,7 +117,10 @@ export async function importSongSuggestionCatalog({
 
   const supabaseUrl =
     process.env.SUPABASE_URL || requiredEnv("NEXT_PUBLIC_SUPABASE_URL");
-  const serviceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
+  const serviceRoleKey = requiredEnv(
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "Add it to .env.song-sources.local for local imports."
+  );
   const supabase = createClient(supabaseUrl, serviceRoleKey, {
     auth: {
       persistSession: false,

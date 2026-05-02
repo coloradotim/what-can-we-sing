@@ -70,7 +70,7 @@ async function scrapePage(page, pageNumber, { debug }) {
   return text;
 }
 
-async function main() {
+export async function main() {
   const args = new Set(process.argv.slice(2));
   if (args.has("--help") || args.has("-h")) {
     console.log(`Usage: node scripts/scrape-barbershoptracks-suggestions.mjs [options]

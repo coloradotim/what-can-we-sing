@@ -24,11 +24,14 @@ text, expands comma-separated supported voicings, deduplicates by
 
 ```bash
 npm run song-suggestions:import -- --dry-run
-SUPABASE_SERVICE_ROLE_KEY=... npm run song-suggestions:import
+npm run song-sources:import:supabase
 ```
 
 Blank arranger and literal `Unknown` are intentionally distinct. Do not rewrite
 blank arranger values to `Unknown`, and do not rewrite `Unknown` to blank.
+
+Current source refresh commands, local credentials, and the manual GitHub import
+workflow are documented in [docs/song-sources.md](song-sources.md).
 
 ## BHS Published Music Refresh
 
@@ -217,10 +220,10 @@ npm run song-suggestions:merge
 ```
 
 The merge script reads the existing `data/song_suggestion_catalog.psv` plus the
-BarbershopTracks source PSV, deduplicates by lowercased title + voicing +
-lowercased arranger, sorts the result, and writes a timestamped local backup to
-`data/backups/` before replacing the catalog. Backups are local safety files and
-should not be committed.
+available committed source PSVs under `data/sources/`, deduplicates by
+lowercased title + voicing + lowercased arranger, sorts the result, and writes a
+timestamped local backup to `data/backups/` before replacing the catalog.
+Backups are local safety files and should not be committed.
 
 Finally, dry-run and apply the Supabase catalog import:
 

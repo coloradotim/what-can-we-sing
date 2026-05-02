@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -15,7 +15,10 @@ const defaultCatalogPath = path.join(
 );
 const defaultBackupDir = path.join(repoRoot, "data/backups");
 const defaultSourcePaths = [
+  path.join(repoRoot, "data/sources/barbershop_connections_song_suggestions.psv"),
   path.join(repoRoot, "data/sources/barbershoptracks_song_suggestions.psv"),
+  path.join(repoRoot, "data/sources/bhs_song_catalog_suggestions.psv"),
+  path.join(repoRoot, "data/sources/harmony_brigade_song_suggestions.psv"),
 ];
 
 function optionValue(name) {
@@ -23,7 +26,7 @@ function optionValue(name) {
   return process.argv.find((arg) => arg.startsWith(prefix))?.slice(prefix.length);
 }
 
-function timestamp() {
+export function timestamp() {
   const now = new Date();
   const date = [
     now.getFullYear(),
@@ -46,7 +49,7 @@ function catalogKey(row) {
   ].join("|");
 }
 
-function mergeRows(rowSets) {
+export function mergeRows(rowSets) {
   const deduped = new Map();
   let duplicateRows = 0;
 
@@ -81,6 +84,15 @@ async function readCatalogRows(filePath) {
   };
 }
 
+async function fileExists(filePath) {
+  try {
+    await access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function main() {
   const args = new Set(process.argv.slice(2));
   const dryRun = args.has("--dry-run");
@@ -95,6 +107,10 @@ async function main() {
   const sourceRows = [];
 
   for (const sourcePath of sourcePaths) {
+    if (!(await fileExists(sourcePath))) {
+      console.log(`Skipping missing source: ${path.relative(repoRoot, sourcePath)}`);
+      continue;
+    }
     const source = await readCatalogRows(sourcePath);
     sourceRows.push(source.rows);
     console.log(`${path.relative(repoRoot, sourcePath)} rows: ${source.rows.length}`);
