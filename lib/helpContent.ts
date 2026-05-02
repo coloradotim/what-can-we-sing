@@ -25,7 +25,7 @@ export type HelpNavItem = {
 export const quickStartSteps = [
   "Add your display name so other singers know who is in the quartet.",
   "Add a few songs you are likely to sing. You can type songs in, copy songs from another singer, or add Harmony Brigade songs.",
-  "For each song, choose the voicing and every part you can sing for that arrangement.",
+  "For each song, choose the arrangement voicing and every barbershop part you can sing for that arrangement.",
   "Start a quartet or join someone else with a code, QR code, or shared link.",
   "Use Matches to pick something everyone can sing right now.",
 ] as const;
@@ -59,41 +59,45 @@ export const helpGuideSections: HelpGuideSection[] = [
     eyebrow: "My Songs",
     title: "Manage The Songs You Know",
     intro:
-      "My Songs stores your songs, voicings, parts, confidence, arranger information, notes, and last-sung tracking.",
+      "My Songs stores your songs, arrangement voicings, barbershop parts, confidence, arranger information, notes, and last-sung tracking.",
     topics: [
       {
         title: "Song Title Autocomplete",
         body: [
           "Start typing to see suggestions. Suggestions are optional — you can always enter your own song title if the song is not listed or if your title is different.",
-          "Selecting a suggestion can prefill title, voicing, and arranger. If one suggestion covers multiple voicings, choose the voicing you know before saving.",
+          "Selecting a suggestion can prefill title, arrangement voicing, and arranger. If one suggestion covers multiple voicings, choose the arrangement voicing you know before saving.",
         ],
       },
       {
         title: "How Suggestions Are Shared",
         body: [
-          "When you add a song, the title, voicing, and arranger you enter can help future singers find the same song faster. Adding a song does not add it to anyone else’s My Songs.",
+          "When you add a song, the title, arrangement voicing, and arranger you enter can help future singers find the same song faster. Adding a song does not add it to anyone else’s My Songs.",
           "Suggestions do not expose private user details such as user IDs, singer names, notes, parts, confidence, timestamps, or your full personal song list.",
         ],
       },
       {
         title: "More Ways To Build My Songs",
         body: [
-          "Use Copy songs from another singer when someone gives you a private link or code. You can copy song titles, voicings, and arrangers, then choose your own part and confidence before saving.",
+          "Use Copy songs from another singer when someone gives you a private link or code. You can copy song titles, arrangement voicings, and arrangers, then choose your own part and confidence before saving.",
           "Use Let another singer copy songs from My Songs to create a private link/code. The other singer cannot see your notes, confidence, last-sung history, email address, or account details.",
-          "Use Add Harmony Brigade songs to choose a year and brigade, review TTBB songs from the reference data, and choose your own parts and confidence before adding anything.",
+          "Use Add Harmony Brigade songs to choose a year and brigade, review lower voice (TTBB) songs from the reference data, and choose your own parts and confidence before adding anything.",
         ],
       },
       {
-        title: "Voicing",
+        title: "Arrangement voicings and barbershop parts",
         body: [
-          "Choose the voicing for the arrangement you know. TTBB means Tenor, Lead, Baritone, Bass. SSAA means Soprano 1, Soprano 2, Alto 1, Alto 2. SATB means Soprano, Alto, Tenor, Bass.",
-          "If you know the same song in more than one voicing, add it more than once — one entry for each voicing.",
+          "Barbershop uses four functional voice parts: Tenor, Lead, Baritone, and Bass. That is true whether the music is published for treble voices, mixed voices, or lower voices.",
+          "Choose the arrangement voicing that matches the music you have: Treble (SSAA), Mixed (SATB), or Lower voice (TTBB).",
+          "Treble (SSAA) music is often printed as S1, S2, A1, A2. S1 usually maps to Tenor, S2 to Lead, A1 to Baritone, and A2 to Bass.",
+          "Mixed (SATB) music is often printed as Soprano, Alto, Tenor, Bass. Soprano usually maps to Tenor, Alto to Lead, Tenor to Baritone, and Bass to Bass.",
+          "Lower voice (TTBB) music is often printed as T1, T2, B1, B2. T1 usually maps to Tenor, T2 to Lead, B1 to Baritone, and B2 to Bass.",
+          "If you know the same song in more than one arrangement voicing, add it more than once — one entry for each voicing.",
         ],
       },
       {
         title: "Parts and Confidence",
         body: [
-          "Select every part you can sing for that arrangement and set your confidence for each part.",
+          "Select every barbershop part you can sing for that arrangement and set your confidence for each part.",
           "A singer may know multiple parts, but in a quartet match each singer can only cover one required part. The app looks for distinct singers covering the required parts.",
         ],
       },
@@ -122,7 +126,7 @@ export const helpGuideSections: HelpGuideSection[] = [
         body: [
           "Use search to filter by title. You can sort by title, newest or oldest added, sung recently, or least recently sung.",
           "Recently sung puts marked-sung songs first, newest to oldest. Least recently sung puts Not marked yet songs first, then marked-sung songs from oldest to newest.",
-          "You can filter by voicing, part, and Sung status. Active filters appear above the song list and can be cleared together.",
+          "You can filter by arrangement voicing, part, and Sung status. Active filters appear above the song list and can be cleared together.",
         ],
       },
     ],
@@ -196,7 +200,7 @@ export const helpGuideSections: HelpGuideSection[] = [
         title: "Ready to Sing",
         body: [
           "Ready to Sing matches are the cleanest matches. All required parts are covered, and the app assigns distinct singers to distinct required parts.",
-          "For example, TTBB needs Tenor, Lead, Baritone, and Bass covered by four different singers.",
+          "For example, lower voice (TTBB) arrangements need Tenor, Lead, Baritone, and Bass covered by four different singers.",
         ],
       },
       {
@@ -209,7 +213,7 @@ export const helpGuideSections: HelpGuideSection[] = [
       {
         title: "What Matters Most",
         body: [
-          "The strongest signals are voicing, required part coverage, and distinct singers for the required parts. Different voicings are not combined.",
+          "The strongest signals are arrangement voicing, required part coverage, and distinct singers for the required parts. Different voicings are not combined.",
           "Title variants, arranger differences, missing arranger information, confidence, and notes are context to help the quartet decide quickly. They are not all automatic blockers.",
         ],
       },
@@ -233,7 +237,7 @@ export const helpGuideSections: HelpGuideSection[] = [
         title: "Managing The Quartet",
         body: [
           "When the quartet is full, use Manage to see quartet members, edit My Songs, change your name, or leave the quartet.",
-          "If a song title, voicing, part, arranger, notes, or confidence looks wrong, update it from My Songs. If the name shown to others is wrong, use Change name.",
+          "If a song title, arrangement voicing, part, arranger, notes, or confidence looks wrong, update it from My Songs. If the name shown to others is wrong, use Change name.",
         ],
       },
       {

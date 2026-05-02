@@ -1,5 +1,10 @@
 import { supabase } from "@/lib/supabase";
 import { getCurrentUser } from "@/lib/profileStore";
+import {
+  functionalPartName,
+  voicingDisplayLabel,
+} from "@/lib/partAbbreviations";
+import type { Part, Voicing } from "@/lib/matching";
 
 export type EventModeVisibility = "listed" | "unlisted";
 export type EventModeLifecycle = "upcoming" | "active" | "ended";
@@ -73,14 +78,17 @@ export type EventModeAvailabilityInput = {
 export const eventModeVoicePartGroups = [
   {
     voicing: "TTBB",
+    label: "Lower voice (TTBB)",
     parts: ["TTBB Tenor", "TTBB Lead", "TTBB Baritone", "TTBB Bass"],
   },
   {
     voicing: "SATB",
+    label: "Mixed (SATB)",
     parts: ["SATB Soprano", "SATB Alto", "SATB Tenor", "SATB Bass"],
   },
   {
     voicing: "SSAA",
+    label: "Treble (SSAA)",
     parts: [
       "SSAA Soprano 1",
       "SSAA Soprano 2",
@@ -88,7 +96,7 @@ export const eventModeVoicePartGroups = [
       "SSAA Alto 2",
     ],
   },
-] satisfies { voicing: string; parts: EventModeVoicePart[] }[];
+] satisfies { voicing: Voicing; label: string; parts: EventModeVoicePart[] }[];
 
 export const eventModeVoicePartOptions = eventModeVoicePartGroups.flatMap(
   (group) => group.parts
@@ -197,7 +205,18 @@ export function defaultEventModeAvailableUntil(
 }
 
 export function formatEventModeVoiceParts(parts: EventModeVoicePart[]) {
-  return parts.join(", ");
+  return parts.map(formatEventModeVoicePart).join(", ");
+}
+
+export function formatEventModeVoicePart(part: EventModeVoicePart) {
+  const [voicing, ...partWords] = part.split(" ");
+  const canonicalVoicing = voicing as Voicing;
+  const storedPart = partWords.join(" ") as Part;
+
+  return `${voicingDisplayLabel(canonicalVoicing)} ${functionalPartName(
+    canonicalVoicing,
+    storedPart
+  )}`;
 }
 
 export function isEventModeAvailabilityActive(

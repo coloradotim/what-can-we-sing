@@ -1,5 +1,6 @@
 import { isLikelySameSongTitle } from "./fuzzySongTitles";
 import { areLikelySameArrangerGroup } from "./arrangerDisplay";
+import { functionalPartName } from "./partAbbreviations";
 
 export type Voicing = "TTBB" | "SATB" | "SSAA";
 
@@ -147,7 +148,8 @@ function confidenceValueForPart(entry: SingerEntry, part: Part): number {
 }
 
 function confidenceWarning(
-  assignment: Record<Part, SingerEntry>
+  assignment: Record<Part, SingerEntry>,
+  voicing: Voicing
 ): string | null {
   const weak = Object.entries(assignment).filter(([part, entry]) => {
     const normalizedConfidence = confidenceForPart(entry, part as Part);
@@ -162,7 +164,10 @@ function confidenceWarning(
   return `Confidence warning: ${weak
     .map(([part, entry]) => {
       const normalizedConfidence = confidenceForPart(entry, part as Part);
-      return `${entry.displayName} marked ${normalizedConfidence} on ${part}`;
+      return `${entry.displayName} marked ${normalizedConfidence} on ${functionalPartName(
+        voicing,
+        part as Part
+      )}`;
     })
     .join(", ")}`;
 }
@@ -376,7 +381,7 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
     const arrangerVariant = arrangerVariantNoteForGroup(knownArrangers);
 
     if (fullAssignment) {
-      const confidence = confidenceWarning(fullAssignment);
+      const confidence = confidenceWarning(fullAssignment, voicing);
       if (confidence) warnings.push(confidence);
 
       results.push({
@@ -417,7 +422,7 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
     }
 
     if (bestNearMatch) {
-      const confidence = confidenceWarning(bestNearMatch.assignment);
+      const confidence = confidenceWarning(bestNearMatch.assignment, voicing);
       if (confidence) warnings.push(confidence);
 
       results.push({
@@ -481,7 +486,7 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
       ];
       const missingArrangerInfo = hasMissingArrangerInfo(group);
       const arrangerVariant = arrangerVariantNoteForGroup(knownArrangers);
-      const confidence = confidenceWarning(fullAssignment);
+      const confidence = confidenceWarning(fullAssignment, first.voicing);
       if (confidence) warnings.push(confidence);
 
       results.push({

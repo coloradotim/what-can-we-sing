@@ -133,7 +133,7 @@ describe("Event Mode helpers", () => {
     expect(eventModeVoicePartOptions).not.toContain("Lead");
     expect(eventModeVoicePartOptions).not.toContain("Tenor");
     expect(formatEventModeVoiceParts(["TTBB Lead", "SATB Tenor"])).toBe(
-      "TTBB Lead, SATB Tenor"
+      "Lower voice (TTBB) Lead, Mixed (SATB) Baritone"
     );
   });
 

@@ -18,7 +18,11 @@ import {
   type Part,
   type SingerEntry,
 } from "@/lib/matching";
-import { partAbbreviation } from "@/lib/partAbbreviations";
+import {
+  functionalPartName,
+  partAbbreviation,
+  voicingDisplayLabel,
+} from "@/lib/partAbbreviations";
 import {
   findParticipantByUserId,
   resolveParticipantForJoin,
@@ -1238,7 +1242,7 @@ export default function JoinSessionPage() {
           <div>
             <h4 className="font-semibold text-white">{starter.songTitle}</h4>
             <p className="mt-1 text-sm text-slate-300">
-              {starter.voicing}
+              {voicingDisplayLabel(starter.voicing)}
               {arrangerSummary ? ` · Arr. ${arrangerSummary}` : ""}
             </p>
           </div>
@@ -1284,7 +1288,7 @@ export default function JoinSessionPage() {
             <p className="mt-1">
               {starter.missingParts.length > 0
                 ? starter.missingParts
-                    .map((part) => partAbbreviation(starter.voicing, part))
+                    .map((part) => functionalPartName(starter.voicing, part))
                     .join(", ")
                 : "Distinct singers do not cover every required part yet."}
             </p>

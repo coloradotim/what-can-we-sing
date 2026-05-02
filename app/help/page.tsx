@@ -119,10 +119,11 @@ export default function HelpPage() {
             what can we sing together right now?
           </p>
           <p className={helpIntroParagraphClass}>
-            Each singer adds the songs they know, the voicing, the parts they
-            can sing, and how confident they feel. When singers join the same
-            quartet, the app compares everyone&apos;s saved songs and shows songs
-            where the required parts are covered by different people.
+            Each singer adds the songs they know, the arrangement voicing, the
+            barbershop parts they can sing, and how confident they feel. When
+            singers join the same quartet, the app compares everyone&apos;s saved
+            songs and shows songs where the required parts are covered by
+            different people.
           </p>
           <p className={helpIntroParagraphClass}>
             {helpWelcomeCopy}

@@ -10,7 +10,13 @@ import type {
   PartConfidence,
   Voicing,
 } from "@/lib/matching";
-import { partAbbreviation, partButtonLabel } from "@/lib/partAbbreviations";
+import {
+  compactVoicingDisplayLabel,
+  partAbbreviation,
+  partButtonLabel,
+  printedNotationSummary,
+  voicingDisplayLabel,
+} from "@/lib/partAbbreviations";
 import {
   filterAndSortRepertoire,
   hasActiveRepertoireFilters,
@@ -102,6 +108,21 @@ function requiredFieldStateClass(isIncomplete: boolean) {
   return isIncomplete
     ? "border-rose-300/70 bg-rose-950/30 ring-rose-300"
     : "border-white/10 bg-slate-900 ring-cyan-300";
+}
+
+function repertoirePartFilterLabel(
+  part: Part,
+  selectedVoicing: Voicing | ""
+) {
+  if (selectedVoicing) return partButtonLabel(selectedVoicing, part);
+
+  return Array.from(
+    new Set(
+      voicings
+        .filter((voicing) => partsByVoicing[voicing].includes(part))
+        .map((voicing) => partButtonLabel(voicing, part))
+    )
+  ).join(" / ");
 }
 
 type RepertoireForm = {
@@ -597,7 +618,7 @@ export default function RepertoireManager() {
     }
 
     if (!voicing) {
-      setMessage("Choose a voicing before saving.");
+      setMessage("Choose an arrangement voicing before saving.");
       return;
     }
 
@@ -1226,7 +1247,8 @@ export default function RepertoireManager() {
                   </h2>
                   <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
                     Create a private link or code another singer can use to copy
-                    song titles, voicings, and arrangers from My Songs.
+                    song titles, arrangement voicings, and arrangers from My
+                    Songs.
                   </p>
                 </div>
                 <button
@@ -1240,10 +1262,10 @@ export default function RepertoireManager() {
 
               <div className="mt-5 rounded-xl border border-white/10 bg-white/5 p-4">
                 <p className="text-sm leading-6 text-slate-300">
-                  Another singer can see song titles, voicings, and arrangers.
-                  They cannot see your notes, confidence, last-sung history, or
-                  email address. They choose their own part and confidence
-                  before saving anything.
+                  Another singer can see song titles, arrangement voicings, and
+                  arrangers. They cannot see your notes, confidence, last-sung
+                  history, or email address. They choose their own part and
+                  confidence before saving anything.
                 </p>
 
                 <div className="mt-4 flex flex-col gap-3">
@@ -1348,8 +1370,9 @@ export default function RepertoireManager() {
                     songs to My Songs.
                   </p>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                    These songs default to TTBB. You&apos;ll choose the part you
-                    usually sing and your confidence before adding them.
+                    These songs default to Lower voice (TTBB). You&apos;ll choose
+                    the barbershop part you usually sing and your confidence
+                    before adding them.
                   </p>
                   <p className="mt-2 text-sm text-slate-400">
                     Source: {HARMONY_BRIGADE_SOURCE}.
@@ -1502,7 +1525,7 @@ export default function RepertoireManager() {
                                 {row.song.songTitle}
                               </p>
                               <p className="mt-1 text-xs leading-5 text-slate-400">
-                                TTBB -{" "}
+                                {voicingDisplayLabel("TTBB")} -{" "}
                                 {row.song.arranger
                                   ? `Arr. ${arrangerDisplayName(row.song.arranger)}`
                                   : "No arranger entered"}
@@ -1724,8 +1747,8 @@ export default function RepertoireManager() {
                     Add &quot;{songTitle.trim()}&quot; manually
                   </button>
                   <p className="mt-2 text-xs leading-5 text-slate-300">
-                    Choose the voicing, arranger, part, and confidence
-                    yourself.
+                    Choose the arrangement voicing, arranger, part, and
+                    confidence yourself.
                   </p>
                 </div>
               </div>
@@ -1912,10 +1935,10 @@ export default function RepertoireManager() {
                     }
                     className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
                   >
-                    <option value="">All voicings</option>
+                    <option value="">All arrangement voicings</option>
                     {voicings.map((v) => (
                       <option key={v} value={v}>
-                        {v}
+                        {voicingDisplayLabel(v)}
                       </option>
                     ))}
                   </select>
@@ -1932,9 +1955,7 @@ export default function RepertoireManager() {
                     <option value="">All parts</option>
                     {partFilterOptions.map((part) => (
                       <option key={part} value={part}>
-                        {voicingFilter
-                          ? partButtonLabel(voicingFilter, part)
-                          : part}
+                        {repertoirePartFilterLabel(part, voicingFilter)}
                       </option>
                     ))}
                   </select>
@@ -1973,14 +1994,12 @@ export default function RepertoireManager() {
                   )}
                   {voicingFilter && (
                     <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
-                      {voicingFilter}
+                      {voicingDisplayLabel(voicingFilter)}
                     </span>
                   )}
                   {partFilter && (
                     <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
-                      {voicingFilter
-                        ? partButtonLabel(voicingFilter, partFilter)
-                        : partFilter}
+                      {repertoirePartFilterLabel(partFilter, voicingFilter)}
                     </span>
                   )}
                   {sungStatusFilter !== "all" && (
@@ -2063,9 +2082,14 @@ export default function RepertoireManager() {
                           className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
                         >
                           {voicings.map((v) => (
-                            <option key={v}>{v}</option>
+                            <option key={v} value={v}>
+                              {voicingDisplayLabel(v)}
+                            </option>
                           ))}
                         </select>
+                        <p className="mt-1 text-xs text-slate-400">
+                          {printedNotationSummary(editForm.voicing)}
+                        </p>
                       </label>
 
                       <label className="block md:col-span-2">
@@ -2209,7 +2233,7 @@ export default function RepertoireManager() {
                           {item.song_title}
                         </h3>
                         <span className="shrink-0 rounded-full bg-slate-900 px-2 py-0.5 text-xs font-semibold text-slate-300">
-                          {item.voicing}
+                          {compactVoicingDisplayLabel(item.voicing)}
                         </span>
                       </div>
 
@@ -2374,8 +2398,8 @@ export default function RepertoireManager() {
                           Add &quot;{songTitle.trim()}&quot; manually
                         </button>
                         <p className="mt-2 text-xs leading-5 text-slate-300">
-                          Choose the voicing, arranger, part, and confidence
-                          yourself.
+                          Choose the arrangement voicing, arranger, part, and
+                          confidence yourself.
                         </p>
                       </div>
                     </div>
@@ -2394,7 +2418,7 @@ export default function RepertoireManager() {
                     </h3>
                     {addSongSource === "suggestion" ? (
                       <p className="mt-1 text-sm text-slate-300">
-                        {voicing ? `${voicing} · ` : ""}
+                        {voicing ? `${voicingDisplayLabel(voicing)} · ` : ""}
                         Arr. {arrangerDisplayName(arrangerName)}
                       </p>
                     ) : (
@@ -2404,7 +2428,7 @@ export default function RepertoireManager() {
                     )}
                     <p className="mt-3 text-sm text-cyan-100">
                       {suggestedVoicings && !voicing
-                        ? "Next: choose the voicing you know."
+                        ? "Next: choose the arrangement voicing you know."
                         : "Next: choose the part you sing and your confidence."}
                     </p>
                   </div>
@@ -2414,8 +2438,8 @@ export default function RepertoireManager() {
                   <p className="text-sm font-medium text-slate-300">Voicing</p>
                   <p className="mt-1 text-xs text-slate-400">
                     {suggestedVoicings
-                      ? "This suggestion has multiple voicings. Choose the version you know."
-                      : "Suggestions are optional. You can always type your own title and choose the correct voicing."}
+                      ? "This suggestion has multiple arrangement voicings. Choose the version you know."
+                      : "Suggestions are optional. You can always type your own title and choose the correct arrangement voicing."}
                   </p>
                   <div className="mt-2 grid grid-cols-3 gap-2">
                     {voicingOptions.map((v) => (
@@ -2432,13 +2456,18 @@ export default function RepertoireManager() {
                             : "bg-slate-800 text-slate-200 ring-white/10 hover:bg-slate-700"
                         }`}
                       >
-                        {v}
+                        {voicingDisplayLabel(v)}
                       </button>
                     ))}
                   </div>
                   {!voicing && (
                     <p className="mt-2 text-sm text-rose-200">
-                      Choose a voicing to continue.
+                      Choose an arrangement voicing to continue.
+                    </p>
+                  )}
+                  {voicing && (
+                    <p className="mt-2 text-xs text-slate-400">
+                      {printedNotationSummary(voicing)}
                     </p>
                   )}
                 </div>
@@ -2522,7 +2551,7 @@ export default function RepertoireManager() {
                       ))
                     ) : (
                       <p className="text-sm text-slate-400">
-                        Choose a voicing first.
+                        Choose an arrangement voicing first.
                       </p>
                     )}
                   </div>

@@ -131,6 +131,48 @@ describe("MatchCard", () => {
     expect(html).toContain("Bass Singer (Arranger: No arranger entered)");
   });
 
+  it("displays treble and mixed parts as barbershop functional parts", () => {
+    const html = renderMatch({
+      songTitle: "Treble Song",
+      voicing: "SSAA",
+      arrangerNames: [],
+      hasMissingArrangerInfo: false,
+      category: "one_part_missing",
+      missingParts: ["Alto 2"],
+      assignments: {
+        "Soprano 1": [
+          singer({
+            displayName: "Tenor Singer",
+            voicing: "SSAA",
+            part: "Soprano 1",
+          }),
+        ],
+        "Soprano 2": [
+          singer({
+            displayName: "Lead Singer",
+            voicing: "SSAA",
+            part: "Soprano 2",
+          }),
+        ],
+        "Alto 1": [
+          singer({
+            displayName: "Bari Singer",
+            voicing: "SSAA",
+            part: "Alto 1",
+          }),
+        ],
+      },
+      warnings: [],
+      score: 0,
+    });
+
+    expect(html).toContain("Treble (SSAA)");
+    expect(html).toContain("Missing Bass");
+    expect(html).toContain("Bari:");
+    expect(html).not.toContain("Missing A2");
+    expect(html).not.toContain("Soprano 1:");
+  });
+
   it("shows a short success state and subtle music-note celebration", () => {
     const html = renderMatch(readyMatch(), {
       isSungCelebrating: true,

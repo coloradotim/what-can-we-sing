@@ -18,7 +18,7 @@ describe("repertoire song suggestion UI", () => {
       'Add &quot;{songTitle.trim()}&quot; manually'
     );
     expect(repertoireManager).toContain(
-      "Choose the voicing, arranger, part, and confidence"
+      "Choose the arrangement voicing, arranger, part, and"
     );
     expect(repertoireManager).not.toContain("as your own song");
     expect(repertoireManager).toContain("max-h-80 overflow-y-auto");
@@ -27,7 +27,7 @@ describe("repertoire song suggestion UI", () => {
     expect(repertoireManager).toContain("songSuggestionSubtitle");
   });
 
-  it("requires choosing a voicing after selecting a grouped suggestion", () => {
+  it("requires choosing an arrangement voicing after selecting a grouped suggestion", () => {
     expect(repertoireManager).toContain(
       "const voicingOptions = suggestedVoicings ?? voicings"
     );
@@ -35,6 +35,7 @@ describe("repertoire song suggestion UI", () => {
       'suggestion.voicings.length === 1 ? (suggestion.voicings[0] ?? "") :'
     );
     expect(repertoireManager).toContain("voicingOptions.map((v) =>");
+    expect(repertoireManager).toContain("voicingDisplayLabel(v)");
   });
 
   it("closes suggestions into a selected-song summary", () => {

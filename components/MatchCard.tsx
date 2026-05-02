@@ -4,7 +4,11 @@ import {
   type MatchTitleVariantSinger,
   type MatchResult,
 } from "@/lib/matching";
-import { partAbbreviation } from "@/lib/partAbbreviations";
+import {
+  functionalPartName,
+  partAbbreviation,
+  voicingDisplayLabel,
+} from "@/lib/partAbbreviations";
 import {
   arrangerDisplayName,
   noArrangerEnteredLabel,
@@ -105,7 +109,7 @@ export function MatchCard({
             </h3>
             <div className="mt-0.5 flex flex-wrap items-center gap-2">
               <p className="text-xs font-semibold uppercase tracking-normal text-slate-400">
-                {match.voicing}
+                {voicingDisplayLabel(match.voicing)}
               </p>
               {isRecentlySung && (
                 <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs font-semibold text-slate-200">
@@ -134,7 +138,11 @@ export function MatchCard({
                     : styles.part
                 }`}
               >
-                <span>{isMissing ? `Missing ${abbreviation}` : abbreviation}</span>
+                <span>
+                  {isMissing
+                    ? `Missing ${functionalPartName(match.voicing, part)}`
+                    : abbreviation}
+                </span>
                 {singers.length > 0 && (
                   <span className="truncate font-medium text-slate-200">
                     {singers.map((singer) => singer.displayName).join(", ")}

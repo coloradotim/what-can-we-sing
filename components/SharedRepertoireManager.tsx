@@ -4,7 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { AppNav } from "@/components/AppNav";
 import type { Confidence, Part, Voicing } from "@/lib/matching";
 import { arrangerDisplayName } from "@/lib/arrangerDisplay";
-import { partButtonLabel } from "@/lib/partAbbreviations";
+import {
+  partButtonLabel,
+  printedNotationSummary,
+  voicingDisplayLabel,
+} from "@/lib/partAbbreviations";
 import { getCurrentUser } from "@/lib/profileStore";
 import { getMyRepertoire } from "@/lib/repertoireStore";
 import {
@@ -295,7 +299,10 @@ export function SharedRepertoireManager({ code }: { code: string }) {
                         className="rounded-xl border border-white/10 bg-slate-950/60 p-3"
                       >
                         <p className="text-sm font-semibold text-white">
-                          {voicing} copied songs
+                          {voicingDisplayLabel(voicing)} copied songs
+                        </p>
+                        <p className="mt-1 text-xs text-slate-400">
+                          {printedNotationSummary(voicing)}
                         </p>
                         <div className="mt-3 grid gap-2 sm:grid-cols-2">
                           <label className="block">
@@ -405,7 +412,7 @@ export function SharedRepertoireManager({ code }: { code: string }) {
                             {song.songTitle}
                           </span>
                           <span className="mt-1 block text-sm text-slate-300">
-                            {song.voicing} - Arr.{" "}
+                            {voicingDisplayLabel(song.voicing)} - Arr.{" "}
                             {arrangerDisplayName(song.arrangerName)}
                           </span>
                           {label && (
