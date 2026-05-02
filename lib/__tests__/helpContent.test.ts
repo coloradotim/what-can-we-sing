@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  helpAcknowledgments,
+  helpAcknowledgmentsIntro,
   helpGuideSections,
   helpSections,
   feedbackHelpCopy,
@@ -86,8 +88,9 @@ describe("help content", () => {
     expect(guideText).toContain("Notes are for your own memory");
     expect(guideText).toContain("Last sung is based on songs");
     expect(guideText).toContain("sort by title");
-    expect(guideText).toContain("Sung status");
-    expect(guideText).toContain("Not marked yet");
+    expect(guideText).toContain("Sung filter");
+    expect(guideText).toContain("not marked sung");
+    expect(guideText).toContain("Open Filters");
   });
 
   it("explains quartet match details and management", () => {
@@ -119,11 +122,13 @@ describe("help content", () => {
       { id: "joining-a-quartet", label: "Joining a quartet" },
       { id: "quartet-matches", label: "Quartet matches" },
       { id: "managing-a-quartet", label: "Managing a quartet" },
+      { id: "acknowledgments", label: "Acknowledgments" },
       { id: "feedback", label: "Feedback" },
     ]);
 
     const sectionIds = new Set([
       ...helpGuideSections.map((section) => section.id),
+      "acknowledgments",
       "feedback",
     ]);
 
@@ -141,5 +146,28 @@ describe("help content", () => {
     expect(feedbackHelpCopy).toContain("just let us know how you are using the app");
     expect(feedbackHelpCopy).toContain("if it helped at a convention");
     expect(feedbackHelpCopy).toContain("General feedback");
+  });
+
+  it("includes a modest acknowledgments section for community contributors", () => {
+    expect(helpAcknowledgmentsIntro).toContain(
+      "people in the barbershop community"
+    );
+    expect(helpAcknowledgments.map((item) => item.name)).toEqual([
+      "Alex Koller",
+      "Amber Reimer",
+      "Ross Wilkins",
+      "Jessica Rodman",
+      "Scott Anderson",
+      "Marcie Jones and Ann Monaghan McAlexander",
+    ]);
+    expect(helpAcknowledgments.map((item) => item.contribution).join(" ")).toContain(
+      "Instant Quartet"
+    );
+    expect(helpAcknowledgments.map((item) => item.contribution).join(" ")).toContain(
+      "Event Mode"
+    );
+    expect(helpAcknowledgments.map((item) => item.contribution).join(" ")).toContain(
+      "voicing terminology"
+    );
   });
 });

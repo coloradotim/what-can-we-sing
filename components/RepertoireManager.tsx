@@ -11,7 +11,6 @@ import type {
   Voicing,
 } from "@/lib/matching";
 import {
-  compactVoicingDisplayLabel,
   functionalPartNames,
   partAbbreviation,
   partButtonLabel,
@@ -138,6 +137,7 @@ export default function RepertoireManager() {
   const [partFilter, setPartFilter] = useState<FunctionalPartName | "">("");
   const [sungStatusFilter, setSungStatusFilter] =
     useState<SungStatusFilter>("all");
+  const [areFiltersOpen, setAreFiltersOpen] = useState(false);
   const [songTitle, setSongTitle] = useState("");
   const [songSuggestions, setSongSuggestions] = useState<SongSuggestion[]>([]);
   const [songSuggestionsOpen, setSongSuggestionsOpen] = useState(false);
@@ -1014,6 +1014,12 @@ export default function RepertoireManager() {
   };
   const visibleItems = filterAndSortRepertoire(items, repertoireFilters);
   const hasActiveFilters = hasActiveRepertoireFilters(repertoireFilters);
+  const activeFilterCount = [
+    searchQuery.trim(),
+    voicingFilter,
+    partFilter,
+    sungStatusFilter !== "all" ? sungStatusFilter : "",
+  ].filter(Boolean).length;
   const partFilterOptions = functionalPartNames;
   const hasSavedSongs = items.length > 0;
   const voicingOptions = suggestedVoicings ?? voicings;
@@ -1114,7 +1120,7 @@ export default function RepertoireManager() {
     sungStatusFilter === "marked"
       ? "marked sung"
       : sungStatusFilter === "not_marked"
-        ? "not marked yet"
+        ? "not marked sung"
         : "",
   ]
     .filter(Boolean)
@@ -1864,11 +1870,11 @@ export default function RepertoireManager() {
               </div>
 
               <div
-                className={`rounded-2xl border border-white/10 bg-white/5 p-4 ${
+                className={`rounded-2xl border border-white/10 bg-white/5 p-3 sm:p-4 ${
                   hasSmallRepertoire ? "opacity-75" : ""
                 }`}
               >
-                <div className="grid gap-3 lg:grid-cols-[minmax(18rem,1fr)_minmax(12rem,14rem)]">
+                <div className="grid gap-3 lg:grid-cols-[minmax(18rem,1fr)_minmax(10rem,13rem)_auto] lg:items-end">
                   <label className="block min-w-0">
                     <span className="text-sm font-semibold text-slate-200">
                       Search My Songs
@@ -1898,67 +1904,95 @@ export default function RepertoireManager() {
                       <option value="last_sung_asc">Least recently sung</option>
                     </select>
                   </label>
+                  <button
+                    type="button"
+                    onClick={() => setAreFiltersOpen((current) => !current)}
+                    aria-expanded={areFiltersOpen}
+                    className="rounded-xl border border-cyan-300/30 bg-cyan-300/10 px-4 py-3 text-sm font-bold text-cyan-100 hover:border-cyan-200 hover:bg-cyan-300/20"
+                  >
+                    {areFiltersOpen ? "Hide filters" : "Filters"}
+                    {!areFiltersOpen && activeFilterCount > 0
+                      ? ` · ${activeFilterCount}`
+                      : ""}
+                  </button>
                 </div>
 
-                <div className="mt-3 grid gap-3 md:grid-cols-3">
-                  <label className="block min-w-0">
-                    <span className="text-sm font-medium text-slate-300">
-                      Arrangement
-                    </span>
-                    <select
-                      value={voicingFilter}
-                      onChange={(e) =>
-                        updateVoicingFilter(e.target.value as Voicing | "")
-                      }
-                      className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-                    >
-                      <option value="">All arrangements</option>
-                      {voicings.map((v) => (
-                        <option key={v} value={v}>
-                          {voicingDisplayLabel(v)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="block min-w-0">
-                    <span className="text-sm font-medium text-slate-300">
-                      Part
-                    </span>
-                    <select
-                      value={partFilter}
-                      onChange={(e) =>
-                        setPartFilter(e.target.value as FunctionalPartName | "")
-                      }
-                      className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-                    >
-                      <option value="">All parts</option>
-                      {partFilterOptions.map((part) => (
-                        <option key={part} value={part}>
-                          {part}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="block min-w-0">
-                    <span className="text-sm font-medium text-slate-300">
-                      Sung status
-                    </span>
-                    <select
-                      value={sungStatusFilter}
-                      onChange={(e) =>
-                        setSungStatusFilter(e.target.value as SungStatusFilter)
-                      }
-                      className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-                    >
-                      <option value="all">All songs</option>
-                      <option value="marked">Marked sung</option>
-                      <option value="not_marked">Not marked yet</option>
-                    </select>
-                    <span className="mt-1 block text-xs text-slate-500">
-                      Based on songs you've marked as sung.
-                    </span>
-                  </label>
-                </div>
+                {areFiltersOpen && (
+                  <div className="mt-3 rounded-xl border border-white/10 bg-slate-950/40 p-3">
+                    <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-end">
+                      <label className="block min-w-0">
+                        <span className="text-sm font-medium text-slate-300">
+                          Voicing
+                        </span>
+                        <select
+                          value={voicingFilter}
+                          onChange={(e) =>
+                            updateVoicingFilter(e.target.value as Voicing | "")
+                          }
+                          className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                        >
+                          <option value="">All voicings</option>
+                          {voicings.map((v) => (
+                            <option key={v} value={v}>
+                              {voicingDisplayLabel(v)}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="block min-w-0">
+                        <span className="text-sm font-medium text-slate-300">
+                          Part
+                        </span>
+                        <select
+                          value={partFilter}
+                          onChange={(e) =>
+                            setPartFilter(
+                              e.target.value as FunctionalPartName | ""
+                            )
+                          }
+                          className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                        >
+                          <option value="">All parts</option>
+                          {partFilterOptions.map((part) => (
+                            <option key={part} value={part}>
+                              {part}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="block min-w-0">
+                        <span className="text-sm font-medium text-slate-300">
+                          Sung
+                        </span>
+                        <select
+                          value={sungStatusFilter}
+                          onChange={(e) =>
+                            setSungStatusFilter(
+                              e.target.value as SungStatusFilter
+                            )
+                          }
+                          className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                        >
+                          <option value="all">All songs</option>
+                          <option value="marked">Marked sung</option>
+                          <option value="not_marked">Not marked sung</option>
+                        </select>
+                      </label>
+                      {hasActiveFilters && (
+                        <button
+                          type="button"
+                          onClick={clearRepertoireFilters}
+                          className="rounded-xl bg-slate-800 px-4 py-3 text-sm font-bold text-slate-200 hover:bg-slate-700"
+                        >
+                          Clear filters
+                        </button>
+                      )}
+                    </div>
+                    <p className="mt-2 text-xs text-slate-500">
+                      Last sung appears after you mark a song as sung.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1984,7 +2018,7 @@ export default function RepertoireManager() {
                     <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
                       {sungStatusFilter === "marked"
                         ? "Marked sung"
-                        : "Not marked yet"}
+                        : "Not marked sung"}
                     </span>
                   )}
                   <button
@@ -2204,12 +2238,12 @@ export default function RepertoireManager() {
                 ) : (
                   <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <h3 className="truncate text-base font-semibold text-white">
                           {item.song_title}
                         </h3>
-                        <span className="shrink-0 rounded-full bg-slate-900 px-2 py-0.5 text-xs font-semibold text-slate-300">
-                          {compactVoicingDisplayLabel(item.voicing)}
+                        <span className="rounded-full bg-slate-900 px-2 py-0.5 text-xs font-semibold text-slate-300">
+                          {voicingDisplayLabel(item.voicing)}
                         </span>
                       </div>
 

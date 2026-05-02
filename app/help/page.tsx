@@ -9,6 +9,8 @@ import {
 } from "@/lib/feedback";
 import {
   feedbackHelpCopy,
+  helpAcknowledgments,
+  helpAcknowledgmentsIntro,
   helpGuideSections,
   helpNavItems,
   helpWelcomeCopy,
@@ -204,6 +206,29 @@ export default function HelpPage() {
               </div>
             </article>
           ))}
+        </section>
+
+        <section
+          id="acknowledgments"
+          className="mt-10 scroll-mt-6 rounded-2xl border border-white/10 bg-white/5 p-5 sm:p-6"
+        >
+          <h2 className="text-2xl font-semibold">Acknowledgments</h2>
+          <p className="mt-3 text-base leading-7 text-slate-300">
+            {helpAcknowledgmentsIntro}
+          </p>
+          <p className="mt-4 text-sm font-semibold uppercase text-slate-300">
+            Special thanks to
+          </p>
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-base leading-7 text-slate-300">
+            {helpAcknowledgments.map((item) => (
+              <li key={item.name}>
+                <span className="font-semibold text-slate-100">
+                  {item.name}
+                </span>
+                , {item.contribution}
+              </li>
+            ))}
+          </ul>
         </section>
 
         <section
