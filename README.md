@@ -99,6 +99,9 @@ The Supabase project should have the current production schema applied:
   The app reads dedicated Supabase reference tables for the secondary
   **Add Harmony Brigade songs** repertoire flow. Adding songs writes only to
   the current user's `user_repertoire`.
+- `event_mode_events` stores user-created Event Mode event spaces. Listed
+  events can be discovered by signed-in users, unlisted events require a
+  link/code, and creators can edit or close their own events.
 
 The app/database contract is documented in
 [docs/supabase-contract.md](docs/supabase-contract.md). Any PR that changes
