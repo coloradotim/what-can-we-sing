@@ -101,6 +101,62 @@ transform attempts to parse a clear `arranged by` or `arr.` value from Product
 Description or Product Name. Product Description is used only as import signal;
 it is not stored in `song_suggestion_catalog`.
 
+## International Songs With Arranger Refresh
+
+The International Songs source workbook was inspected and committed as a
+cleaned CSV at:
+
+```text
+data/international_songs_with_arranger.csv
+```
+
+Workbook inspection notes:
+
+- Workbook name: `International Songs with Arranger.xlsx`
+- Sheet: `Sheet1`
+- Columns: `Title`, `Arranger`, `Voicing`
+- Inspected source row count: 745 data rows
+- Source voicings in the uploaded workbook: `TTBB`
+- No blank title, arranger, or voicing values were found in the uploaded
+  workbook.
+
+To refresh the source file, export or save the workbook to CSV with the same
+three headers:
+
+```text
+Title, Arranger, Voicing
+```
+
+Then inspect the transform without changing the PSV catalog:
+
+```bash
+npm run international-songs:import
+```
+
+After reviewing the report, merge the International rows into the PSV catalog:
+
+```bash
+npm run international-songs:import -- --write-catalog
+```
+
+Finally, dry-run and apply the Supabase catalog import:
+
+```bash
+npm run song-suggestions:import -- --dry-run
+SUPABASE_SERVICE_ROLE_KEY=... npm run song-suggestions:import
+```
+
+The transform imports only title, voicing, and arranger. It does not import
+lyrics, sheet music, notes, or source-only descriptive fields. Supported
+voicings are `TTBB`, `SSAA`, and `SATB`; clearly multi-voicing rows are split
+into one suggestion row per supported voicing. Missing, unsupported, or mixed
+supported/unsupported voicing values are skipped and counted in the report.
+
+Arranger handling follows the app-wide semantics: blank arranger stays blank,
+and literal `Unknown` stays `Unknown`. Dedupe uses normalized title + voicing +
+normalized arranger. This import adds optional suggestions only; it never writes
+to any user's My Songs.
+
 ## Harmony Brigade Songs
 
 Harmony Brigade data comes from Ross Wilkins' read-only Harmony Brigade MySQL
