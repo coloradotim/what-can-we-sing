@@ -159,6 +159,7 @@ describe("help content", () => {
       "Jessica Rodman",
       "Scott Anderson",
       "Marcie Jones and Ann Monaghan McAlexander",
+      "Sweet Adelines",
     ]);
     expect(helpAcknowledgments.map((item) => item.contribution).join(" ")).toContain(
       "Instant Quartet"
@@ -168,6 +169,9 @@ describe("help content", () => {
     );
     expect(helpAcknowledgments.map((item) => item.contribution).join(" ")).toContain(
       "voicing terminology"
+    );
+    expect(helpAcknowledgments.map((item) => item.contribution).join(" ")).toContain(
+      "sweetadelines.com published music list"
     );
   });
 });

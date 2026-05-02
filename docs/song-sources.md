@@ -14,6 +14,7 @@ by individual singers.
 - `data/sources/barbershoptracks_song_suggestions.psv`
 - `data/sources/timtracks_song_suggestions.psv`
 - `data/sources/bhs_song_catalog_suggestions.psv`
+- `data/sources/sweet_adelines_published_music_song_suggestions.psv`
 - `data/sources/harmony_brigade_song_suggestions.psv`
 - `data/song_suggestion_catalog.psv`
 
@@ -49,6 +50,7 @@ npm run song-sources:scrape:barbershop-connections
 npm run song-sources:scrape:barbershoptracks
 npm run song-sources:scrape:timtracks
 npm run song-sources:import:bhs
+npm run song-sources:import:sweet-adelines
 npm run song-sources:import:harmony-brigade
 ```
 
@@ -97,6 +99,17 @@ BHS Published Music:
 
 - Uses the repo-local CSV by default.
 - Can use `BHS_CATALOG_CSV_PATH` or `BHS_CATALOG_CSV_URL`.
+
+Sweet Adelines published music:
+
+- Downloads the public Sweet Adelines published music PDF by default.
+- Can read a local PDF with
+  `npm run song-sources:import:sweet-adelines -- --pdf-path=/path/to/PublishedMusic.pdf`.
+- Treats every confidently parsed row as canonical `SSAA`.
+- Removes source-only title markers such as `YW -`, `(SSAA)`, and
+  `FREE DOWNLOAD`.
+- Writes ambiguous rows to
+  `tmp/song-sources/sweet-adelines-published-music-skipped.json`.
 
 Harmony Brigade:
 
