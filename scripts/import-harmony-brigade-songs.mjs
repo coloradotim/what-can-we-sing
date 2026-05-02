@@ -15,6 +15,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 const defaultSourceDir = path.join(repoRoot, "data/harmony-brigade");
 const batchSize = 500;
+const suspiciousEventSongCountThreshold = 10;
 
 function requiredEnv(name) {
   const value = process.env[name];
@@ -40,6 +41,47 @@ async function readCsv(filePath) {
 function numberOrNull(value) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
+}
+
+function eventSongCountSummary(events, eventSongs) {
+  const counts = new Map(events.map((event) => [
+    `${event.year_held}|${event.brigade_abbr}`,
+    0,
+  ]));
+
+  for (const eventSong of eventSongs) {
+    counts.set(
+      eventSong.eventKey,
+      (counts.get(eventSong.eventKey) ?? 0) + 1
+    );
+  }
+
+  return events
+    .map((event) => {
+      const eventKey = `${event.year_held}|${event.brigade_abbr}`;
+      const song_count = counts.get(eventKey) ?? 0;
+
+      return {
+        year_held: event.year_held,
+        brigade_abbr: event.brigade_abbr,
+        song_count,
+        suspicious: song_count < suspiciousEventSongCountThreshold,
+      };
+    })
+    .sort((a, b) => {
+      return b.year_held - a.year_held || a.brigade_abbr.localeCompare(b.brigade_abbr);
+    });
+}
+
+function printEventSongCountSummary(label, summary) {
+  console.log(`${label}:`);
+
+  for (const row of summary) {
+    const warning = row.suspicious ? " - fewer than 10" : "";
+    console.log(
+      `- ${row.year_held} ${row.brigade_abbr}: ${row.song_count} songs${warning}`
+    );
+  }
 }
 
 export function parseHarmonyBrigadeSnapshots({
@@ -138,7 +180,7 @@ export function parseHarmonyBrigadeSnapshots({
     });
   }
 
-  return {
+  const parsed = {
     songs: Array.from(songsById.values()).sort((a, b) => a.source_song_id - b.source_song_id),
     events: Array.from(events.values()).sort((a, b) => {
       return b.year_held - a.year_held || a.brigade_abbr.localeCompare(b.brigade_abbr);
@@ -146,6 +188,14 @@ export function parseHarmonyBrigadeSnapshots({
     eventSongs: Array.from(eventSongs.values()),
     missingSongCount,
     missingArrangerCount: Array.from(songsById.values()).filter((song) => !song.arranger).length,
+  };
+
+  return {
+    ...parsed,
+    eventSongCountSummary: eventSongCountSummary(
+      parsed.events,
+      parsed.eventSongs
+    ),
   };
 }
 
@@ -180,9 +230,13 @@ export async function importHarmonyBrigadeSongs({
     historyRows,
     brigadeRows,
   });
+  const sourceEventSongCountSummary = eventSongCountSummary(
+    parsed.events,
+    parsed.eventSongs
+  );
 
   if (dryRun) {
-    return { ...parsed, dryRun: true };
+    return { ...parsed, sourceEventSongCountSummary, dryRun: true };
   }
 
   const supabaseUrl =
@@ -215,14 +269,20 @@ export async function importHarmonyBrigadeSongs({
     eventRows.map((row) => [`${row.year_held}|${row.brigade_abbr}`, row.id])
   );
 
-  const joinRows = parsed.eventSongs
+  const joinRowsWithEventKeys = parsed.eventSongs
     .map((row, index) => ({
+      eventKey: row.eventKey,
       event_id: eventIds.get(row.eventKey),
       song_id: songIds.get(row.source_song_id),
       track_number: row.track_number,
       sort_order: row.track_number ?? index + 1,
     }))
     .filter((row) => row.event_id && row.song_id);
+  const joinRows = joinRowsWithEventKeys.map(({ eventKey: _eventKey, ...row }) => row);
+  const importedEventSongCountSummary = eventSongCountSummary(
+    parsed.events,
+    joinRowsWithEventKeys.map((row) => ({ eventKey: row.eventKey }))
+  );
 
   await deleteAllRows(supabase, "harmony_brigade_event_songs");
   await upsertInBatches(supabase, "harmony_brigade_event_songs", joinRows, {
@@ -231,6 +291,8 @@ export async function importHarmonyBrigadeSongs({
 
   return {
     ...parsed,
+    sourceEventSongCountSummary,
+    importedEventSongCountSummary,
     eventSongsImported: joinRows.length,
     dryRun: false,
   };
@@ -247,6 +309,10 @@ async function main() {
   console.log(`Event-song rows: ${result.eventSongsImported ?? result.eventSongs.length}`);
   console.log(`Missing arrangers: ${result.missingArrangerCount}`);
   console.log(`History rows missing SongData match: ${result.missingSongCount}`);
+  printEventSongCountSummary("Source event-song counts", result.sourceEventSongCountSummary);
+  if (result.importedEventSongCountSummary) {
+    printEventSongCountSummary("Imported event-song counts", result.importedEventSongCountSummary);
+  }
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
