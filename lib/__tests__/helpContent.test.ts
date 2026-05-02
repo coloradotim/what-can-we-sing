@@ -27,7 +27,8 @@ describe("help content", () => {
 
   it("covers the core new-user flow", () => {
     expect(quickStartSteps.join(" ")).toContain("display name");
-    expect(quickStartSteps.join(" ")).toContain("repertoire");
+    expect(quickStartSteps.join(" ")).toContain("songs");
+    expect(quickStartSteps.join(" ")).toContain("Harmony Brigade");
     expect(quickStartSteps.join(" ")).toContain("code");
 
     const sectionText = helpSections
@@ -45,7 +46,7 @@ describe("help content", () => {
     expect(feedbackHelpCopy).toContain("General feedback");
   });
 
-  it("is organized into onboarding, repertoire, and quartet guidance", () => {
+  it("is organized into onboarding, My Songs, and quartet guidance", () => {
     expect(helpGuideSections.map((section) => section.title)).toEqual([
       "Get Singing Quickly",
       "Manage The Songs You Know",
@@ -65,10 +66,12 @@ describe("help content", () => {
     ]);
 
     expect(guideText).toContain("First Time Setup");
-    expect(guideText).toContain("you do not need to enter your entire repertoire");
+    expect(guideText).toContain("copy songs from another singer");
+    expect(guideText).toContain("Harmony Brigade songs");
     expect(guideText).toContain("Song Title Autocomplete");
     expect(guideText).toContain("Suggestions are optional");
-    expect(guideText).toContain("does not add it to anyone else’s repertoire");
+    expect(guideText).toContain("does not add it to anyone else’s My Songs");
+    expect(guideText).toContain("More Ways To Build My Songs");
     expect(guideText).toContain("TTBB means Tenor, Lead, Baritone, Bass");
     expect(guideText).toContain("add it more than once");
     expect(guideText).toContain("A singer may know multiple parts");
@@ -76,9 +79,10 @@ describe("help content", () => {
     expect(guideText).toContain("no arranger entered");
     expect(guideText).toContain("Unknown");
     expect(guideText).toContain("Notes are for your own memory");
-    expect(guideText).toContain("Recently sung helps you remember");
+    expect(guideText).toContain("Last sung is based on songs");
     expect(guideText).toContain("sort by title");
-    expect(guideText).toContain("Never Sung");
+    expect(guideText).toContain("Sung status");
+    expect(guideText).toContain("Not marked yet");
   });
 
   it("explains quartet match details and management", () => {
@@ -97,7 +101,7 @@ describe("help content", () => {
     expect(guideText).toContain("arranger differences");
     expect(guideText).toContain("Open a match to see who is covering which part");
     expect(guideText).toContain("use Manage to see quartet members");
-    expect(guideText).toContain("edit repertoire");
+    expect(guideText).toContain("edit My Songs");
     expect(guideText).toContain("Leaving removes you from the active quartet");
     expect(guideText).toContain("you can rejoin normally");
   });
@@ -105,7 +109,7 @@ describe("help content", () => {
   it("provides compact table of contents links for every major help section", () => {
     expect(helpNavItems).toEqual([
       { id: "first-time-setup", label: "First time setup" },
-      { id: "repertoire", label: "Repertoire" },
+      { id: "repertoire", label: "My Songs" },
       { id: "starting-a-quartet", label: "Starting a quartet" },
       { id: "joining-a-quartet", label: "Joining a quartet" },
       { id: "quartet-matches", label: "Quartet matches" },

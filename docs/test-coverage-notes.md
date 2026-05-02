@@ -15,7 +15,7 @@ This file tracks high-risk behavior that should stay covered as the app changes.
 - Detecting when the current participant has been removed from a quartet.
 - Building participant snapshot entries from profile display names and
   repertoire rows without leaking private notes.
-- Refreshing an active quartet snapshot from current repertoire, clearing stale
+- Refreshing an active quartet snapshot from current My Songs entries, clearing stale
   local active-quartet state when the user is no longer a participant, and
   refusing to write a snapshot without a display name.
 - `sessionStore` write helpers for participant upsert, leave/delete, and
@@ -28,7 +28,7 @@ This file tracks high-risk behavior that should stay covered as the app changes.
 ## Remaining Gaps
 
 - The suite still does not run a browser-level test for the full start -> join
-  -> edit repertoire -> refresh matches -> leave/remove flow. The current tests
+  -> edit My Songs -> refresh matches -> leave/remove flow. The current tests
   cover the pure helpers and store calls underneath those flows.
 - The suite does not execute RLS policies against a real Supabase instance.
   `docs/supabase-contract.md` describes the smallest follow-up: add
@@ -40,11 +40,11 @@ This file tracks high-risk behavior that should stay covered as the app changes.
 
 ## Future Checklist
 
-When changing quartet or repertoire data flow, add or update tests that prove:
+When changing quartet or My Songs data flow, add or update tests that prove:
 
 - database helpers read/write the expected Supabase table or RPC
 - stale local active-quartet state is reconciled against database state
-- repertoire edits refresh `session_participants.repertoire` when applicable
+- My Songs edits refresh `session_participants.repertoire` when applicable
 - matching derives from participant snapshots, not local-only component state
 - UI copy does not imply a user joined, left, or refreshed before the database
   operation has been verified

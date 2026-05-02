@@ -8,7 +8,7 @@ export default function PrivacyPage() {
 
         <h1 className="mt-8 text-4xl font-bold tracking-tight">Privacy</h1>
         <p className="mt-3 text-lg text-slate-300">
-          What Can We Sing is built to help singers compare repertoire in the
+          What Can We Sing is built to help singers compare saved songs in the
           room. This page explains what information the app uses, what other
           quartet members can see, and which services help run the app.
         </p>
@@ -18,19 +18,20 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold">Information we collect</h2>
             <p className="mt-2 text-slate-300">
               We store your email address so you can sign in and access your
-              saved repertoire. We do not show your email address to other
+              saved songs. We do not show your email address to other
               singers in a quartet.
             </p>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-slate-300">
               <li>Your display name for profile and quartet screens.</li>
               <li>
-                Your repertoire entries, including song title, voicing, parts
+                Your My Songs entries, including song title, voicing, parts
                 known, confidence, arranger if entered, notes if entered, date
-                added or updated, and recently sung information.
+                added or updated, and last-sung information when you mark a song
+                as sung in the app.
               </li>
               <li>
                 Quartet/session data, including join codes, active membership,
-                and participant repertoire snapshots used to calculate matches.
+                and participant saved-song snapshots used to calculate matches.
               </li>
               <li>
                 Feedback messages you send, including the contact email shown in
@@ -43,7 +44,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold">How we use it</h2>
             <p className="mt-2 text-slate-300">
               The app uses your information to sign you in, save your profile,
-              manage your repertoire, let you join or leave quartets, refresh
+              manage My Songs, let you join or leave quartets, refresh
               quartet snapshots, and show songs the group may be able to sing.
               Song title suggestions are generated from distinct song title,
               voicing, and arranger values that singers have entered before.
@@ -53,21 +54,69 @@ export default function PrivacyPage() {
           </div>
 
           <div>
+            <h2 className="text-xl font-semibold">Song suggestions</h2>
+            <p className="mt-2 text-slate-300">
+              Suggestions help singers enter songs faster. They may use safe song
+              identity fields such as title, voicing, and arranger from catalog
+              imports or previously saved song identities. Suggestions are not
+              authoritative, and adding a song to My Songs does not add it to
+              anyone else&apos;s My Songs. Personal details such as notes,
+              confidence, last-sung history, user identity, and email address are
+              not exposed as suggestions.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-semibold">Private copy links</h2>
+            <p className="mt-2 text-slate-300">
+              If you choose Let another singer copy songs from My Songs, the app
+              creates a private code/link. Anyone with an active code/link can
+              view safe song identity fields: title, voicing, and arranger. They
+              must sign in before copying songs, and copied songs become their
+              own My Songs entries with their chosen part and confidence. The
+              shared view does not expose notes, confidence, last-sung history,
+              email address, or account details, and you can revoke the link.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-semibold">Harmony Brigade songs</h2>
+            <p className="mt-2 text-slate-300">
+              Adding Harmony Brigade songs uses reference data to help you add
+              songs to My Songs. It does not publicly indicate that you attended
+              a Brigade event. Your selected year, brigade, song choices, parts,
+              and confidence are not shown to other users by default, except
+              through normal quartet matching if you join a quartet.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-semibold">Last-sung data</h2>
+            <p className="mt-2 text-slate-300">
+              Last-sung data is stored when you mark a song as sung from a
+              quartet page or from My Songs. It is used for sorting, filtering,
+              and personal guidance. It is not meant to be a public performance
+              history, and Not marked yet does not make any claim about your
+              real-life singing history.
+            </p>
+          </div>
+
+          <div>
             <h2 className="text-xl font-semibold">
               What quartet members can see
             </h2>
             <p className="mt-2 text-slate-300">
               When you join a quartet, other singers in that quartet may see
-              your display name and repertoire-derived information needed for
+              your display name and saved-song information needed for
               matching, such as songs, voicing, parts, confidence, and possible
               arrangement details or warnings. This sharing is the core purpose
               of the app: helping the quartet answer what can we sing together
               right now.
             </p>
             <p className="mt-2 text-slate-300">
-              Personal repertoire notes are stored for you and are not included
+              Personal notes are stored for you and are not included
               in participant snapshots. Notes may appear to you in your own
-              repertoire and match details.
+              My Songs and match details.
             </p>
           </div>
 
@@ -87,7 +136,7 @@ export default function PrivacyPage() {
               If analytics are enabled, we use PostHog to understand product
               usage and reliability. Analytics events may include routes,
               counts, categories, browser/device information, and coarse action
-              details. We do not intentionally send feedback text, repertoire
+              details. We do not intentionally send feedback text, My Songs
               notes, song titles, arranger names, singer names, email addresses,
               or quartet join codes to analytics.
             </p>

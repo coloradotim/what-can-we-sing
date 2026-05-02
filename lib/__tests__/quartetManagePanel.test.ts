@@ -12,7 +12,7 @@ describe("quartet manage panel markup", () => {
     expect(joinPage).toContain("Singing as");
     expect(joinPage).toContain("Manage");
     expect(joinPage).toContain("Members");
-    expect(joinPage).toContain("Edit Repertoire");
+    expect(joinPage).toContain("Edit My Songs");
     expect(joinPage).toContain("Leave Quartet");
     expect(joinPage).toContain("showCurrentParticipantActions: false");
     expect(joinPage).not.toContain("Quartet full");

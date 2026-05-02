@@ -13,7 +13,7 @@ describe("login intro content", () => {
     expect(copy).toContain("what can we sing together right now");
     expect(copy).toContain("songs they know");
     expect(copy).toContain("parts they can sing");
-    expect(copy).toContain("Sign in to save your repertoire");
+    expect(copy).toContain("Sign in to save My Songs");
   });
 
   it("links new users to help before they sign in", () => {

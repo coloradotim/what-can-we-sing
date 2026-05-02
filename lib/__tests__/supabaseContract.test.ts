@@ -30,6 +30,13 @@ const sungMetadataMigration = readFileSync(
   ),
   "utf8"
 );
+const nullableSungSessionMigration = readFileSync(
+  join(
+    repoRoot,
+    "supabase/migrations/20260501210000_allow_repertoire_mark_sung_without_session.sql"
+  ),
+  "utf8"
+);
 const participantRemovalMigration = readFileSync(
   join(
     repoRoot,
@@ -193,11 +200,19 @@ describe("Supabase contract guardrails", () => {
     expect(contract).toContain("last_sung_at");
     expect(contract).toContain("times_sung_count");
     expect(contract).toContain("mark_repertoire_sung");
+    expect(contract).toContain("p_session_id uuid default null");
+    expect(contract).toContain("My Songs marks pass `null`");
     expect(sungMetadataMigration).toContain("last_sung_at timestamptz");
     expect(sungMetadataMigration).toContain("times_sung_count integer");
     expect(sungMetadataMigration).toContain("times_sung_count + 1");
     expect(sungMetadataMigration).toContain("user_id = auth.uid()");
     expect(sungMetadataMigration).toContain("sung_song_events");
+    expect(nullableSungSessionMigration).toContain(
+      "alter column session_id drop not null"
+    );
+    expect(nullableSungSessionMigration).toContain(
+      "p_session_id uuid default null"
+    );
   });
 
   it("documents and migrates private repertoire share links", () => {

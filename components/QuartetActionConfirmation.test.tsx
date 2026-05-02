@@ -42,13 +42,13 @@ describe("QuartetActionConfirmation", () => {
     expect(html).toContain("Leaving...");
   });
 
-  it("supports destructive repertoire delete confirmation copy", () => {
+  it("supports destructive My Songs delete confirmation copy", () => {
     const html = renderToStaticMarkup(
       <QuartetActionConfirmation
         open
         busy={false}
         title="Delete song?"
-        description='This will remove "Mamselle" from your repertoire. This cannot be undone.'
+        description='This will remove "Mamselle" from My Songs. This cannot be undone.'
         confirmLabel="Delete song"
         busyLabel="Deleting..."
         onCancel={() => undefined}

@@ -62,8 +62,8 @@ The app currently tracks these events through `lib/analytics.ts`:
 | `repertoire_song_deleted` | `components/RepertoireManager.tsx` after deleting a song | `song_count` | No free text | Legacy compatibility |
 | `repertoire_updated` | `components/RepertoireManager.tsx` after add/edit/delete succeeds | `action`, `song_count`, `parts_known_count` | No free text | Quartet Funnel, Repertoire & Matching |
 | `repertoire_update_failed` | `components/RepertoireManager.tsx` when add/edit/delete fails | `action` | No free text | Reliability / Errors |
-| `song_marked_sung` | `app/join/[code]/page.tsx` after marking a match as sung | `session_id`, `match_category`, `voicing` | No free text | Future recently sung dashboard |
-| `song_mark_sung_failed` | `app/join/[code]/page.tsx` when marking a match as sung fails | `session_id`, `match_category`, `voicing` | No free text | Reliability / Errors |
+| `song_marked_sung` | `app/join/[code]/page.tsx` after marking a match as sung, or `components/RepertoireManager.tsx` after marking a My Songs row as sung | `session_id`, `match_category`, `voicing`, `source` | No free text | Future recently sung dashboard |
+| `song_mark_sung_failed` | `app/join/[code]/page.tsx` or `components/RepertoireManager.tsx` when marking a song as sung fails | `session_id`, `match_category`, `voicing`, `source` | No free text | Reliability / Errors |
 | `help_viewed` | `app/help/page.tsx` when the help page loads | none | No | Product Health context |
 | `feedback_submitted` | `app/help/page.tsx` after feedback API succeeds | `category`, `length` | No message text | Product Health |
 | `feedback_failed` | `app/help/page.tsx` when feedback API fails | `category`, `status_code` or `reason` | No message text | Reliability / Errors |

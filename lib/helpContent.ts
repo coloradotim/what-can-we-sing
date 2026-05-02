@@ -24,7 +24,7 @@ export type HelpNavItem = {
 
 export const quickStartSteps = [
   "Add your display name so other singers know who is in the quartet.",
-  "Add a few songs you are likely to sing. You do not need to enter your entire repertoire before starting.",
+  "Add a few songs you are likely to sing. You can type songs in, copy songs from another singer, or add Harmony Brigade songs.",
   "For each song, choose the voicing and every part you can sing for that arrangement.",
   "Start a quartet or join someone else with a code, QR code, or shared link.",
   "Use Matches to pick something everyone can sing right now.",
@@ -36,7 +36,7 @@ export const helpGuideSections: HelpGuideSection[] = [
     eyebrow: "First Time Setup",
     title: "Get Singing Quickly",
     intro:
-      "If you are using the app for the first time, you do not need to enter your entire repertoire. Add a few songs you are likely to sing, join a quartet, and add more as you go.",
+      "If you are using the app for the first time, you do not need to enter every song. Add a few songs you are likely to sing, join a quartet, and add more as you go.",
     topics: [
       {
         title: "The basic flow",
@@ -49,17 +49,17 @@ export const helpGuideSections: HelpGuideSection[] = [
       {
         title: "Don't overthink entering all of your songs",
         body: [
-          "Start with songs you are likely to sing soon. You can add more repertoire later, and if you are already in a quartet, repertoire edits refresh your active quartet snapshot so matches can update.",
+          "Start with songs you are likely to sing soon. You can add more later, copy songs from another singer, or add Harmony Brigade songs if that helps you get started faster. If you are already in a quartet, edits to My Songs refresh your active quartet snapshot so matches can update.",
         ],
       },
     ],
   },
   {
     id: "repertoire",
-    eyebrow: "Repertoire",
+    eyebrow: "My Songs",
     title: "Manage The Songs You Know",
     intro:
-      "The Repertoire page stores your songs, voicings, parts, confidence, arranger information, notes, and recently sung history.",
+      "My Songs stores your songs, voicings, parts, confidence, arranger information, notes, and last-sung tracking.",
     topics: [
       {
         title: "Song Title Autocomplete",
@@ -71,8 +71,16 @@ export const helpGuideSections: HelpGuideSection[] = [
       {
         title: "How Suggestions Are Shared",
         body: [
-          "When you add a song, the title, voicing, and arranger you enter can help future singers find the same song faster. Adding a song does not add it to anyone else’s repertoire.",
-          "Suggestions do not expose private user details such as user IDs, singer names, notes, parts, confidence, timestamps, or your full personal repertoire.",
+          "When you add a song, the title, voicing, and arranger you enter can help future singers find the same song faster. Adding a song does not add it to anyone else’s My Songs.",
+          "Suggestions do not expose private user details such as user IDs, singer names, notes, parts, confidence, timestamps, or your full personal song list.",
+        ],
+      },
+      {
+        title: "More Ways To Build My Songs",
+        body: [
+          "Use Copy songs from another singer when someone gives you a private link or code. You can copy song titles, voicings, and arrangers, then choose your own part and confidence before saving.",
+          "Use Let another singer copy songs from My Songs to create a private link/code. The other singer cannot see your notes, confidence, last-sung history, email address, or account details.",
+          "Use Add Harmony Brigade songs to choose a year and brigade, review TTBB songs from the reference data, and choose your own parts and confidence before adding anything.",
         ],
       },
       {
@@ -99,20 +107,22 @@ export const helpGuideSections: HelpGuideSection[] = [
       {
         title: "Notes",
         body: [
-          "Notes are for your own memory — for example, version reminders, tags, first words, key, or tricky spots. They help you manage your repertoire but are not used to decide whether the quartet can sing a song.",
+          "Notes are for your own memory — for example, version reminders, tags, first words, key, or tricky spots. They help you manage My Songs but are not used to decide whether the quartet can sing a song.",
         ],
       },
       {
-        title: "Recently Sung",
+        title: "Last Sung",
         body: [
-          "Recently sung helps you remember what you have sung lately. It can help you sort or filter your repertoire, but it does not remove the song from your repertoire or from possible matches.",
+          "Last sung is based on songs you have marked as sung in the app, either from a quartet page or from My Songs. Not marked yet does not make any claim about your real-life singing history.",
+          "You can use Sung status to show all songs, marked-sung songs, or songs that are not marked yet.",
         ],
       },
       {
         title: "Sorting and Filtering",
         body: [
           "Use search to filter by title. You can sort by title, newest or oldest added, sung recently, or least recently sung.",
-          "You can filter by voicing, part, and Never Sung. Active filters appear above the song list and can be cleared together.",
+          "Recently sung puts marked-sung songs first, newest to oldest. Least recently sung puts Not marked yet songs first, then marked-sung songs from oldest to newest.",
+          "You can filter by voicing, part, and Sung status. Active filters appear above the song list and can be cleared together.",
         ],
       },
     ],
@@ -128,20 +138,20 @@ export const helpGuideSections: HelpGuideSection[] = [
         title: "What Start Does",
         body: [
           "Start creates a quartet session and gives it a short code. Other singers can enter the code, scan the QR code, or open the shared link to join.",
-          "You are part of the quartet you start. Your saved repertoire is used along with the other singers’ repertoire to find matches, so add at least a few songs first.",
+          "You are part of the quartet you start. My Songs is used along with the other singers’ saved songs to find matches, so add at least a few songs first.",
         ],
       },
       {
         title: "After Singers Join",
         body: [
-          "Once singers join, the app compares the current quartet members’ saved repertoire snapshots. A quartet is full when four singers have joined.",
-          "Starting a quartet does not permanently change anyone else’s repertoire. It only creates a shared place where the group can compare what each singer already has saved.",
+          "Once singers join, the app compares the current quartet members’ saved song snapshots. A quartet is full when four singers have joined.",
+          "Starting a quartet does not permanently change anyone else’s My Songs. It only creates a shared place where the group can compare what each singer already has saved.",
         ],
       },
       {
         title: "Fixing Something After Starting",
         body: [
-          "If you notice a missing song, wrong part, confidence issue, arranger detail, or display name problem, you can still edit your repertoire or name after starting and return to the quartet.",
+          "If you notice a missing song, wrong part, confidence issue, arranger detail, or display name problem, you can still edit My Songs or your name after starting and return to the quartet.",
         ],
       },
     ],
@@ -156,8 +166,8 @@ export const helpGuideSections: HelpGuideSection[] = [
       {
         title: "What Join Uses",
         body: [
-          "When you join, the app uses your saved repertoire to look for songs the group can sing together. Joining does not add songs to your repertoire or change the songs you already saved.",
-          "If your repertoire is empty or missing common songs, the group may see fewer matches until you add or update entries.",
+          "When you join, the app uses My Songs to look for songs the group can sing together. Joining does not add songs to My Songs or change the songs you already saved.",
+          "If My Songs is empty or missing common songs, the group may see fewer matches until you add or update entries.",
         ],
       },
       {
@@ -217,13 +227,13 @@ export const helpGuideSections: HelpGuideSection[] = [
     eyebrow: "Managing A Quartet",
     title: "Update, Leave, Or Rejoin A Quartet",
     intro:
-      "Quartet membership and match results come from the current quartet data. Use the quartet controls when someone updates repertoire, changes names, leaves, rejoins, or needs to be removed.",
+      "Quartet membership and match results come from the current quartet data. Use the quartet controls when someone updates My Songs, changes names, leaves, rejoins, or needs to be removed.",
     topics: [
       {
         title: "Managing The Quartet",
         body: [
-          "When the quartet is full, use Manage to see quartet members, edit repertoire, change your name, or leave the quartet.",
-          "If a song title, voicing, part, arranger, notes, or confidence looks wrong, update it from Repertoire. If the name shown to others is wrong, use Change name.",
+          "When the quartet is full, use Manage to see quartet members, edit My Songs, change your name, or leave the quartet.",
+          "If a song title, voicing, part, arranger, notes, or confidence looks wrong, update it from My Songs. If the name shown to others is wrong, use Change name.",
         ],
       },
       {
@@ -239,7 +249,7 @@ export const helpGuideSections: HelpGuideSection[] = [
 
 export const helpNavItems: HelpNavItem[] = [
   { id: "first-time-setup", label: "First time setup" },
-  { id: "repertoire", label: "Repertoire" },
+  { id: "repertoire", label: "My Songs" },
   { id: "starting-a-quartet", label: "Starting a quartet" },
   { id: "joining-a-quartet", label: "Joining a quartet" },
   { id: "quartet-matches", label: "Quartet matches" },

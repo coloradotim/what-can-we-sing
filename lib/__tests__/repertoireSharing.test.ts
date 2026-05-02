@@ -111,11 +111,11 @@ describe("repertoire sharing", () => {
 
   it("uses a clear remote request message for copy links and codes", () => {
     expect(repertoireCopyRequestMessage).toContain(
-      "Let another singer copy songs from my repertoire"
+      "Let another singer copy songs from My Songs"
     );
     expect(repertoireCopyRequestMessage).toContain("link or code");
     expect(repertoireCopyRequestMessage).toContain(
-      "copy a few songs into my repertoire"
+      "copy a few songs into My Songs"
     );
   });
 });

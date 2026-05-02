@@ -7,10 +7,10 @@ sync with `README.md`, `AGENTS.md`, and `docs/supabase-contract.md`.
 
 - `profiles.display_name` is the source of truth for singer names.
 - `user_repertoire` is the source of truth for a user's saved songs, parts,
-  confidence values, private notes, and recently sung metadata.
+  confidence values, private notes, and last-sung metadata.
 - `sessions` is the source of truth for quartet join codes and session activity.
 - `session_participants` is the source of truth for active quartet membership
-  and each singer's repertoire snapshot.
+  and each singer's saved-song snapshot.
 - Local active-quartet state is only a navigation shortcut. The quartet screen
   must reconcile it against `session_participants`.
 
@@ -19,7 +19,7 @@ sync with `README.md`, `AGENTS.md`, and `docs/supabase-contract.md`.
 ### Start Quartet
 
 Starting a quartet creates a `sessions` row, reads the current user's profile
-and repertoire, writes that user's `session_participants` snapshot, stores the
+and My Songs entries, writes that user's `session_participants` snapshot, stores the
 active quartet shortcut locally, and then sends the user to `/join/[code]`.
 
 The first singer should appear in the quartet without needing to manually join
@@ -55,14 +55,14 @@ A current participant may remove another singer through
 `session_participants` row is deleted, and their client should stop treating the
 quartet as active after it observes that database state.
 
-### Repertoire Updates While In A Quartet
+### My Songs Updates While In A Quartet
 
-Adding, editing, or deleting repertoire updates `user_repertoire`. If the user
+Adding, editing, or deleting My Songs entries updates `user_repertoire`. If the user
 has an active quartet, the app refreshes that user's
 `session_participants.repertoire` snapshot so quartet results derive from the
 database snapshot instead of stale local component state.
 
-When adding repertoire, song-title autocomplete suggestions come from distinct
+When adding My Songs entries, song-title autocomplete suggestions come from distinct
 song identities already entered in `user_repertoire` plus optional reference
 rows in `song_suggestion_catalog`. These suggestions only prefill the form.
 Users can ignore them, edit all fields, or enter a song that is not in the
@@ -87,7 +87,7 @@ should not be collapsed with blank data.
 ## Navigation
 
 The home page is an action hub. It offers Start Quartet, Join Quartet, Return to
-Quartet when local state exists, and Repertoire. Manual code entry belongs on
+Quartet when local state exists, and My Songs. Manual code entry belongs on
 `/join`, while QR and shared links use `/join/[code]`. Help and feedback live at
 `/help`; `/feedback` redirects there for older links. Help is public so new or
 logged-out users can read it before signing in.
@@ -102,7 +102,7 @@ not rely on magic-link callback redirects.
 
 PostHog is optional and controlled by `NEXT_PUBLIC_POSTHOG_KEY` and
 `NEXT_PUBLIC_POSTHOG_HOST`. Events must not include free-text user content such
-as feedback text, repertoire notes, song titles, arranger names, singer names,
+as feedback text, My Songs notes, song titles, arranger names, singer names,
 or email addresses.
 
 See `docs/analytics.md` for the current event contract.

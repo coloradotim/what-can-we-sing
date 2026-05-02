@@ -98,7 +98,11 @@ export default function WelcomePage() {
             <p className="font-semibold text-white">To get useful matches:</p>
             <ol className="mt-3 space-y-3 text-sm leading-6 text-slate-300">
               <li>1. Set your display name.</li>
-              <li>2. Add a few songs you know, not your whole repertoire.</li>
+              <li>
+                2. Add a few songs you know, not every song. You can type songs
+                in, copy songs from another singer, or add Harmony Brigade songs
+                if that applies to you.
+              </li>
               <li>3. Start a quartet or join one with a code, QR code, or link.</li>
               <li>4. Use the match list to pick something and sing.</li>
             </ol>

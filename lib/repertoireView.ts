@@ -8,11 +8,13 @@ export type RepertoireSortOption =
   | "last_sung_desc"
   | "last_sung_asc";
 
+export type SungStatusFilter = "all" | "marked" | "not_marked";
+
 export type RepertoireFilters = {
   searchQuery: string;
   voicing: Voicing | "";
   part: Part | "";
-  neverSungOnly: boolean;
+  sungStatus: SungStatusFilter;
   sort: RepertoireSortOption;
 };
 
@@ -69,7 +71,11 @@ export function filterAndSortRepertoire(
         return false;
       }
 
-      if (filters.neverSungOnly && item.last_sung_at) {
+      if (filters.sungStatus === "marked" && !item.last_sung_at) {
+        return false;
+      }
+
+      if (filters.sungStatus === "not_marked" && item.last_sung_at) {
         return false;
       }
 
@@ -113,6 +119,6 @@ export function hasActiveRepertoireFilters(filters: RepertoireFilters) {
     filters.searchQuery.trim() ||
       filters.voicing ||
       filters.part ||
-      filters.neverSungOnly
+      filters.sungStatus !== "all"
   );
 }

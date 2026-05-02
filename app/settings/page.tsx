@@ -162,7 +162,7 @@ export default function SettingsPage() {
               href="/repertoire"
               className="mt-4 inline-block rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-white/20"
             >
-              Add songs
+              Add songs to My Songs
             </a>
           )}
         </section>

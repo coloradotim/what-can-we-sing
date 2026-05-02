@@ -1,9 +1,9 @@
 # Data Imports
 
 What Can We Sing uses controlled source-data transforms for optional song-entry
-suggestions and repertoire-building helpers. Catalog imports must not add songs
-to any user's repertoire. Singer-facing add flows may add songs only to the
-current authenticated user's repertoire after the user previews the songs and
+suggestions and My Songs-building helpers. Catalog imports must not add songs
+to any user's My Songs. Singer-facing add flows may add songs only to the
+current authenticated user's My Songs after the user previews the songs and
 chooses required personal fields. Source data must not store lyrics, sheet
 music contents, preview images, pricing, cart data, or full product
 descriptions in user-facing suggestion data.
@@ -175,7 +175,7 @@ The import creates or updates:
 - `harmony_brigade_events`
 - `harmony_brigade_event_songs`
 
-The user-facing flow appears under **More ways to build your repertoire** as
+The user-facing flow appears under **More ways to build My Songs** as
 **Add Harmony Brigade songs**. Users can choose:
 
 - `All years` or a real `YearHeld` value
@@ -185,7 +185,7 @@ The picker lists event-song appearances from `ViewHistory`, so the same song
 can appear under multiple years or brigades. Songs default to `TTBB`. Before
 adding, the user chooses any TTBB parts they know for each song and a confidence
 value for each selected part. If multiple appearances of the same normalized
-title + arranger are selected, they are saved as one repertoire row with the
+title + arranger are selected, they are saved as one My Songs row with the
 combined part confidences. Adding Harmony Brigade songs writes only to the
 current user's `user_repertoire`; it does not expose the user's Brigade
 selection publicly.
