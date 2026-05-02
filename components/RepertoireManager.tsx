@@ -1874,9 +1874,11 @@ export default function RepertoireManager() {
 
         {hasSavedSongs && (
           <section className="mt-8">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h2 className="text-2xl font-semibold">My saved songs</h2>
+            <div className="grid gap-4 xl:grid-cols-[minmax(14rem,16rem)_minmax(0,1fr)] xl:items-end">
+              <div className="min-w-0">
+                <h2 className="text-2xl font-semibold tracking-tight sm:whitespace-nowrap">
+                  My saved songs
+                </h2>
                 <p className="mt-1 text-sm text-slate-400">
                   {visibleItems.length === items.length
                     ? `${items.length} ${items.length === 1 ? "song" : "songs"} saved`
@@ -1888,14 +1890,14 @@ export default function RepertoireManager() {
               </div>
 
               <div
-                className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(12rem,18rem)_11rem_11rem_11rem_11rem] ${
+                className={`grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-[minmax(20rem,1.5fr)_repeat(4,minmax(10rem,1fr))] ${
                   hasSmallRepertoire ? "opacity-75" : ""
                 }`}
               >
-                <p className="text-sm font-semibold text-slate-300 sm:col-span-2 lg:col-span-5">
+                <p className="text-sm font-semibold text-slate-300 sm:col-span-2 lg:col-span-4 2xl:col-span-5">
                   Filter saved songs
                 </p>
-                <label className="block">
+                <label className="block min-w-0 sm:col-span-2 lg:col-span-2 2xl:col-span-1">
                   <span className="text-sm font-medium text-slate-300">
                     Search My Songs
                   </span>
@@ -1906,7 +1908,7 @@ export default function RepertoireManager() {
                     className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
                   />
                 </label>
-                <label className="block">
+                <label className="block min-w-0">
                   <span className="text-sm font-medium text-slate-300">
                     Sort
                   </span>
@@ -1924,7 +1926,7 @@ export default function RepertoireManager() {
                     <option value="last_sung_asc">Least recently sung</option>
                   </select>
                 </label>
-                <label className="block">
+                <label className="block min-w-0">
                   <span className="text-sm font-medium text-slate-300">
                     Voicing
                   </span>
@@ -1943,7 +1945,7 @@ export default function RepertoireManager() {
                     ))}
                   </select>
                 </label>
-                <label className="block">
+                <label className="block min-w-0">
                   <span className="text-sm font-medium text-slate-300">
                     Part
                   </span>
@@ -1960,7 +1962,7 @@ export default function RepertoireManager() {
                     ))}
                   </select>
                 </label>
-                <label className="block">
+                <label className="block min-w-0">
                   <span className="text-sm font-medium text-slate-300">
                     Sung status
                   </span>
