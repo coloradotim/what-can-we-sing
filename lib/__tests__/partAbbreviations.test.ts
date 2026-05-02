@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   compactVoicingDisplayLabel,
+  functionalPartNames,
   functionalPartName,
   partAbbreviation,
   partButtonLabel,
@@ -23,6 +24,15 @@ describe("voicing labels", () => {
 });
 
 describe("partAbbreviation", () => {
+  it("exposes one clean set of functional part names for filters", () => {
+    expect(functionalPartNames).toEqual([
+      "Tenor",
+      "Lead",
+      "Baritone",
+      "Bass",
+    ]);
+  });
+
   it("uses barbershop functional abbreviations for TTBB stored parts", () => {
     expect(partAbbreviation("TTBB", "Tenor")).toBe("T");
     expect(partAbbreviation("TTBB", "Lead")).toBe("L");

@@ -166,6 +166,48 @@ describe("filterAndSortRepertoire", () => {
 
     expect(result.map((item) => item.id)).toEqual(["not-marked"]);
   });
+
+  it("filters parts by functional barbershop role across arrangements", () => {
+    const result = filterAndSortRepertoire(
+      [
+        row({
+          id: "lower-lead",
+          song_title: "Lower Lead",
+          voicing: "TTBB",
+          parts_known: ["Lead"],
+          part_confidences: [{ part: "Lead", confidence: "Good to Go" }],
+        }),
+        row({
+          id: "mixed-lead",
+          song_title: "Mixed Lead",
+          voicing: "SATB",
+          parts_known: ["Alto"],
+          part_confidences: [{ part: "Alto", confidence: "Good to Go" }],
+        }),
+        row({
+          id: "treble-lead",
+          song_title: "Treble Lead",
+          voicing: "SSAA",
+          parts_known: ["Soprano 2"],
+          part_confidences: [{ part: "Soprano 2", confidence: "Good to Go" }],
+        }),
+        row({
+          id: "mixed-bari",
+          song_title: "Mixed Bari",
+          voicing: "SATB",
+          parts_known: ["Tenor"],
+          part_confidences: [{ part: "Tenor", confidence: "Good to Go" }],
+        }),
+      ],
+      { ...defaultFilters, part: "Lead" }
+    );
+
+    expect(result.map((item) => item.id)).toEqual([
+      "lower-lead",
+      "mixed-lead",
+      "treble-lead",
+    ]);
+  });
 });
 
 describe("hasActiveRepertoireFilters", () => {
