@@ -17,6 +17,7 @@ const defaultBackupDir = path.join(repoRoot, "data/backups");
 const defaultSourcePaths = [
   path.join(repoRoot, "data/sources/barbershop_connections_song_suggestions.psv"),
   path.join(repoRoot, "data/sources/barbershoptracks_song_suggestions.psv"),
+  path.join(repoRoot, "data/sources/timtracks_song_suggestions.psv"),
   path.join(repoRoot, "data/sources/bhs_song_catalog_suggestions.psv"),
   path.join(repoRoot, "data/sources/harmony_brigade_song_suggestions.psv"),
 ];
