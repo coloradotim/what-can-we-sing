@@ -6,10 +6,19 @@ import { useEffect, useRef, useState } from "react";
 import { AppNav } from "@/components/AppNav";
 import { MatchCard } from "@/components/MatchCard";
 import { QuartetActionConfirmation } from "@/components/QuartetActionConfirmation";
+import { noArrangerEnteredLabel } from "@/lib/arrangerDisplay";
 import { trackEvent } from "@/lib/analytics";
 import { intentionalJoinStorageKey } from "@/lib/joinIntent";
 import { resolveCurrentUserRepertoireForMarkAsSung } from "@/lib/markAsSung";
-import { findMatches, type MatchResult, type SingerEntry } from "@/lib/matching";
+import {
+  findConversationStarters,
+  findMatches,
+  type ConversationStarter,
+  type MatchResult,
+  type Part,
+  type SingerEntry,
+} from "@/lib/matching";
+import { partAbbreviation } from "@/lib/partAbbreviations";
 import {
   findParticipantByUserId,
   resolveParticipantForJoin,
@@ -86,7 +95,7 @@ type PersonalSongNote = {
   notes: string;
 };
 
-type QuartetStatusMessageKind = "transient" | "persistent" | "error";
+type QuartetStatusMessageKind = "transient" | "persistent" | "success" | "error";
 
 function leftQuartetStorageKey(code: string) {
   return `left-quartet:${code}`;
@@ -109,6 +118,7 @@ export default function JoinSessionPage() {
   const lastTrackedMatchesKey = useRef("");
   const participantsRef = useRef<DbParticipant[]>([]);
   const messageTimeoutRef = useRef<number | null>(null);
+  const sungCelebrationTimeoutRef = useRef<number | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -123,6 +133,7 @@ export default function JoinSessionPage() {
   );
   const [recentSungSongs, setRecentSungSongs] = useState<SungSongEvent[]>([]);
   const [markingSungKey, setMarkingSungKey] = useState("");
+  const [celebratingSungKey, setCelebratingSungKey] = useState("");
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [messageKind, setMessageKind] =
@@ -131,6 +142,7 @@ export default function JoinSessionPage() {
   const [qrUrl, setQrUrl] = useState("");
   const [loadError, setLoadError] = useState("");
   const [now, setNow] = useState(() => new Date());
+  const [isManageOpen, setIsManageOpen] = useState(false);
   const [leftQuartet, setLeftQuartet] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
@@ -169,7 +181,7 @@ export default function JoinSessionPage() {
     setMessage(text);
     setMessageKind(kind);
 
-    if (kind === "transient") {
+    if (kind === "transient" || kind === "success") {
       messageTimeoutRef.current = window.setTimeout(() => {
         setMessage((currentMessage) =>
           currentMessage === text ? "" : currentMessage
@@ -189,6 +201,7 @@ export default function JoinSessionPage() {
     window.sessionStorage.setItem(leftQuartetStorageKey(code), "true");
     window.sessionStorage.removeItem(intentionalJoinStorageKey(code));
     clearActiveQuartetIfMatches(id);
+    setIsManageOpen(false);
     setLeftQuartet(true);
     setPendingActiveQuartet(null);
     window.location.href = "/join?removed=1";
@@ -463,6 +476,7 @@ export default function JoinSessionPage() {
         source: "quartet_page",
       });
     }
+    setIsManageOpen(false);
     setShowLeaveConfirmation(true);
   }
 
@@ -680,10 +694,17 @@ export default function JoinSessionPage() {
         voicing: match.voicing,
       });
       await refreshRecentSungSongs();
-      showStatusMessage(
-        `Marked "${resolution.entry.songTitle}" as sung.`,
-        "transient"
-      );
+      if (sungCelebrationTimeoutRef.current) {
+        window.clearTimeout(sungCelebrationTimeoutRef.current);
+      }
+      setCelebratingSungKey(key);
+      sungCelebrationTimeoutRef.current = window.setTimeout(() => {
+        setCelebratingSungKey((currentKey) =>
+          currentKey === key ? "" : currentKey
+        );
+        sungCelebrationTimeoutRef.current = null;
+      }, 1800);
+      showStatusMessage("Nice — marked as sung.", "success", 3000);
     } catch (err) {
       console.error(err);
       trackEvent("song_mark_sung_failed", {
@@ -908,6 +929,8 @@ export default function JoinSessionPage() {
     profileDisplayNamesByUserId
   );
   const matches = findMatches(allEntries);
+  const conversationStarters =
+    matches.length === 0 ? findConversationStarters(allEntries) : [];
   const groupedMatches = matchSections.map((section) => ({
     ...section,
     matches: matches.filter((match) => match.category === section.category),
@@ -932,11 +955,28 @@ export default function JoinSessionPage() {
   const isCurrentUserParticipant = Boolean(
     findParticipantByUserId(participants, currentUserId)
   );
+  const orderedParticipants = [...participants].sort((a, b) => {
+    if (a.user_id === currentUserId) return -1;
+    if (b.user_id === currentUserId) return 1;
+    return getParticipantDisplayName(a, profileDisplayNamesByUserId).localeCompare(
+      getParticipantDisplayName(b, profileDisplayNamesByUserId),
+      undefined,
+      { sensitivity: "base" }
+    );
+  });
   const openSingerSlots = Math.max(
     0,
     MAX_QUARTET_PARTICIPANTS - participants.length
   );
   const isQuartetFull = participants.length >= MAX_QUARTET_PARTICIPANTS;
+  const showManageButton =
+    Boolean(session) &&
+    isQuartetFull &&
+    participants.length > 0 &&
+    !leftQuartet &&
+    !loadError &&
+    !quartetExpired &&
+    !pendingActiveQuartet;
   const showJoinInfo =
     Boolean(session) &&
     !quartetExpired &&
@@ -954,6 +994,10 @@ export default function JoinSessionPage() {
     return () => {
       if (messageTimeoutRef.current) {
         window.clearTimeout(messageTimeoutRef.current);
+      }
+
+      if (sungCelebrationTimeoutRef.current) {
+        window.clearTimeout(sungCelebrationTimeoutRef.current);
       }
     };
   }, []);
@@ -1102,16 +1146,9 @@ export default function JoinSessionPage() {
     );
   }
 
-  function renderParticipantRow(
-    participant: DbParticipant,
-    options: { showCurrentParticipantActions?: boolean } = {}
-  ) {
+  function renderParticipantRow(participant: DbParticipant) {
     const isCurrentParticipant = participant.user_id === currentUserId;
-    const showCurrentParticipantActions =
-      options.showCurrentParticipantActions ?? true;
-    const showActions =
-      canManageParticipants &&
-      (!isCurrentParticipant || showCurrentParticipantActions);
+    const showActions = canManageParticipants;
 
     return (
       <div
@@ -1139,35 +1176,121 @@ export default function JoinSessionPage() {
           {showActions && (
             <div className="flex flex-wrap gap-2">
               {isCurrentParticipant && (
-                <a
-                  href="/settings"
-                  className="w-fit rounded-lg border border-cyan-300/30 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-300/10"
-                >
-                  Change name
-                </a>
+                <>
+                  <a
+                    href="/repertoire"
+                    className="w-fit rounded-lg border border-cyan-300/30 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-300/10"
+                  >
+                    Edit My Songs
+                  </a>
+                  <a
+                    href="/settings"
+                    className="w-fit rounded-lg border border-cyan-300/30 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-300/10"
+                  >
+                    Change name
+                  </a>
+                  <button
+                    type="button"
+                    onClick={requestLeaveQuartet}
+                    disabled={leaving || !sessionId}
+                    className="w-fit rounded-lg bg-rose-400/10 px-3 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-400/20 disabled:opacity-40"
+                  >
+                    {leaving ? "Leaving..." : "Leave quartet"}
+                  </button>
+                </>
               )}
-              <button
-                type="button"
-                onClick={() => removeQuartetParticipant(participant)}
-                disabled={
-                  leaving ||
-                  !sessionId ||
-                  Boolean(removingParticipantId)
-                }
-                className="w-fit rounded-lg bg-rose-400/10 px-3 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-400/20 disabled:opacity-40"
-              >
-                {isCurrentParticipant
-                  ? leaving
-                    ? "Leaving..."
-                    : "Leave"
-                  : removingParticipantId === participant.id
+              {!isCurrentParticipant && (
+                <button
+                  type="button"
+                  onClick={() => removeQuartetParticipant(participant)}
+                  disabled={leaving || !sessionId || Boolean(removingParticipantId)}
+                  className="w-fit rounded-lg bg-rose-400/10 px-3 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-400/20 disabled:opacity-40"
+                >
+                  {removingParticipantId === participant.id
                     ? "Removing..."
                     : "Remove"}
-              </button>
+                </button>
+              )}
             </div>
           )}
         </div>
       </div>
+    );
+  }
+
+  function renderConversationStarter(starter: ConversationStarter) {
+    const coveredParts = Object.entries(starter.coveredParts) as Array<
+      [Part, SingerEntry[]]
+    >;
+    const arrangerSummary = [
+      ...starter.arrangerNames,
+      starter.hasMissingArrangerInfo ? noArrangerEnteredLabel : null,
+    ]
+      .filter((name): name is string => Boolean(name))
+      .join(", ");
+
+    return (
+      <article
+        key={`${starter.voicing}-${starter.songTitle}`}
+        className="rounded-xl border border-cyan-300/20 bg-cyan-300/10 p-4"
+      >
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h4 className="font-semibold text-white">{starter.songTitle}</h4>
+            <p className="mt-1 text-sm text-slate-300">
+              {starter.voicing}
+              {arrangerSummary ? ` · Arr. ${arrangerSummary}` : ""}
+            </p>
+          </div>
+          <span className="w-fit rounded-full bg-slate-950/70 px-2 py-1 text-xs font-semibold text-cyan-100">
+            {starter.singerCount} singers
+          </span>
+        </div>
+
+        {starter.warnings.length > 0 && (
+          <div className="mt-3 rounded-lg bg-amber-300/10 p-2 text-xs text-amber-100">
+            {starter.warnings.map((warning) => (
+              <p key={warning}>{warning}</p>
+            ))}
+          </div>
+        )}
+
+        {starter.arrangerVariantNote && (
+          <p className="mt-3 text-xs text-slate-300">
+            {starter.arrangerVariantNote}
+          </p>
+        )}
+
+        <div className="mt-3 grid gap-2 text-sm text-slate-200 sm:grid-cols-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-normal text-slate-400">
+              Covered
+            </p>
+            <div className="mt-1 space-y-1">
+              {coveredParts.map(([part, singers]) => (
+                <p key={part}>
+                  <span className="font-semibold text-white">
+                    {partAbbreviation(starter.voicing, part)}:
+                  </span>{" "}
+                  {singers.map((singer) => singer.displayName).join(", ")}
+                </p>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-normal text-slate-400">
+              Missing
+            </p>
+            <p className="mt-1">
+              {starter.missingParts.length > 0
+                ? starter.missingParts
+                    .map((part) => partAbbreviation(starter.voicing, part))
+                    .join(", ")
+                : "Distinct singers do not cover every required part yet."}
+            </p>
+          </div>
+        </div>
+      </article>
     );
   }
 
@@ -1211,13 +1334,26 @@ export default function JoinSessionPage() {
           onConfirm={confirmRemoveQuartetParticipant}
         />
 
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-4xl font-bold">Quartet {code}</h1>
-          {expirationLabel && (
-            <p className="w-fit rounded-full border border-white/10 bg-white/10 px-3 py-1 text-sm font-semibold text-slate-300">
-              {expirationLabel}
-            </p>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {expirationLabel && (
+              <p className="w-fit rounded-full border border-white/10 bg-white/10 px-3 py-1 text-sm font-semibold text-slate-300">
+                {expirationLabel}
+              </p>
+            )}
+            {showManageButton && (
+              <button
+                type="button"
+                aria-expanded={isManageOpen}
+                aria-controls="quartet-manage-panel"
+                onClick={() => setIsManageOpen((open) => !open)}
+                className="rounded-xl border border-cyan-300/30 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-300/10"
+              >
+                Manage
+              </button>
+            )}
+          </div>
         </div>
 
         {(loadError || quartetExpired) && (
@@ -1253,8 +1389,11 @@ export default function JoinSessionPage() {
             className={`mt-4 flex items-start justify-between gap-3 rounded-xl p-4 text-sm ${
               messageKind === "error"
                 ? "border border-rose-300/20 bg-rose-400/10 text-rose-100"
+                : messageKind === "success"
+                  ? "border border-cyan-300/30 bg-cyan-300/10 text-cyan-50"
                 : "bg-white/10 text-slate-200"
             }`}
+            role={messageKind === "error" ? "alert" : "status"}
           >
             <p>{message}</p>
             <button
@@ -1352,115 +1491,46 @@ export default function JoinSessionPage() {
               </section>
             )}
 
-            {isQuartetFull && (
-              <details className="group mt-4 rounded-2xl border border-white/10 bg-white/10 p-3 open:p-4">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
-                  <p className="min-w-0 truncate text-sm font-semibold text-slate-200">
-                    {isCurrentUserParticipant ? (
-                      <>
-                        Singing as{" "}
-                        <span className="text-cyan-200">
-                          {currentParticipantDisplayName}
-                        </span>
-                      </>
-                    ) : (
-                      <span>{participants.length} singers</span>
-                    )}
-                  </p>
-                  <span className="shrink-0 rounded-lg border border-cyan-300/30 px-3 py-1.5 text-sm font-semibold text-cyan-200 group-open:bg-cyan-300/10">
-                    Manage
-                  </span>
-                </summary>
-
-                <div className="mt-4 border-t border-white/10 pt-4">
-                  {isCurrentUserParticipant && (
-                    <div className="flex flex-wrap gap-2">
-                      <a
-                        href="/repertoire"
-                        className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-white/10"
-                      >
-                        Edit My Songs
-                      </a>
-                      <a
-                        href="/settings"
-                        className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-white/10"
-                      >
-                        Change name
-                      </a>
-                      <button
-                        onClick={requestLeaveQuartet}
-                        disabled={leaving || !sessionId}
-                        className="rounded-xl bg-rose-200 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-rose-100 disabled:opacity-40"
-                      >
-                        {leaving ? "Leaving..." : "Leave Quartet"}
-                      </button>
-                    </div>
+            {isManageOpen && showManageButton && (
+              <section
+                id="quartet-manage-panel"
+                className="mt-4 rounded-2xl border border-white/10 bg-white/10 p-4"
+              >
+                <h2 className="text-xl font-semibold">People in this quartet</h2>
+                <p className="mt-1 text-sm text-slate-300">
+                  Update your songs or display name here, or manage who is in
+                  this quartet.
+                </p>
+                <div className="mt-4 space-y-3">
+                  {orderedParticipants.map((participant) =>
+                    renderParticipantRow(participant)
                   )}
-
-                  <div className="mt-4">
-                    <h2 className="text-lg font-semibold">Members</h2>
-                    <div className="mt-3 space-y-3">
-                      {participants.map((participant) =>
-                        renderParticipantRow(participant, {
-                          showCurrentParticipantActions: false,
-                        })
-                      )}
-                    </div>
-                  </div>
                 </div>
-              </details>
+              </section>
             )}
 
             {!isQuartetFull && (
               <>
-                <div className="mt-6 rounded-2xl border border-white/10 bg-white/10 p-6">
-                  {leftQuartet ? (
-                    <>
-                      <p className="text-slate-300">
-                        You are not currently in this quartet.
-                      </p>
-                      <button
-                        onClick={rejoinQuartet}
-                        disabled={
-                          joiningQuartet ||
-                          !sessionId ||
-                          !currentParticipantDisplayName ||
-                          !currentUserId ||
-                          quartetExpired
-                        }
-                        className="mt-4 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
-                      >
-                        {joiningQuartet ? "Joining..." : "Join this quartet again"}
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-slate-300">You are in this quartet as:</p>
-                      <p className="mt-1 text-2xl font-bold text-cyan-300">
-                        {currentParticipantDisplayName}
-                      </p>
-
-                      <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <button
-                          onClick={requestLeaveQuartet}
-                          disabled={leaving || !sessionId}
-                          className="rounded-xl bg-rose-200 px-5 py-3 font-semibold text-slate-950 hover:bg-rose-100 disabled:opacity-40"
-                        >
-                          {leaving ? "Leaving..." : "Leave quartet"}
-                        </button>
-
-                        <div className="flex flex-wrap gap-x-4 gap-y-2">
-                          <a
-                            href="/repertoire"
-                            className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
-                          >
-                            Edit My Songs
-                          </a>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
+                {leftQuartet && (
+                  <div className="mt-6 rounded-2xl border border-white/10 bg-white/10 p-6">
+                    <p className="text-slate-300">
+                      You are not currently in this quartet.
+                    </p>
+                    <button
+                      onClick={rejoinQuartet}
+                      disabled={
+                        joiningQuartet ||
+                        !sessionId ||
+                        !currentParticipantDisplayName ||
+                        !currentUserId ||
+                        quartetExpired
+                      }
+                      className="mt-4 rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
+                    >
+                      {joiningQuartet ? "Joining..." : "Join this quartet again"}
+                    </button>
+                  </div>
+                )}
 
                 <div className="mt-8">
                   <h2 className="text-2xl font-semibold">Participants</h2>
@@ -1472,7 +1542,7 @@ export default function JoinSessionPage() {
                       </p>
                     )}
 
-                    {participants.map((participant) =>
+                    {orderedParticipants.map((participant) =>
                       renderParticipantRow(participant)
                     )}
                   </div>
@@ -1493,7 +1563,59 @@ export default function JoinSessionPage() {
               </div>
 
               <div className="mt-4 space-y-5">
-                {matches.length === 0 && (
+                {matches.length === 0 && isQuartetFull && (
+                  <section className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                    <h3 className="text-xl font-semibold text-white">
+                      No quartet-ready matches yet
+                    </h3>
+                    <p className="mt-2 text-slate-300">
+                      Across the songs entered by this quartet, we did not find
+                      a song where all required parts are covered by different
+                      singers.
+                    </p>
+                    <div className="mt-4 rounded-xl bg-slate-950/50 p-4">
+                      <p className="font-semibold text-slate-100">Try this:</p>
+                      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-300">
+                        <li>Talk through songs the group may have in common.</li>
+                        <li>Add a few more songs to My Songs.</li>
+                        <li>
+                          Check title, voicing, and arranger if you think a song
+                          should match.
+                        </li>
+                      </ul>
+                    </div>
+                    <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                      <a
+                        href="/repertoire"
+                        className="rounded-xl bg-cyan-300 px-5 py-3 text-center font-semibold text-slate-950 hover:bg-cyan-200"
+                      >
+                        Review My Songs
+                      </a>
+                    </div>
+
+                    {conversationStarters.length > 0 ? (
+                      <div className="mt-6">
+                        <h3 className="text-lg font-semibold text-cyan-100">
+                          Conversation starters
+                        </h3>
+                        <p className="mt-1 text-sm text-slate-300">
+                          These are not ready matches, but they may help the
+                          quartet find songs to talk through or add.
+                        </p>
+                        <div className="mt-3 space-y-3">
+                          {conversationStarters.map(renderConversationStarter)}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="mt-4 text-sm text-slate-400">
+                        We also did not find any song titles entered by more
+                        than one singer yet.
+                      </p>
+                    )}
+                  </section>
+                )}
+
+                {matches.length === 0 && !isQuartetFull && (
                   <p className="rounded-2xl border border-white/10 bg-white/5 p-5 text-slate-300">
                     No matches yet. Add more singers or saved songs.
                   </p>
@@ -1532,6 +1654,7 @@ export default function JoinSessionPage() {
                                 isExpanded={expandedMatchId === id}
                                 isRecentlySung={wasRecentlySung(match)}
                                 isMarkingSung={markingSungKey === id}
+                                isSungCelebrating={celebratingSungKey === id}
                                 onToggle={() => toggleExpandedMatch(id)}
                                 onMarkAsSung={() => markMatchAsSung(match)}
                               />

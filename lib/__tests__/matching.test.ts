@@ -3,6 +3,7 @@ import {
   arrangementCheckNote,
   arrangerConflictNote,
   arrangerVariantNote,
+  findConversationStarters,
   findMatches,
   normalizeConfidence,
   possibleSameSongNote,
@@ -617,5 +618,88 @@ describe("findMatches", () => {
     expect(matches[0].warnings).toContain(arrangementCheckNote);
     expect(matches[1].warnings[0]).toMatch(/^Confidence warning:/);
     expect(matches[0].score).toBeGreaterThan(matches[1].score);
+  });
+});
+
+describe("findConversationStarters", () => {
+  it("shows weaker overlap with at least two distinct singers", () => {
+    const entries: SingerEntry[] = [
+      {
+        userId: "1",
+        displayName: "Lead Singer",
+        songTitle: "Hello, My Baby",
+        voicing: "TTBB",
+        arrangerName: "Joe Liles",
+        partsKnown: ["Lead"],
+      },
+      {
+        userId: "2",
+        displayName: "Bass Singer",
+        songTitle: "Hello My Baby",
+        voicing: "TTBB",
+        arrangerName: "Joe Liles",
+        partsKnown: ["Bass"],
+      },
+      {
+        userId: "3",
+        displayName: "Solo Singer",
+        songTitle: "One Person Song",
+        voicing: "TTBB",
+        partsKnown: ["Tenor"],
+      },
+    ];
+
+    const starters = findConversationStarters(entries);
+
+    expect(starters).toHaveLength(1);
+    expect(starters[0]).toMatchObject({
+      songTitle: "Hello, My Baby",
+      voicing: "TTBB",
+      arrangerNames: ["Joe Liles"],
+      singerCount: 2,
+      missingParts: ["Tenor", "Baritone"],
+    });
+    expect(starters[0].coveredParts.Lead?.[0].displayName).toBe("Lead Singer");
+    expect(starters[0].coveredParts.Bass?.[0].displayName).toBe("Bass Singer");
+  });
+
+  it("does not duplicate ready or one-part-missing matches", () => {
+    const entries: SingerEntry[] = [
+      { userId: "1", displayName: "T", songTitle: "Close Song", voicing: "TTBB", partsKnown: ["Tenor"] },
+      { userId: "2", displayName: "L", songTitle: "Close Song", voicing: "TTBB", partsKnown: ["Lead"] },
+      { userId: "3", displayName: "Bari", songTitle: "Close Song", voicing: "TTBB", partsKnown: ["Baritone"] },
+      { userId: "4", displayName: "T2", songTitle: "Ready Song", voicing: "TTBB", partsKnown: ["Tenor"] },
+      { userId: "5", displayName: "L2", songTitle: "Ready Song", voicing: "TTBB", partsKnown: ["Lead"] },
+      { userId: "6", displayName: "B2", songTitle: "Ready Song", voicing: "TTBB", partsKnown: ["Baritone"] },
+      { userId: "7", displayName: "Bass2", songTitle: "Ready Song", voicing: "TTBB", partsKnown: ["Bass"] },
+    ];
+
+    expect(findConversationStarters(entries)).toEqual([]);
+  });
+
+  it("keeps arranger warnings as conversation context", () => {
+    const entries: SingerEntry[] = [
+      {
+        userId: "1",
+        displayName: "Lead Singer",
+        songTitle: "Arranger Talk",
+        voicing: "TTBB",
+        arrangerName: "Arranger One",
+        partsKnown: ["Lead"],
+      },
+      {
+        userId: "2",
+        displayName: "Bass Singer",
+        songTitle: "Arranger Talk",
+        voicing: "TTBB",
+        arrangerName: "Arranger Two",
+        partsKnown: ["Bass"],
+      },
+    ];
+
+    const starters = findConversationStarters(entries);
+
+    expect(starters[0].warnings).toContain(arrangerConflictNote);
+    expect(starters[0].warnings).toContain(arrangementCheckNote);
   });
 });

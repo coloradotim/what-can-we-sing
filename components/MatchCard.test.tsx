@@ -17,14 +17,32 @@ function singer(
   };
 }
 
-function renderMatch(match: MatchResult) {
+function renderMatch(
+  match: MatchResult,
+  props: Partial<Parameters<typeof MatchCard>[0]> = {}
+) {
   return renderToStaticMarkup(
     <MatchCard
       match={match}
       isExpanded
       onToggle={() => undefined}
+      {...props}
     />
   );
+}
+
+function readyMatch(): MatchResult {
+  return {
+    songTitle: "Why Try to Change Me Now",
+    voicing: "TTBB",
+    arrangerNames: [],
+    hasMissingArrangerInfo: false,
+    category: "ready",
+    missingParts: [],
+    assignments: {},
+    warnings: [],
+    score: 0,
+  };
 }
 
 describe("MatchCard", () => {
@@ -111,5 +129,29 @@ describe("MatchCard", () => {
 
     expect(html).toContain("Lead Singer (Arranger: Unknown)");
     expect(html).toContain("Bass Singer (Arranger: No arranger entered)");
+  });
+
+  it("shows a short success state and subtle music-note celebration", () => {
+    const html = renderMatch(readyMatch(), {
+      isSungCelebrating: true,
+      onMarkAsSung: () => undefined,
+    });
+
+    expect(html).toContain("✓ Sung!");
+    expect(html).toContain("♪");
+    expect(html).toContain("♫");
+    expect(html).toContain("motion-safe:animate-pulse");
+    expect(html).toContain("motion-reduce:hidden");
+    expect(html).not.toContain("Mark as sung");
+  });
+
+  it("keeps the mark-as-sung button retryable outside success or loading states", () => {
+    const html = renderMatch(readyMatch(), {
+      onMarkAsSung: () => undefined,
+    });
+
+    expect(html).toContain("Mark as sung");
+    expect(html).not.toContain("✓ Sung!");
+    expect(html).not.toContain("♪");
   });
 });
