@@ -29,7 +29,7 @@ const defaultFilters: RepertoireFilters = {
   searchQuery: "",
   voicing: "",
   part: "",
-  neverSungOnly: false,
+  sungStatus: "all",
   sort: "title_asc",
 };
 
@@ -63,7 +63,7 @@ describe("filterAndSortRepertoire", () => {
     ).toEqual(["old", "new"]);
   });
 
-  it("sorts by last sung with never-sung placement", () => {
+  it("sorts by last sung with not-marked placement", () => {
     const items = [
       row({ id: "never", song_title: "Never", last_sung_at: null }),
       row({ id: "old", song_title: "Old", last_sung_at: "2026-01-01T00:00:00.000Z" }),
@@ -84,7 +84,7 @@ describe("filterAndSortRepertoire", () => {
     ).toEqual(["never", "old", "recent"]);
   });
 
-  it("filters by search, voicing, part, and never sung", () => {
+  it("filters by search, voicing, part, and not-marked sung status", () => {
     const result = filterAndSortRepertoire(
       [
         row({
@@ -127,12 +127,44 @@ describe("filterAndSortRepertoire", () => {
         searchQuery: "bright",
         voicing: "TTBB",
         part: "Baritone",
-        neverSungOnly: true,
+        sungStatus: "not_marked",
         sort: "title_asc",
       }
     );
 
     expect(result.map((item) => item.id)).toEqual(["match"]);
+  });
+
+  it("filters by marked sung status", () => {
+    const result = filterAndSortRepertoire(
+      [
+        row({ id: "not-marked", song_title: "Mamselle", last_sung_at: null }),
+        row({
+          id: "marked",
+          song_title: "Bright Was The Night",
+          last_sung_at: "2026-04-01T00:00:00.000Z",
+        }),
+      ],
+      { ...defaultFilters, sungStatus: "marked" }
+    );
+
+    expect(result.map((item) => item.id)).toEqual(["marked"]);
+  });
+
+  it("filters by not-marked sung status", () => {
+    const result = filterAndSortRepertoire(
+      [
+        row({ id: "not-marked", song_title: "Mamselle", last_sung_at: null }),
+        row({
+          id: "marked",
+          song_title: "Bright Was The Night",
+          last_sung_at: "2026-04-01T00:00:00.000Z",
+        }),
+      ],
+      { ...defaultFilters, sungStatus: "not_marked" }
+    );
+
+    expect(result.map((item) => item.id)).toEqual(["not-marked"]);
   });
 });
 

@@ -129,7 +129,10 @@ export async function searchRepertoireSongSuggestions(
   );
 }
 
-export async function markRepertoireItemAsSung(id: string, sessionId: string) {
+export async function markRepertoireItemAsSung(
+  id: string,
+  sessionId: string | null = null
+) {
   const user = await getCurrentUser();
   if (!user) throw new Error("You must be logged in.");
 
@@ -142,7 +145,7 @@ export async function markRepertoireItemAsSung(id: string, sessionId: string) {
 
   const row = Array.isArray(data) ? data[0] : data;
   if (!row || row.user_id !== user.id || row.id !== id) {
-    throw new Error("Could not verify that your repertoire row was marked as sung.");
+    throw new Error("Could not verify that your song was marked as sung.");
   }
 
   return normalizeRepertoireRow(row as RawRepertoireRow);

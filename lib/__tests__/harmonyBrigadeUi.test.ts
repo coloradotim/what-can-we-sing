@@ -9,10 +9,10 @@ const repertoireManager = readFileSync(
 
 describe("Harmony Brigade repertoire UI", () => {
   it("uses Add Harmony Brigade songs as a compact secondary action", () => {
-    expect(repertoireManager).toContain("More ways to build your repertoire");
+    expect(repertoireManager).toContain("More ways to build My Songs");
     expect(repertoireManager).toContain("Copy songs from another singer");
     expect(repertoireManager).toContain(
-      "Let another singer copy songs from my repertoire"
+      "Let another singer copy songs from My Songs"
     );
     expect(repertoireManager).toContain("Add Harmony Brigade songs");
     expect(repertoireManager).toContain("Choose Brigade songs");

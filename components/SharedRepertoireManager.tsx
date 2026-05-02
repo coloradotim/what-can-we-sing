@@ -33,7 +33,7 @@ type SelectionByVoicing = Partial<
 >;
 
 function duplicateLabel(status: CopyableSharedSong["duplicateStatus"]) {
-  if (status === "exact") return "Already in your repertoire";
+  if (status === "exact") return "Already in My Songs";
   if (status === "possible_arrangement") return "Possible different arrangement";
   return null;
 }
@@ -197,7 +197,7 @@ export function SharedRepertoireManager({ code }: { code: string }) {
           result.copiedCount === 1 ? "song" : "songs"
         } copied${
           result.skippedExactCount > 0
-            ? `; ${result.skippedExactCount} already in your repertoire`
+            ? `; ${result.skippedExactCount} already in My Songs`
             : ""
         }.`
       );
@@ -249,8 +249,8 @@ export function SharedRepertoireManager({ code }: { code: string }) {
               </h1>
               <p className="mt-3 max-w-3xl text-slate-200">
                 {isSignedIn
-                  ? "You can copy songs into your own repertoire. You'll choose your own part and confidence before saving."
-                  : "Sign in to copy songs into your own repertoire."}
+                  ? "You can copy songs into My Songs. You'll choose your own part and confidence before saving."
+                  : "Sign in to copy songs into My Songs."}
               </p>
               {!isSignedIn && (
                 <a

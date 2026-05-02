@@ -13,14 +13,16 @@ describe("privacy page copy", () => {
     expect(privacyPage).toContain("<PublicAwareAppNav />");
   });
 
-  it("discloses account, repertoire, quartet, feedback, analytics, and providers", () => {
+  it("discloses account, My Songs, quartet, feedback, analytics, and providers", () => {
     expect(privacyPage).toContain("email address");
     expect(privacyPage).toContain("We do not show your email address");
     expect(privacyPage).toContain("song title");
     expect(privacyPage).toContain("parts");
     expect(privacyPage).toContain("confidence");
-    expect(privacyPage).toContain("recently sung");
-    expect(privacyPage).toContain("participant repertoire snapshots");
+    expect(privacyPage).toContain("Last-sung data");
+    expect(privacyPage).toContain("participant saved-song snapshots");
+    expect(privacyPage).toContain("Private copy links");
+    expect(privacyPage).toContain("Harmony Brigade songs");
     expect(privacyPage).toContain("other singers in that quartet may see");
     expect(privacyPage).toContain("Feedback forms");
     expect(privacyPage).toContain("PostHog");

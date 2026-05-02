@@ -9,15 +9,15 @@ const repertoireManager = readFileSync(
 
 describe("repertoire sharing UI language", () => {
   it("offers separate copy-requester and copy-provider actions", () => {
-    expect(repertoireManager).toContain("More ways to build your repertoire");
+    expect(repertoireManager).toContain("More ways to build My Songs");
     expect(repertoireManager).toContain("aria-expanded={isMoreWaysOpen}");
     expect(repertoireManager).toContain("Show options");
     expect(repertoireManager).toContain("Hide options");
     expect(repertoireManager).toContain("Copy songs from another singer");
     expect(repertoireManager).toContain(
-      "Let another singer copy songs from my repertoire"
+      "Let another singer copy songs from My Songs"
     );
-    expect(repertoireManager).toContain("Open shared repertoire");
+    expect(repertoireManager).toContain("Open shared songs");
     expect(repertoireManager).toContain("Copy request message");
     expect(repertoireManager).toContain("Create link/code");
     expect(repertoireManager).toContain("Copy code");
@@ -39,5 +39,6 @@ describe("repertoire sharing UI language", () => {
     expect(repertoireManager).not.toContain("Share repertoire");
     expect(repertoireManager).not.toContain("Create share link");
     expect(repertoireManager).not.toContain("Your repertoire share link");
+    expect(repertoireManager).not.toContain("Share My Songs");
   });
 });

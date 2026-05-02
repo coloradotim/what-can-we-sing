@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: siteTitle,
     description:
-      "What Can We Sing helps barbershop singers compare repertoire, form pickup quartets, and find songs with the right parts covered by different singers.",
+      "What Can We Sing helps barbershop singers compare saved songs, form pickup quartets, and find songs with the right parts covered by different singers.",
     siteName: siteTitle,
     type: "website",
   },

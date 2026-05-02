@@ -40,7 +40,7 @@ describe("repertoire quartet guidance", () => {
 
   it("uses more helpful post-save copy for early users", () => {
     expect(repertoireManager).toContain(
-      "Song added. Add a few more songs for better matches, or start/join a quartet when you're ready."
+      "Song added. Add a few more songs for better matches, use More ways to build My Songs, or start/join a quartet when you're ready."
     );
   });
 });

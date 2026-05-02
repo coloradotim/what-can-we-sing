@@ -117,6 +117,37 @@ business logic, data flow, matching, Supabase helpers, auth/session behavior,
 UI state transitions, or regression-prone bugs. If docs or tests are not
 updated, explain why in the PR.
 
+## Issue and PR completeness standard
+
+For every product, UX, feature, data, or workflow change, consider downstream
+impact across:
+
+- navigation
+- home/dashboard
+- onboarding and first-run prompts
+- empty states and new-user guidance
+- Help and Privacy pages
+- README, docs, AGENTS.md, and Supabase contract
+- analytics events and analytics privacy
+- mobile layout
+- accessibility
+- auth, permissions, and RLS
+- data model, migrations, seed/import scripts, and cleanup scripts
+- tests
+- deployment and environment variables
+- admin/support/runbook behavior
+- existing terminology decisions
+
+If an area is affected, update it in the same PR unless the issue explicitly
+says otherwise. If an area is not affected, note that briefly in the PR summary.
+Do not leave obvious rollout items as implicit follow-ups.
+
+When creating or refining issues, include an impact audit section when the
+change is more than a tiny bug fix. The issue should tell the implementer what
+needs to be inspected across nav, onboarding, Help, Privacy, docs, analytics,
+mobile, accessibility, tests, data/RLS, deployment, and admin/support
+implications.
+
 Supabase changes must be captured in repo migrations and docs rather than
 dashboard-only changes. If a change requires schema, RLS, or data-model updates,
 add a proper migration and update `docs/supabase-contract.md` as needed.

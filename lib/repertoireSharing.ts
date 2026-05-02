@@ -45,7 +45,7 @@ export type CopyableSharedSong = SharedRepertoireSong & {
 };
 
 export const repertoireCopyRequestMessage =
-  "Can you open What Can We Sing, go to Repertoire, choose 'Let another singer copy songs from my repertoire,' and send me the link or code? I'd like to copy a few songs into my repertoire.";
+  "Can you open What Can We Sing, go to My Songs, choose 'Let another singer copy songs from My Songs,' and send me the link or code? I'd like to copy a few songs into My Songs.";
 
 export function sharedRepertoirePathFromInput(input: string) {
   const trimmed = input.trim();
@@ -188,7 +188,7 @@ export async function createRepertoireShare() {
 
   throw lastError instanceof Error
     ? lastError
-    : new Error("Could not create repertoire share link.");
+      : new Error("Could not create My Songs copy link.");
 }
 
 export async function revokeRepertoireShare(shareId: string) {

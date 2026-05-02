@@ -193,7 +193,7 @@ export function MatchCard({
               Potential title match
             </p>
             <p className="mt-1 text-xs text-amber-50/80">
-              These repertoire entries may refer to the same song.
+              These saved song entries may refer to the same song.
             </p>
             <p className="mt-2 text-xs text-amber-50/70">
               Comparison key:{" "}
@@ -238,8 +238,8 @@ export function MatchCard({
               })}
             </div>
             <p className="mt-3 text-xs text-amber-50/80">
-              If these are the same song, consider updating repertoire titles
-              so future matches are clearer.
+              If these are the same song, consider updating song titles in My
+              Songs so future matches are clearer.
             </p>
           </div>
         ) : null}

@@ -17,7 +17,7 @@ const primaryNavItems = [
   },
   {
     href: "/repertoire",
-    label: "Repertoire",
+    label: "My Songs",
     isActive: (pathname: string) => pathname === "/repertoire",
   },
 ];

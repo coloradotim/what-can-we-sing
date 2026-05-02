@@ -15,12 +15,15 @@ import {
   filterAndSortRepertoire,
   hasActiveRepertoireFilters,
   type RepertoireSortOption,
+  type SungStatusFilter,
 } from "@/lib/repertoireView";
+import { formatLastSungStatus } from "@/lib/lastSung";
 import { trackEvent } from "@/lib/analytics";
 import {
   addRepertoireItem,
   deleteRepertoireItem,
   getMyRepertoire,
+  markRepertoireItemAsSung,
   searchRepertoireSongSuggestions,
   updateRepertoireItem,
   type RepertoireRow,
@@ -124,7 +127,8 @@ export default function RepertoireManager() {
     useState<RepertoireSortOption>("title_asc");
   const [voicingFilter, setVoicingFilter] = useState<Voicing | "">("");
   const [partFilter, setPartFilter] = useState<Part | "">("");
-  const [neverSungOnly, setNeverSungOnly] = useState(false);
+  const [sungStatusFilter, setSungStatusFilter] =
+    useState<SungStatusFilter>("all");
   const [songTitle, setSongTitle] = useState("");
   const [songSuggestions, setSongSuggestions] = useState<SongSuggestion[]>([]);
   const [songSuggestionsOpen, setSongSuggestionsOpen] = useState(false);
@@ -148,6 +152,7 @@ export default function RepertoireManager() {
   const [isAdding, setIsAdding] = useState(false);
   const [savingEditId, setSavingEditId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [markingSungId, setMarkingSungId] = useState<string | null>(null);
   const [itemToDelete, setItemToDelete] = useState<RepertoireRow | null>(null);
   const [hasUsedQuartetWorkflow, setHasUsedQuartetWorkflow] = useState(false);
   const [hasDismissedQuartetNudge, setHasDismissedQuartetNudge] =
@@ -214,7 +219,7 @@ export default function RepertoireManager() {
     } catch (err) {
       console.error(err);
       setLoadError(
-        "Could not load your repertoire. Check your connection and try again."
+        "Could not load your songs. Check your connection and try again."
       );
       throw err;
     }
@@ -253,7 +258,7 @@ export default function RepertoireManager() {
       } catch (err) {
         console.error(err);
         setLoadError(
-          "Could not load your repertoire. Check your connection and try again."
+          "Could not load your songs. Check your connection and try again."
         );
       } finally {
         setLoading(false);
@@ -487,7 +492,7 @@ export default function RepertoireManager() {
     setSearchQuery("");
     setVoicingFilter("");
     setPartFilter("");
-    setNeverSungOnly(false);
+    setSungStatusFilter("all");
   }
 
   function updateEditForm(patch: Partial<RepertoireForm>) {
@@ -591,7 +596,7 @@ export default function RepertoireManager() {
       const nextSongCount = items.length + 1;
       setMessage(
         !hasUsedQuartetWorkflow && nextSongCount <= 3
-          ? "Song added. Add a few more songs for better matches, or start/join a quartet when you're ready."
+          ? "Song added. Add a few more songs for better matches, use More ways to build My Songs, or start/join a quartet when you're ready."
           : "Song added."
       );
       trackEvent("repertoire_song_added", {
@@ -766,6 +771,28 @@ export default function RepertoireManager() {
     }
   }
 
+  async function markSongSungToday(id: string) {
+    if (markingSungId) return;
+
+    try {
+      setMarkingSungId(id);
+      await markRepertoireItemAsSung(id);
+      setMessage("Marked sung today.");
+      trackEvent("song_marked_sung", {
+        source: "my_songs",
+      });
+      await loadRepertoire();
+    } catch (err) {
+      console.error(err);
+      trackEvent("song_mark_sung_failed", {
+        source: "my_songs",
+      });
+      setMessage("Could not mark song sung. Please try again.");
+    } finally {
+      setMarkingSungId(null);
+    }
+  }
+
   async function createShareLink() {
     if (isCreatingShare) return;
 
@@ -811,7 +838,7 @@ export default function RepertoireManager() {
     const path = sharedRepertoirePathFromInput(copySourceInput);
     if (!path) {
       setCopySourceMessage(
-        "Paste a six-character code or a shared repertoire link."
+        "Paste a six-character code or a shared My Songs link."
       );
       return;
     }
@@ -930,7 +957,7 @@ export default function RepertoireManager() {
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-        Loading repertoire...
+        Loading My Songs...
       </main>
     );
   }
@@ -947,7 +974,7 @@ export default function RepertoireManager() {
     searchQuery,
     voicing: voicingFilter,
     part: partFilter,
-    neverSungOnly,
+    sungStatus: sungStatusFilter,
     sort: sortOption,
   };
   const visibleItems = filterAndSortRepertoire(items, repertoireFilters);
@@ -968,13 +995,13 @@ export default function RepertoireManager() {
     items.length === 0
       ? "Add your first song"
       : hasSmallRepertoire
-        ? "Keep building your repertoire"
+        ? "Keep building My Songs"
         : "Add a song";
   const addSectionDescription =
     items.length === 0
-      ? "Start typing a song title. Choose a suggestion if it matches your arrangement, or add your own title."
+      ? "Start typing a song title, or use More ways to build My Songs to copy songs from another singer or add Harmony Brigade songs."
       : hasSmallRepertoire
-        ? "Add a few songs you are likely to sing. Search and filters become useful once you have more songs saved."
+        ? "Add a few more songs for better matches, or use More ways to build My Songs if another singer or Harmony Brigade can help you get started faster."
         : "Start typing a song title. Choose a suggestion if it matches your arrangement, or add your own title.";
   const showQuartetTeachingCard =
     !hasDismissedQuartetNudge && !hasUsedQuartetWorkflow && items.length > 0;
@@ -1055,7 +1082,11 @@ export default function RepertoireManager() {
         ? partButtonLabel(voicingFilter, partFilter)
         : partFilter
       : "",
-    neverSungOnly ? "never sung" : "",
+    sungStatusFilter === "marked"
+      ? "marked sung"
+      : sungStatusFilter === "not_marked"
+        ? "not marked yet"
+        : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -1069,7 +1100,7 @@ export default function RepertoireManager() {
           title="Delete song?"
           description={`This will remove "${
             itemToDelete?.song_title ?? "this song"
-          }" from your repertoire. This cannot be undone.`}
+          }" from My Songs. This cannot be undone.`}
           confirmLabel="Delete song"
           busyLabel="Deleting..."
           onCancel={() => setItemToDelete(null)}
@@ -1081,13 +1112,13 @@ export default function RepertoireManager() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-normal text-cyan-200">
-                    More ways to build your repertoire
+                    More ways to build My Songs
                   </p>
                   <h2 className="mt-2 text-3xl font-bold tracking-tight">
                     Copy songs from another singer
                   </h2>
                   <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
-                    Ask another singer for a private repertoire link or code.
+                    Ask another singer for a private My Songs link or code.
                     Once you have it, paste it here.
                   </p>
                 </div>
@@ -1102,7 +1133,7 @@ export default function RepertoireManager() {
 
               <div className="mt-5 flex flex-col gap-2 sm:flex-row">
                 <label className="sr-only" htmlFor="shared-repertoire-code-modal">
-                  Shared repertoire link or code
+                  Shared My Songs link or code
                 </label>
                 <input
                   id="shared-repertoire-code-modal"
@@ -1119,15 +1150,14 @@ export default function RepertoireManager() {
                   onClick={openSharedRepertoire}
                   className="min-h-12 rounded-xl bg-cyan-300 px-4 py-3 text-sm font-bold text-slate-950 hover:bg-cyan-200"
                 >
-                  Open shared repertoire
+                  Open shared songs
                 </button>
               </div>
 
               <div className="mt-5 rounded-xl border border-white/10 bg-white/5 p-4 text-sm leading-6 text-slate-300">
                 <p>
-                  Standing together? Ask the other singer to open Repertoire,
-                  choose &quot;Let another singer copy songs from my
-                  repertoire,&quot; and show you the code or QR code.
+                  Standing together? Ask the other singer to open My Songs,
+                  choose &quot;Let another singer copy songs from My Songs,&quot; and show you the code or QR code.
                 </p>
                 <p className="mt-3">
                   Not together? Copy this request and send it by text or email.
@@ -1158,14 +1188,14 @@ export default function RepertoireManager() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-normal text-cyan-200">
-                    More ways to build your repertoire
+                    More ways to build My Songs
                   </p>
                   <h2 className="mt-2 text-3xl font-bold tracking-tight">
-                    Let another singer copy songs from my repertoire
+                    Let another singer copy songs from My Songs
                   </h2>
                   <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
                     Create a private link or code another singer can use to copy
-                    song titles, voicings, and arrangers from your repertoire.
+                    song titles, voicings, and arrangers from My Songs.
                   </p>
                 </div>
                 <button
@@ -1194,7 +1224,7 @@ export default function RepertoireManager() {
                   ) : repertoireShare ? (
                     <>
                       <p className="text-sm font-semibold text-cyan-100">
-                        Your repertoire copy link is ready
+                        Your My Songs copy link is ready
                       </p>
                       <div className="rounded-xl border border-cyan-300/20 bg-cyan-300/10 p-3 text-center">
                         <p className="text-xs font-semibold uppercase tracking-normal text-cyan-200">
@@ -1206,7 +1236,7 @@ export default function RepertoireManager() {
                         {shareQrUrl && (
                           <img
                             src={shareQrUrl}
-                            alt="QR code for repertoire copy link"
+                            alt="QR code for My Songs copy link"
                             className="mx-auto mt-3 h-36 w-36 rounded-xl bg-white p-2"
                           />
                         )}
@@ -1220,7 +1250,7 @@ export default function RepertoireManager() {
                         value={shareLink}
                         readOnly
                         className="w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-2 text-sm text-slate-200"
-                        aria-label="Repertoire copy link"
+                        aria-label="My Songs copy link"
                       />
                       <div className="grid gap-2 sm:grid-cols-3">
                         <button
@@ -1277,14 +1307,14 @@ export default function RepertoireManager() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-normal text-cyan-200">
-                    More ways to build your repertoire
+                    More ways to build My Songs
                   </p>
                   <h2 className="mt-2 text-3xl font-bold tracking-tight">
                     Add Harmony Brigade songs
                   </h2>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
                     Choose a Harmony Brigade year and brigade, then add selected
-                    songs to your repertoire.
+                    songs to My Songs.
                   </p>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
                     These songs default to TTBB. You&apos;ll choose the part you
@@ -1379,7 +1409,7 @@ export default function RepertoireManager() {
                       {harmonyBrigadeEligibleCount} can be added.{" "}
                       {harmonyBrigadeAlreadyCount}{" "}
                       {harmonyBrigadeAlreadyCount === 1 ? "is" : "are"} already
-                      in your repertoire.
+                      in My Songs.
                     </p>
                     <p className="mt-1 text-sm leading-6 text-slate-300">
                       Choose one or more parts for each song you want to add.
@@ -1429,7 +1459,7 @@ export default function RepertoireManager() {
                             <div className="min-w-0">
                               <p className="font-semibold">
                                 {isExactDuplicate
-                                  ? "Already in your repertoire: "
+                                  ? "Already in My Songs: "
                                   : ""}
                                 {row.song.songTitle}
                               </p>
@@ -1514,7 +1544,7 @@ export default function RepertoireManager() {
                       : "songs are"}{" "}
                     ready to add. {harmonyBrigadeAlreadyCount}{" "}
                     {harmonyBrigadeAlreadyCount === 1 ? "song was" : "songs were"}{" "}
-                    already in your repertoire and will not be added again.
+                    already in My Songs and will not be added again.
                   </p>
                   <button
                     type="button"
@@ -1541,7 +1571,7 @@ export default function RepertoireManager() {
             </div>
           </div>
         )}
-        <h1 className="mt-4 text-4xl font-bold tracking-tight">My Repertoire</h1>
+        <h1 className="mt-4 text-4xl font-bold tracking-tight">My Songs</h1>
         <p className="mt-2 text-slate-300">
           Add songs you know, the parts you can sing, and how confident you are.
         </p>
@@ -1595,7 +1625,7 @@ export default function RepertoireManager() {
           <div className="relative mt-5">
             <label className="block">
               <span className="text-sm font-medium text-slate-200">
-                Add a song to your repertoire
+                Add a song to My Songs
               </span>
               <div className="mt-1 flex flex-col gap-3 sm:flex-row">
                 <input
@@ -1684,7 +1714,7 @@ export default function RepertoireManager() {
           >
             <span>
               <span className="block text-base font-bold text-white">
-                More ways to build your repertoire
+                More ways to build My Songs
               </span>
               <span className="mt-1 block text-sm leading-6 text-slate-300">
                 Copy songs with another singer or add Harmony Brigade songs.
@@ -1718,7 +1748,7 @@ export default function RepertoireManager() {
 
               <div className="rounded-xl border border-white/10 bg-slate-950/60 p-3">
                 <h3 className="text-base font-bold text-white">
-                  Let another singer copy songs from my repertoire
+                  Let another singer copy songs from My Songs
                 </h3>
                 <p className="mt-1 text-sm leading-5 text-slate-300">
                   Create a private link or code for another singer.
@@ -1794,25 +1824,28 @@ export default function RepertoireManager() {
           <section className="mt-8">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h2 className="text-2xl font-semibold">Songs I know</h2>
+                <h2 className="text-2xl font-semibold">My saved songs</h2>
                 <p className="mt-1 text-sm text-slate-400">
                   {visibleItems.length === items.length
                     ? `${items.length} ${items.length === 1 ? "song" : "songs"} saved`
                     : `${visibleItems.length} of ${items.length} songs shown`}
                 </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Last sung is based on songs you have marked as sung in the app.
+                </p>
               </div>
 
               <div
-                className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(12rem,18rem)_11rem_11rem_11rem] ${
+                className={`grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(12rem,18rem)_11rem_11rem_11rem_11rem] ${
                   hasSmallRepertoire ? "opacity-75" : ""
                 }`}
               >
-                <p className="text-sm font-semibold text-slate-300 sm:col-span-2 lg:col-span-4">
+                <p className="text-sm font-semibold text-slate-300 sm:col-span-2 lg:col-span-5">
                   Filter saved songs
                 </p>
                 <label className="block">
                   <span className="text-sm font-medium text-slate-300">
-                    Search my repertoire
+                    Search My Songs
                   </span>
                   <input
                     value={searchQuery}
@@ -1877,19 +1910,30 @@ export default function RepertoireManager() {
                     ))}
                   </select>
                 </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-300">
+                    Sung status
+                  </span>
+                  <select
+                    value={sungStatusFilter}
+                    onChange={(e) =>
+                      setSungStatusFilter(e.target.value as SungStatusFilter)
+                    }
+                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                  >
+                    <option value="all">All songs</option>
+                    <option value="marked">Marked sung</option>
+                    <option value="not_marked">Not marked yet</option>
+                  </select>
+                </label>
               </div>
             </div>
 
             <div className="mt-3 flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between">
-              <label className="flex items-center gap-3 text-sm font-semibold text-slate-200">
-                <input
-                  type="checkbox"
-                  checked={neverSungOnly}
-                  onChange={(e) => setNeverSungOnly(e.target.checked)}
-                  className="h-4 w-4 rounded border-white/20 bg-slate-900 text-cyan-300"
-                />
-                Never sung
-              </label>
+              <p className="text-sm text-slate-400">
+                Use Sung status to find songs you have or have not marked in the
+                app.
+              </p>
 
               {hasActiveFilters ? (
                 <div className="flex flex-wrap items-center gap-2">
@@ -1910,9 +1954,11 @@ export default function RepertoireManager() {
                         : partFilter}
                     </span>
                   )}
-                  {neverSungOnly && (
+                  {sungStatusFilter !== "all" && (
                     <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
-                      Never sung
+                      {sungStatusFilter === "marked"
+                        ? "Marked sung"
+                        : "Not marked yet"}
                     </span>
                   )}
                   <button
@@ -2127,7 +2173,7 @@ export default function RepertoireManager() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 p-3">
+                  <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <h3 className="truncate text-base font-semibold text-white">
@@ -2151,6 +2197,9 @@ export default function RepertoireManager() {
                           Arr. {arrangerDisplayName(item.arranger_name)}
                         </span>
                       </div>
+                      <p className="mt-1 text-xs text-slate-400">
+                        Last sung: {formatLastSungStatus(item.last_sung_at)}
+                      </p>
                       {item.notes && (
                         <p className="mt-1 line-clamp-2 text-xs text-slate-400">
                           Notes: {item.notes}
@@ -2158,8 +2207,19 @@ export default function RepertoireManager() {
                       )}
                     </div>
 
-                    <div className="flex shrink-0 gap-1">
+                    <div className="flex shrink-0 flex-wrap gap-1 sm:justify-end">
                       <button
+                        type="button"
+                        onClick={() => markSongSungToday(item.id)}
+                        disabled={markingSungId === item.id || Boolean(deletingId)}
+                        className="rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-slate-200 hover:bg-white/20 disabled:opacity-40"
+                      >
+                        {markingSungId === item.id
+                          ? "Marking..."
+                          : "Mark sung today"}
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => startEditing(item)}
                         disabled={Boolean(deletingId)}
                         className="rounded-lg bg-cyan-300/10 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-300/20"
@@ -2167,6 +2227,7 @@ export default function RepertoireManager() {
                         Edit
                       </button>
                       <button
+                        type="button"
                         onClick={() => requestDeleteItem(item)}
                         disabled={deletingId === item.id}
                         className="rounded-lg bg-rose-400/10 px-3 py-2 text-sm font-semibold text-rose-200 hover:bg-rose-400/20 disabled:opacity-40"
@@ -2492,7 +2553,7 @@ export default function RepertoireManager() {
                   disabled={!canAddSong || isAdding}
                   className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
                 >
-                  {isAdding ? "Adding..." : "Add to repertoire"}
+                  {isAdding ? "Adding..." : "Add to My Songs"}
                 </button>
                 <button
                   type="button"

@@ -11,7 +11,7 @@ describe("repertoire empty state", () => {
   it("makes the song-title input the primary first-run action", () => {
     expect(repertoireManager).toContain("Add your first song");
     expect(repertoireManager).toContain("Add songs here");
-    expect(repertoireManager).toContain("Add a song to your repertoire");
+    expect(repertoireManager).toContain("Add a song to My Songs");
     expect(repertoireManager).toContain("Start typing a song title...");
     expect(repertoireManager).toContain("Add song");
     expect(repertoireManager).not.toContain(
@@ -31,8 +31,11 @@ describe("repertoire empty state", () => {
   it("keeps saved-song filters separate from adding songs", () => {
     expect(repertoireManager).toContain("hasSavedSongs &&");
     expect(repertoireManager).toContain("Filter saved songs");
-    expect(repertoireManager).toContain("Search my repertoire");
+    expect(repertoireManager).toContain("Search My Songs");
     expect(repertoireManager).toContain("Filter songs you've already added");
+    expect(repertoireManager).toContain("Sung status");
+    expect(repertoireManager).toContain("Not marked yet");
+    expect(repertoireManager).toContain("Mark sung today");
     expect(repertoireManager).toContain('hasSmallRepertoire ? "opacity-75"');
     expect(repertoireManager).not.toContain("Search by title");
   });

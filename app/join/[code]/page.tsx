@@ -330,7 +330,7 @@ export default function JoinSessionPage() {
         });
         showStatusMessage(
           options.successMessage ??
-            `Updated ${name}'s repertoire with ${entries.length} songs.`,
+            `Updated ${name}'s saved songs with ${entries.length} songs.`,
           "transient"
         );
         return;
@@ -667,7 +667,7 @@ export default function JoinSessionPage() {
 
       if (resolution.status === "ambiguous") {
         showStatusMessage(
-          "This match includes more than one of your repertoire entries. Update the exact song from your repertoire.",
+          "This match includes more than one of your saved song entries. Update the exact song from My Songs.",
           "error"
         );
         return;
@@ -1379,7 +1379,7 @@ export default function JoinSessionPage() {
                         href="/repertoire"
                         className="rounded-xl border border-white/10 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-white/10"
                       >
-                        Edit Repertoire
+                        Edit My Songs
                       </a>
                       <a
                         href="/settings"
@@ -1454,7 +1454,7 @@ export default function JoinSessionPage() {
                             href="/repertoire"
                             className="text-sm font-semibold text-cyan-300 hover:text-cyan-200"
                           >
-                            Edit repertoire
+                            Edit My Songs
                           </a>
                         </div>
                       </div>
@@ -1495,7 +1495,7 @@ export default function JoinSessionPage() {
               <div className="mt-4 space-y-5">
                 {matches.length === 0 && (
                   <p className="rounded-2xl border border-white/10 bg-white/5 p-5 text-slate-300">
-                    No matches yet. Add more singers or repertoire.
+                    No matches yet. Add more singers or saved songs.
                   </p>
                 )}
 

@@ -23,10 +23,10 @@ migrations in `supabase/migrations`, and tests or test documentation.
   Existing participants are recognized by `user_id`, not by display name.
 - Local active-quartet state is a shortcut for navigation only. It must not be
   treated as proof that the user still has a current `session_participants` row.
-- Repertoire add, edit, delete, and mark-as-sung actions update
+- My Songs add, edit, delete, and mark-as-sung actions update
   `user_repertoire`. Add/edit/delete actions refresh the active quartet
   `session_participants.repertoire` snapshot when the user is in a quartet.
-- Private repertoire sharing is opt-in. A singer creates a code in
+- Private My Songs sharing is opt-in. A singer creates a code in
   `repertoire_shares`; recipients can view only safe song identity fields
   through `get_shared_repertoire` and must sign in before copying songs into
   their own `user_repertoire`.
@@ -123,10 +123,11 @@ Required database contract:
   `user_id = auth.uid()`.
 - Index on `(user_id, song_title)` for repertoire listing.
 - Index on `(user_id, last_sung_at desc)` for future sung-history sorting.
-- `public.mark_repertoire_sung(p_repertoire_id uuid, p_session_id uuid)`
+- `public.mark_repertoire_sung(p_repertoire_id uuid, p_session_id uuid default null)`
   updates only the authenticated user's matching `user_repertoire` row,
   increments `times_sung_count`, sets `last_sung_at`, and records the matching
-  private `sung_song_events` row in one database operation.
+  private `sung_song_events` row in one database operation. Quartet-page marks
+  pass a session id; My Songs marks pass `null`.
 - `public.search_repertoire_song_suggestions(p_query text, p_limit integer)`
   is a security-definer RPC available only to authenticated users. It returns
   distinct global song identity suggestions from all repertoire rows and
@@ -145,9 +146,9 @@ Established by migrations:
 
 ### `repertoire_shares`
 
-Purpose: opt-in private repertoire copy links. A copy code lets another
-singer view only song identity fields from the owner's current repertoire so
-they can copy selected songs into their own repertoire.
+Purpose: opt-in private My Songs copy links. A copy code lets another
+singer view only song identity fields from the owner's current My Songs entries
+so they can copy selected songs into their own My Songs.
 
 Code:
 - Create active copy link/code: `lib/repertoireSharing.ts#createRepertoireShare`
@@ -158,7 +159,7 @@ Code:
   `lib/repertoireSharing.ts#getSharedRepertoire`, through
   `public.get_shared_repertoire`
 - Recipient copy flow: `components/SharedRepertoireManager.tsx`
-- "Let another singer copy songs from my repertoire" controls:
+- "Let another singer copy songs from My Songs" controls:
   `components/RepertoireManager.tsx`
 
 Expected context:
@@ -361,7 +362,8 @@ Expected context:
 
 Required database contract:
 - `id uuid primary key`
-- `session_id uuid not null references public.sessions(id) on delete cascade`
+- `session_id uuid references public.sessions(id) on delete cascade`; nullable
+  for songs marked from My Songs outside a quartet.
 - `user_id uuid not null references auth.users(id) on delete cascade`
 - `display_name text not null`
 - `repertoire jsonb not null default '[]'::jsonb`; snapshot entries include
@@ -412,6 +414,7 @@ Required database contract:
 
 Established by migrations:
 - `20260428060000_supabase_contract_alignment.sql`
+- `20260501210000_allow_repertoire_mark_sung_without_session.sql`
 
 ### Feedback Email
 

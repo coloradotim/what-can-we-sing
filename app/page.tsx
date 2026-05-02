@@ -23,7 +23,7 @@ const actions = [
   },
   {
     href: "/repertoire",
-    title: "My repertoire",
+    title: "My Songs",
     description: "Add or update songs you know.",
   },
 ];
@@ -47,7 +47,7 @@ const setupPrompts: Record<
   missing_repertoire: {
     message: "Add a few songs before starting or joining a quartet.",
     helper:
-      "You can still use Start or Join from the navigation if you are helping set up a quartet.",
+      "You can type songs in, copy songs from another singer, or add Harmony Brigade songs from My Songs.",
     href: "/repertoire",
     action: "Add songs",
   },
@@ -157,7 +157,7 @@ export default function Home() {
             <div className="mt-6 rounded-xl bg-white/10 px-4 py-3">
               <p className="text-sm font-semibold text-slate-100">
                 {repertoireCount} {repertoireCount === 1 ? "song" : "songs"} in
-                your repertoire
+                My Songs
               </p>
               <p className="mt-1 text-sm text-slate-300">
                 Start a quartet, join with a code, or update your song list.
