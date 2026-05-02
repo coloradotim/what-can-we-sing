@@ -22,6 +22,11 @@ export type HelpNavItem = {
   label: string;
 };
 
+export type HelpAcknowledgment = {
+  name: string;
+  contribution: string;
+};
+
 export const quickStartSteps = [
   "Add your display name so other singers know who is in the quartet.",
   "Add a few songs you are likely to sing. You can type songs in, copy songs from another singer, or add Harmony Brigade songs.",
@@ -118,7 +123,7 @@ export const helpGuideSections: HelpGuideSection[] = [
         title: "Last Sung",
         body: [
           "Last sung is based on songs you have marked as sung in the app, either from a quartet page or from My Songs. Not marked yet does not make any claim about your real-life singing history.",
-          "You can use Sung status to show all songs, marked-sung songs, or songs that are not marked yet.",
+          "You can use the Sung filter to show all songs, marked-sung songs, or songs that are not marked sung.",
         ],
       },
       {
@@ -126,7 +131,7 @@ export const helpGuideSections: HelpGuideSection[] = [
         body: [
           "Use search to filter by title. You can sort by title, newest or oldest added, sung recently, or least recently sung.",
           "Recently sung puts marked-sung songs first, newest to oldest. Least recently sung puts Not marked yet songs first, then marked-sung songs from oldest to newest.",
-          "You can filter by arrangement voicing, part, and Sung status. Active filters appear above the song list and can be cleared together.",
+          "Open Filters when you need to narrow My Songs by voicing, functional barbershop part, or Sung state. Active filters appear above the song list and can be cleared together.",
         ],
       },
     ],
@@ -258,7 +263,40 @@ export const helpNavItems: HelpNavItem[] = [
   { id: "joining-a-quartet", label: "Joining a quartet" },
   { id: "quartet-matches", label: "Quartet matches" },
   { id: "managing-a-quartet", label: "Managing a quartet" },
+  { id: "acknowledgments", label: "Acknowledgments" },
   { id: "feedback", label: "Feedback" },
+];
+
+export const helpAcknowledgmentsIntro =
+  "What Can We Sing exists because of the generosity, encouragement, and good ideas of people in the barbershop community.";
+
+export const helpAcknowledgments: HelpAcknowledgment[] = [
+  {
+    name: "Alex Koller",
+    contribution:
+      "for inspiring this app with his OG in the 2010s, Instant Quartet",
+  },
+  {
+    name: "Amber Reimer",
+    contribution:
+      "for encouraging this work and for her tireless support of Harmony Brigade singing",
+  },
+  {
+    name: "Ross Wilkins",
+    contribution: "for the use of his excellent Brigade song database",
+  },
+  {
+    name: "Jessica Rodman",
+    contribution: "for her enthusiastic support and suggesting Event Mode",
+  },
+  {
+    name: "Scott Anderson",
+    contribution: "for excellent early feedback and several feature suggestions",
+  },
+  {
+    name: "Marcie Jones and Ann Monaghan McAlexander",
+    contribution: "for crucial feedback on voicing terminology",
+  },
 ];
 
 export const helpWelcomeCopy =

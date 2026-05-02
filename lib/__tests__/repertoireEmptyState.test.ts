@@ -32,27 +32,38 @@ describe("repertoire empty state", () => {
     expect(repertoireManager).toContain("hasSavedSongs &&");
     expect(repertoireManager).toContain("Search My Songs");
     expect(repertoireManager).toContain("Filter songs you've already added");
-    expect(repertoireManager).toContain("Arrangement");
-    expect(repertoireManager).toContain("All arrangements");
+    expect(repertoireManager).toContain("aria-expanded={areFiltersOpen}");
+    expect(repertoireManager).toContain("Hide filters");
+    expect(repertoireManager).toContain("All voicings");
     expect(repertoireManager).toContain("All parts");
-    expect(repertoireManager).toContain("Sung status");
-    expect(repertoireManager).toContain("Not marked yet");
+    expect(repertoireManager).toContain("Sung");
+    expect(repertoireManager).toContain("Not marked sung");
     expect(repertoireManager).toContain("Mark sung today");
     expect(repertoireManager).toContain('hasSmallRepertoire ? "opacity-75"');
     expect(repertoireManager).not.toContain("Search by title");
+    expect(repertoireManager).not.toContain("All arrangements");
   });
 
-  it("keeps search primary and stacks filters cleanly", () => {
+  it("keeps search primary and hides secondary filters behind a disclosure", () => {
     expect(repertoireManager).toContain(
-      "lg:grid-cols-[minmax(18rem,1fr)_minmax(12rem,14rem)]"
+      "lg:grid-cols-[minmax(18rem,1fr)_minmax(10rem,13rem)_auto]"
     );
-    expect(repertoireManager).toContain("md:grid-cols-3");
+    expect(repertoireManager).toContain(
+      "md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
+    );
     expect(repertoireManager).toContain("text-base text-white");
     expect(repertoireManager).toContain(
-      "Based on songs you've marked as sung."
+      "Last sung appears after you mark a song as sung."
     );
     expect(repertoireManager).not.toContain(
       "Use Sung status to find songs you have or have not marked"
+    );
+  });
+
+  it("uses full voicing labels on saved-song cards", () => {
+    expect(repertoireManager).toContain("voicingDisplayLabel(item.voicing)");
+    expect(repertoireManager).not.toContain(
+      "compactVoicingDisplayLabel(item.voicing)"
     );
   });
 });
