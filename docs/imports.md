@@ -186,16 +186,18 @@ The user-facing flow appears under **More ways to build My Songs** as
 - `All years` or a real `YearHeld` value
 - `All brigades` or a real brigade abbreviation/name from `XQ_Brigades`
 
-The picker lists event-song appearances from `ViewHistory`, so the same song
-can appear under multiple years or brigades. Songs default to `TTBB`. Before
-adding, the user chooses any TTBB parts they know for each song and a confidence
-value for each selected part. If multiple appearances of the same normalized
-title + arranger are selected, they are saved as one My Songs row with the
-combined part confidences. Adding Harmony Brigade songs writes only to the
-current user's `user_repertoire`; it does not expose the user's Brigade
-selection publicly. The picker fetches event-song rows for the selected
-year/brigade scope and paginates Supabase reads so complete event lists are not
-truncated by PostgREST response caps.
+The picker reads event-song appearances from `ViewHistory`, then groups visible
+cards by normalized title + `TTBB` + normalized arranger. If the same song
+appears in multiple brigades for the selected scope, users see one card with the
+event/track appearances listed on it. Songs default to `TTBB`. Before adding,
+the user chooses any TTBB parts they know for each song and a confidence value
+for each selected part. If multiple appearances of the same normalized title +
+arranger are selected, they are saved as one My Songs row with the combined part
+confidences. Adding Harmony Brigade songs writes only to the current user's
+`user_repertoire`; it does not expose the user's Brigade selection publicly. The
+picker fetches event-song rows for the selected year/brigade scope and paginates
+Supabase reads so complete event lists are not truncated by PostgREST response
+caps.
 
 Duplicate detection uses normalized title + `TTBB` + normalized arranger,
 preserving the distinction between a blank arranger and literal `Unknown`.

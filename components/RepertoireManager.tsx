@@ -54,13 +54,15 @@ import {
   getHarmonyBrigadeEvents,
   getHarmonyBrigadeEventSongsForScope,
   getHarmonyBrigadeYearOptions,
+  groupHarmonyBrigadeCandidates,
   HARMONY_BRIGADE_ALL_BRIGADES,
   HARMONY_BRIGADE_ALL_YEARS,
   HARMONY_BRIGADE_SOURCE,
-  harmonyBrigadeEventSongKey,
+  harmonyBrigadeAppearanceSummary,
+  harmonyBrigadeGroupedCandidateKey,
   harmonyBrigadeSelectionDescription,
   resolveHarmonyBrigadeCandidates,
-  searchHarmonyBrigadeCandidates,
+  searchHarmonyBrigadeGroupedCandidates,
   type HarmonyBrigadeEvent,
   type HarmonyBrigadeEventSong,
   type HarmonyBrigadePartSelections,
@@ -1053,22 +1055,27 @@ export default function RepertoireManager() {
     harmonyBrigadeRows,
     items
   );
-  const visibleHarmonyBrigadeCandidates = searchHarmonyBrigadeCandidates(
-    harmonyBrigadeCandidates,
+  const harmonyBrigadeGroupedCandidates = groupHarmonyBrigadeCandidates(
+    harmonyBrigadeCandidates
+  );
+  const visibleHarmonyBrigadeCandidates = searchHarmonyBrigadeGroupedCandidates(
+    harmonyBrigadeGroupedCandidates,
     harmonyBrigadeSearchQuery
   );
-  const harmonyBrigadeEligibleCount = harmonyBrigadeCandidates.filter(
+  const harmonyBrigadeEligibleCount = harmonyBrigadeGroupedCandidates.filter(
     (row) => row.duplicateStatus === "eligible"
   ).length;
   const harmonyBrigadeAlreadyCount =
-    harmonyBrigadeCandidates.length - harmonyBrigadeEligibleCount;
-  const selectedHarmonyBrigadeEligibleCount = harmonyBrigadeCandidates.filter(
-    (row) =>
-      row.duplicateStatus === "eligible" &&
-      Object.keys(
-        harmonyBrigadePartSelections[harmonyBrigadeEventSongKey(row)] ?? {}
-      ).length > 0
-  ).length;
+    harmonyBrigadeGroupedCandidates.length - harmonyBrigadeEligibleCount;
+  const selectedHarmonyBrigadeEligibleCount =
+    harmonyBrigadeGroupedCandidates.filter(
+      (row) =>
+        row.duplicateStatus === "eligible" &&
+        Object.keys(
+          harmonyBrigadePartSelections[harmonyBrigadeGroupedCandidateKey(row)] ??
+            {}
+        ).length > 0
+    ).length;
   const selectedHarmonyBrigadeAddInputs = buildHarmonyBrigadeAddInputs(
     harmonyBrigadeCandidates,
     harmonyBrigadePartSelections
@@ -1077,7 +1084,7 @@ export default function RepertoireManager() {
     harmonyBrigadeSelectionDescription(
       harmonyBrigadeYear,
       selectedHarmonyBrigadeBrigade,
-      harmonyBrigadeCandidates.length,
+      harmonyBrigadeGroupedCandidates.length,
       harmonyBrigadeEvents
     );
   const canAddHarmonyBrigadeSongs = selectedHarmonyBrigadeAddInputs.length > 0;
@@ -1473,13 +1480,14 @@ export default function RepertoireManager() {
                       {visibleHarmonyBrigadeCandidates.map((row) => {
                         const isExactDuplicate =
                           row.duplicateStatus === "exact";
-                        const eventSongKey = harmonyBrigadeEventSongKey(row);
+                        const selectionKey =
+                          harmonyBrigadeGroupedCandidateKey(row);
                         const selectedParts =
-                          harmonyBrigadePartSelections[eventSongKey] ?? {};
+                          harmonyBrigadePartSelections[selectionKey] ?? {};
 
                         return (
                           <div
-                            key={eventSongKey}
+                            key={selectionKey}
                             className={`grid gap-3 p-3 ${
                               isExactDuplicate
                                 ? "bg-slate-900/80 text-slate-500"
@@ -1498,18 +1506,9 @@ export default function RepertoireManager() {
                                 {row.song.arranger
                                   ? `Arr. ${arrangerDisplayName(row.song.arranger)}`
                                   : "No arranger entered"}
-                                {row.song.asSungBy
-                                  ? ` - As sung by ${row.song.asSungBy}`
-                                  : ""}
-                                {row.song.startingWords
-                                  ? ` - Starts "${row.song.startingWords}"`
-                                  : ""}
                               </p>
                               <p className="mt-1 text-xs leading-5 text-slate-500">
-                                {row.event.eventLabel}
-                                {row.trackNumber
-                                  ? ` - Track ${row.trackNumber}`
-                                  : ""}
+                                {harmonyBrigadeAppearanceSummary(row)}
                               </p>
                             </div>
 
@@ -1524,7 +1523,7 @@ export default function RepertoireManager() {
                                       value={selectedParts[part] ?? ""}
                                       onChange={(event) =>
                                         updateHarmonyBrigadePartSelection(
-                                          eventSongKey,
+                                          selectionKey,
                                           part,
                                           event.target.value as Confidence | ""
                                         )
@@ -1565,8 +1564,8 @@ export default function RepertoireManager() {
                   <p className="text-sm text-slate-300">
                     {selectedHarmonyBrigadeEligibleCount}{" "}
                     {selectedHarmonyBrigadeEligibleCount === 1
-                      ? "listing has"
-                      : "listings have"}{" "}
+                      ? "song has"
+                      : "songs have"}{" "}
                     part choices. {selectedHarmonyBrigadeAddInputs.length}{" "}
                     unique{" "}
                     {selectedHarmonyBrigadeAddInputs.length === 1
