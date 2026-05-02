@@ -132,19 +132,21 @@ after the catalog import behavior changes, run the import script with a
 server-side Supabase service role key:
 
 ```bash
-SUPABASE_SERVICE_ROLE_KEY=... npm run song-suggestions:import
+cp .env.song-sources.example .env.song-sources.local
+npm run song-sources:import:supabase
 ```
 
 Use `npm run song-suggestions:import -- --dry-run` to parse and deduplicate the
 catalog file without writing to Supabase.
 
-To refresh BHS Published Music, International Songs, or BarbershopTracks source
-data and merge it into `data/song_suggestion_catalog.psv`, follow
-[docs/imports.md](docs/imports.md). The catalog transforms are conservative:
-they import title, supported voicing, and arranger metadata only, skip ambiguous
-rows, preserve blank arranger versus literal `Unknown`, and split clearly
-multi-voicing rows into separate catalog rows where a source provides multiple
-supported voicings.
+To refresh Barbershop Connections, BarbershopTracks, BHS Published Music, or
+Harmony Brigade suggestion sources and merge them into
+`data/song_suggestion_catalog.psv`, follow
+[docs/song-sources.md](docs/song-sources.md). The catalog transforms are
+conservative: they import title, supported voicing, and arranger metadata only,
+skip ambiguous rows, preserve blank arranger versus literal `Unknown`, and split
+clearly multi-voicing rows into separate catalog rows where a source provides
+multiple supported voicings.
 
 To refresh Harmony Brigade data, export read-only upstream snapshots and then
 import them into the Supabase reference tables after migrations are applied:

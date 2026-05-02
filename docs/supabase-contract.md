@@ -195,28 +195,31 @@ Established by migrations:
 
 Purpose: optional autocomplete reference data for song entry, imported from
 `data/song_suggestion_catalog.psv`. The PSV catalog is maintained from
-controlled metadata sources including `data/bhs_published_music_catalog.csv`,
-`data/international_songs_with_arranger.csv`, and
-`data/sources/barbershoptracks_song_suggestions.psv`; see `docs/imports.md`.
+controlled metadata sources under `data/sources/`; see
+`docs/song-sources.md`.
 
 Code:
 - Imported by `scripts/import-song-suggestions.mjs`
-- BHS source data is transformed by `scripts/import-bhs-published-music.mjs`
-  before being merged into `data/song_suggestion_catalog.psv`
-- International Songs source data is transformed by
-  `scripts/import-international-songs.mjs` before being merged into
-  `data/song_suggestion_catalog.psv`
+- BHS source data is transformed by `scripts/song-sources/import-bhs-catalog.mjs`
+  into `data/sources/bhs_song_catalog_suggestions.psv`
+- Barbershop Connections source data is scraped by
+  `scripts/song-sources/scrape-barbershop-connections.mjs` into
+  `data/sources/barbershop_connections_song_suggestions.psv`
 - BarbershopTracks source data is scraped from rendered Playwright pages by
-  `scripts/scrape-barbershoptracks-suggestions.mjs` into
+  `scripts/song-sources/scrape-barbershoptracks.mjs` into
   `data/sources/barbershoptracks_song_suggestions.psv`
+- Harmony Brigade source data is transformed by
+  `scripts/song-sources/import-harmony-brigade-db.mjs` into
+  `data/sources/harmony_brigade_song_suggestions.psv`
 - `scripts/merge-song-suggestion-sources.mjs` safely merges committed source
   PSVs into `data/song_suggestion_catalog.psv` with a timestamped local backup
 - Preserved by `scripts/delete-user.mjs`; catalog rows are global suggestions,
   not user-owned data.
 - Read only through `public.search_repertoire_song_suggestions`
 - Parsed/deduplicated by `lib/__tests__/songSuggestionCatalogImport.test.ts`
-  and import-source tests including `lib/__tests__/bhsPublishedMusicImport.test.mjs`
-  and `lib/__tests__/barbershoptracksParser.test.mjs`
+  and import-source tests including
+  `lib/__tests__/songSourcePipeline.test.mjs` and
+  `lib/__tests__/barbershoptracksParser.test.mjs`
 
 Expected context:
 - Server/local import script with `SUPABASE_SERVICE_ROLE_KEY`

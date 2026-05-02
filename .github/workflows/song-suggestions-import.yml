@@ -1,0 +1,47 @@
+name: Song Suggestion Catalog Import
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Parse the merged catalog without writing to Supabase"
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Merge source files
+        run: npm run song-sources:merge
+
+      - name: Parse catalog
+        if: ${{ inputs.dry_run == 'true' }}
+        run: npm run song-suggestions:import -- --dry-run
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Import catalog to Supabase
+        if: ${{ inputs.dry_run == 'false' }}
+        run: npm run song-suggestions:import
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
