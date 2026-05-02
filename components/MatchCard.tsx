@@ -16,6 +16,7 @@ type MatchCardProps = {
   isExpanded: boolean;
   isRecentlySung?: boolean;
   isMarkingSung?: boolean;
+  isSungCelebrating?: boolean;
   onToggle: () => void;
   onMarkAsSung?: () => void;
 };
@@ -62,6 +63,7 @@ export function MatchCard({
   isExpanded,
   isRecentlySung = false,
   isMarkingSung = false,
+  isSungCelebrating = false,
   onToggle,
   onMarkAsSung,
 }: MatchCardProps) {
@@ -82,7 +84,11 @@ export function MatchCard({
   return (
     <details
       open={isExpanded}
-      className={`group rounded-xl border px-3 py-2 shadow-lg open:pb-3 ${styles.row}`}
+      className={`group relative overflow-hidden rounded-xl border px-3 py-2 shadow-lg open:pb-3 ${
+        isSungCelebrating
+          ? "ring-2 ring-cyan-200/70 ring-offset-2 ring-offset-slate-950 motion-safe:animate-pulse"
+          : ""
+      } ${styles.row}`}
     >
       <summary
         aria-expanded={isExpanded}
@@ -266,15 +272,33 @@ export function MatchCard({
         )}
 
         {onMarkAsSung && (
-          <div className="mt-3">
+          <div className="relative mt-3 inline-flex">
             <button
               type="button"
               onClick={onMarkAsSung}
-              disabled={isMarkingSung}
-              className="rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-slate-200 hover:bg-white/20 disabled:opacity-40"
+              disabled={isMarkingSung || isSungCelebrating}
+              className={`rounded-lg px-3 py-2 text-sm font-semibold hover:bg-white/20 disabled:opacity-70 ${
+                isSungCelebrating
+                  ? "bg-cyan-300 text-slate-950"
+                  : "bg-white/10 text-slate-200"
+              }`}
             >
-              {isMarkingSung ? "Marking..." : "Mark as sung"}
+              {isMarkingSung
+                ? "Marking..."
+                : isSungCelebrating
+                  ? "✓ Sung!"
+                  : "Mark as sung"}
             </button>
+            {isSungCelebrating && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -right-7 -top-5 flex gap-1 text-sm text-cyan-100 motion-safe:animate-bounce motion-reduce:hidden"
+              >
+                <span>♪</span>
+                <span className="mt-2 text-cyan-200">♫</span>
+                <span>♪</span>
+              </div>
+            )}
           </div>
         )}
 

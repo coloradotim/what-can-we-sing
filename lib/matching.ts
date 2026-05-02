@@ -67,6 +67,18 @@ export type MatchTitleVariantSinger = {
   arrangerName: string | null;
 };
 
+export type ConversationStarter = {
+  songTitle: string;
+  voicing: Voicing;
+  arrangerNames: string[];
+  hasMissingArrangerInfo: boolean;
+  arrangerVariantNote?: string;
+  warnings: string[];
+  singerCount: number;
+  coveredParts: Partial<Record<Part, SingerEntry[]>>;
+  missingParts: Part[];
+};
+
 type InternalMatchResult = MatchResult & {
   sourceGroupKeys?: string[];
 };
@@ -203,6 +215,20 @@ function buildAssignments(
 
   for (const [part, entry] of Object.entries(assignment)) {
     result[part as Part] = [entry];
+  }
+
+  return result;
+}
+
+function buildCoveredParts(
+  requiredParts: Part[],
+  entries: SingerEntry[]
+): Partial<Record<Part, SingerEntry[]>> {
+  const result: Partial<Record<Part, SingerEntry[]>> = {};
+
+  for (const part of requiredParts) {
+    const singers = entries.filter((entry) => entry.partsKnown.includes(part));
+    if (singers.length > 0) result[part] = singers;
   }
 
   return result;
@@ -486,4 +512,66 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
     })
     .map(({ sourceGroupKeys: _sourceGroupKeys, ...match }) => match)
     .sort((a, b) => b.score - a.score);
+}
+
+export function findConversationStarters(
+  entries: SingerEntry[]
+): ConversationStarter[] {
+  const groups = new Map<string, SingerEntry[]>();
+
+  for (const entry of entries) {
+    const key = `${normalizeTitle(entry.songTitle)}::${entry.voicing}`;
+    groups.set(key, [...(groups.get(key) ?? []), entry]);
+  }
+
+  const starters: ConversationStarter[] = [];
+
+  for (const group of groups.values()) {
+    const { songTitle, voicing } = group[0];
+    const requiredParts = requiredPartsForVoicing(voicing);
+    const distinctSingerIds = new Set(group.map((entry) => entry.userId));
+
+    if (distinctSingerIds.size < 2) continue;
+    if (findDistinctAssignment(requiredParts, group)) continue;
+
+    const hasNearMatch = requiredParts.some((omittedPart) => {
+      const remainingParts = requiredParts.filter(
+        (part) => part !== omittedPart
+      );
+      return Boolean(findDistinctAssignment(remainingParts, group));
+    });
+
+    if (hasNearMatch) continue;
+
+    const coveredParts = buildCoveredParts(requiredParts, group);
+    const missingParts = requiredParts.filter(
+      (part) => !coveredParts[part]?.length
+    );
+    const knownArrangers = knownArrangersForGroup(group);
+
+    starters.push({
+      songTitle,
+      voicing,
+      arrangerNames: knownArrangers,
+      hasMissingArrangerInfo: hasMissingArrangerInfo(group),
+      arrangerVariantNote: arrangerVariantNoteForGroup(knownArrangers),
+      warnings: arrangementWarningsForGroup(knownArrangers),
+      singerCount: distinctSingerIds.size,
+      coveredParts,
+      missingParts,
+    });
+  }
+
+  return starters.sort((a, b) => {
+    const singerDifference = b.singerCount - a.singerCount;
+    if (singerDifference !== 0) return singerDifference;
+
+    const coveredDifference =
+      Object.keys(b.coveredParts).length - Object.keys(a.coveredParts).length;
+    if (coveredDifference !== 0) return coveredDifference;
+
+    return a.songTitle.localeCompare(b.songTitle, undefined, {
+      sensitivity: "base",
+    });
+  });
 }
