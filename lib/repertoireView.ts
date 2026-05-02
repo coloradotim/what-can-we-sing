@@ -1,4 +1,8 @@
-import type { Part, Voicing } from "@/lib/matching";
+import type { Voicing } from "@/lib/matching";
+import {
+  functionalPartName,
+  type FunctionalPartName,
+} from "@/lib/partAbbreviations";
 import type { RepertoireRow } from "@/lib/repertoireStore";
 
 export type RepertoireSortOption =
@@ -13,7 +17,7 @@ export type SungStatusFilter = "all" | "marked" | "not_marked";
 export type RepertoireFilters = {
   searchQuery: string;
   voicing: Voicing | "";
-  part: Part | "";
+  part: FunctionalPartName | "";
   sungStatus: SungStatusFilter;
   sort: RepertoireSortOption;
 };
@@ -66,7 +70,9 @@ export function filterAndSortRepertoire(
 
       if (
         filters.part &&
-        !item.part_confidences.some(({ part }) => part === filters.part)
+        !item.part_confidences.some(
+          ({ part }) => functionalPartName(item.voicing, part) === filters.part
+        )
       ) {
         return false;
       }

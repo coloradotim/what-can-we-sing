@@ -1,5 +1,14 @@
 import type { Part, Voicing } from "@/lib/matching";
 
+export const functionalPartNames = [
+  "Tenor",
+  "Lead",
+  "Baritone",
+  "Bass",
+] as const;
+
+export type FunctionalPartName = (typeof functionalPartNames)[number];
+
 export const voicingDisplayLabels: Record<Voicing, string> = {
   SSAA: "Treble (SSAA)",
   SATB: "Mixed (SATB)",
@@ -18,7 +27,10 @@ export const printedNotationSummaries: Record<Voicing, string> = {
   TTBB: "T1 = T, T2 = L, B1 = Bari, B2 = Bass",
 };
 
-const functionalPartLabels: Record<Voicing, Partial<Record<Part, Part>>> = {
+const functionalPartLabels: Record<
+  Voicing,
+  Partial<Record<Part, FunctionalPartName>>
+> = {
   TTBB: {
     Tenor: "Tenor",
     Lead: "Lead",
@@ -51,7 +63,10 @@ export function printedNotationSummary(voicing: Voicing): string {
   return printedNotationSummaries[voicing];
 }
 
-export function functionalPartName(voicing: Voicing, part: Part): Part {
+export function functionalPartName(
+  voicing: Voicing,
+  part: Part
+): string {
   return functionalPartLabels[voicing][part] ?? part;
 }
 

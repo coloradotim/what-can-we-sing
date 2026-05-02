@@ -12,9 +12,11 @@ import type {
 } from "@/lib/matching";
 import {
   compactVoicingDisplayLabel,
+  functionalPartNames,
   partAbbreviation,
   partButtonLabel,
   printedNotationSummary,
+  type FunctionalPartName,
   voicingDisplayLabel,
 } from "@/lib/partAbbreviations";
 import {
@@ -110,21 +112,6 @@ function requiredFieldStateClass(isIncomplete: boolean) {
     : "border-white/10 bg-slate-900 ring-cyan-300";
 }
 
-function repertoirePartFilterLabel(
-  part: Part,
-  selectedVoicing: Voicing | ""
-) {
-  if (selectedVoicing) return partButtonLabel(selectedVoicing, part);
-
-  return Array.from(
-    new Set(
-      voicings
-        .filter((voicing) => partsByVoicing[voicing].includes(part))
-        .map((voicing) => partButtonLabel(voicing, part))
-    )
-  ).join(" / ");
-}
-
 type RepertoireForm = {
   songTitle: string;
   voicing: Voicing;
@@ -148,7 +135,7 @@ export default function RepertoireManager() {
   const [sortOption, setSortOption] =
     useState<RepertoireSortOption>("title_asc");
   const [voicingFilter, setVoicingFilter] = useState<Voicing | "">("");
-  const [partFilter, setPartFilter] = useState<Part | "">("");
+  const [partFilter, setPartFilter] = useState<FunctionalPartName | "">("");
   const [sungStatusFilter, setSungStatusFilter] =
     useState<SungStatusFilter>("all");
   const [songTitle, setSongTitle] = useState("");
@@ -534,10 +521,6 @@ export default function RepertoireManager() {
 
   function updateVoicingFilter(nextVoicing: Voicing | "") {
     setVoicingFilter(nextVoicing);
-    setPartFilter((currentPart) => {
-      if (!nextVoicing || !currentPart) return currentPart;
-      return partsByVoicing[nextVoicing].includes(currentPart) ? currentPart : "";
-    });
   }
 
   function clearRepertoireFilters() {
@@ -1031,9 +1014,7 @@ export default function RepertoireManager() {
   };
   const visibleItems = filterAndSortRepertoire(items, repertoireFilters);
   const hasActiveFilters = hasActiveRepertoireFilters(repertoireFilters);
-  const partFilterOptions = voicingFilter
-    ? partsByVoicing[voicingFilter]
-    : Array.from(new Set(voicings.flatMap((v) => partsByVoicing[v])));
+  const partFilterOptions = functionalPartNames;
   const hasSavedSongs = items.length > 0;
   const voicingOptions = suggestedVoicings ?? voicings;
   const isActivelySearchingSuggestions = !addSongSource && songSuggestionsOpen;
@@ -1128,12 +1109,8 @@ export default function RepertoireManager() {
           { label: "Join a quartet", href: "/join" },
         ] as const);
   const filteredEmptyDescription = [
-    voicingFilter,
-    partFilter
-      ? voicingFilter
-        ? partButtonLabel(voicingFilter, partFilter)
-        : partFilter
-      : "",
+    voicingFilter ? voicingDisplayLabel(voicingFilter) : "",
+    partFilter,
     sungStatusFilter === "marked"
       ? "marked sung"
       : sungStatusFilter === "not_marked"
@@ -1874,7 +1851,7 @@ export default function RepertoireManager() {
 
         {hasSavedSongs && (
           <section className="mt-8">
-            <div className="grid gap-4 xl:grid-cols-[minmax(14rem,16rem)_minmax(0,1fr)] xl:items-end">
+            <div className="space-y-4">
               <div className="min-w-0">
                 <h2 className="text-2xl font-semibold tracking-tight sm:whitespace-nowrap">
                   My saved songs
@@ -1884,110 +1861,109 @@ export default function RepertoireManager() {
                     ? `${items.length} ${items.length === 1 ? "song" : "songs"} saved`
                     : `${visibleItems.length} of ${items.length} songs shown`}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  Last sung is based on songs you have marked as sung in the app.
-                </p>
               </div>
 
               <div
-                className={`grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-[minmax(20rem,1.5fr)_repeat(4,minmax(10rem,1fr))] ${
+                className={`rounded-2xl border border-white/10 bg-white/5 p-4 ${
                   hasSmallRepertoire ? "opacity-75" : ""
                 }`}
               >
-                <p className="text-sm font-semibold text-slate-300 sm:col-span-2 lg:col-span-4 2xl:col-span-5">
-                  Filter saved songs
-                </p>
-                <label className="block min-w-0 sm:col-span-2 lg:col-span-2 2xl:col-span-1">
-                  <span className="text-sm font-medium text-slate-300">
-                    Search My Songs
-                  </span>
-                  <input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Filter songs you've already added"
-                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-                  />
-                </label>
-                <label className="block min-w-0">
-                  <span className="text-sm font-medium text-slate-300">
-                    Sort
-                  </span>
-                  <select
-                    value={sortOption}
-                    onChange={(e) =>
-                      setSortOption(e.target.value as RepertoireSortOption)
-                    }
-                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-                  >
-                    <option value="title_asc">Title A-Z</option>
-                    <option value="created_desc">Added newest</option>
-                    <option value="created_asc">Added oldest</option>
-                    <option value="last_sung_desc">Sung recently</option>
-                    <option value="last_sung_asc">Least recently sung</option>
-                  </select>
-                </label>
-                <label className="block min-w-0">
-                  <span className="text-sm font-medium text-slate-300">
-                    Voicing
-                  </span>
-                  <select
-                    value={voicingFilter}
-                    onChange={(e) =>
-                      updateVoicingFilter(e.target.value as Voicing | "")
-                    }
-                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-                  >
-                    <option value="">All arrangement voicings</option>
-                    {voicings.map((v) => (
-                      <option key={v} value={v}>
-                        {voicingDisplayLabel(v)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block min-w-0">
-                  <span className="text-sm font-medium text-slate-300">
-                    Part
-                  </span>
-                  <select
-                    value={partFilter}
-                    onChange={(e) => setPartFilter(e.target.value as Part | "")}
-                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-                  >
-                    <option value="">All parts</option>
-                    {partFilterOptions.map((part) => (
-                      <option key={part} value={part}>
-                        {repertoirePartFilterLabel(part, voicingFilter)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block min-w-0">
-                  <span className="text-sm font-medium text-slate-300">
-                    Sung status
-                  </span>
-                  <select
-                    value={sungStatusFilter}
-                    onChange={(e) =>
-                      setSungStatusFilter(e.target.value as SungStatusFilter)
-                    }
-                    className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-                  >
-                    <option value="all">All songs</option>
-                    <option value="marked">Marked sung</option>
-                    <option value="not_marked">Not marked yet</option>
-                  </select>
-                </label>
+                <div className="grid gap-3 lg:grid-cols-[minmax(18rem,1fr)_minmax(12rem,14rem)]">
+                  <label className="block min-w-0">
+                    <span className="text-sm font-semibold text-slate-200">
+                      Search My Songs
+                    </span>
+                    <input
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Filter songs you've already added"
+                      className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-base text-white outline-none ring-cyan-300 focus:ring-2"
+                    />
+                  </label>
+                  <label className="block min-w-0">
+                    <span className="text-sm font-medium text-slate-300">
+                      Sort
+                    </span>
+                    <select
+                      value={sortOption}
+                      onChange={(e) =>
+                        setSortOption(e.target.value as RepertoireSortOption)
+                      }
+                      className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                    >
+                      <option value="title_asc">Title A-Z</option>
+                      <option value="created_desc">Added newest</option>
+                      <option value="created_asc">Added oldest</option>
+                      <option value="last_sung_desc">Sung recently</option>
+                      <option value="last_sung_asc">Least recently sung</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div className="mt-3 grid gap-3 md:grid-cols-3">
+                  <label className="block min-w-0">
+                    <span className="text-sm font-medium text-slate-300">
+                      Arrangement
+                    </span>
+                    <select
+                      value={voicingFilter}
+                      onChange={(e) =>
+                        updateVoicingFilter(e.target.value as Voicing | "")
+                      }
+                      className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                    >
+                      <option value="">All arrangements</option>
+                      {voicings.map((v) => (
+                        <option key={v} value={v}>
+                          {voicingDisplayLabel(v)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block min-w-0">
+                    <span className="text-sm font-medium text-slate-300">
+                      Part
+                    </span>
+                    <select
+                      value={partFilter}
+                      onChange={(e) =>
+                        setPartFilter(e.target.value as FunctionalPartName | "")
+                      }
+                      className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                    >
+                      <option value="">All parts</option>
+                      {partFilterOptions.map((part) => (
+                        <option key={part} value={part}>
+                          {part}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block min-w-0">
+                    <span className="text-sm font-medium text-slate-300">
+                      Sung status
+                    </span>
+                    <select
+                      value={sungStatusFilter}
+                      onChange={(e) =>
+                        setSungStatusFilter(e.target.value as SungStatusFilter)
+                      }
+                      className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                    >
+                      <option value="all">All songs</option>
+                      <option value="marked">Marked sung</option>
+                      <option value="not_marked">Not marked yet</option>
+                    </select>
+                    <span className="mt-1 block text-xs text-slate-500">
+                      Based on songs you've marked as sung.
+                    </span>
+                  </label>
+                </div>
               </div>
             </div>
 
-            <div className="mt-3 flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm text-slate-400">
-                Use Sung status to find songs you have or have not marked in the
-                app.
-              </p>
-
-              {hasActiveFilters ? (
+            {hasActiveFilters && (
+              <div className="mt-3 rounded-xl border border-cyan-300/10 bg-cyan-300/5 p-3">
                 <div className="flex flex-wrap items-center gap-2">
                   {searchQuery.trim() && (
                     <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
@@ -2001,7 +1977,7 @@ export default function RepertoireManager() {
                   )}
                   {partFilter && (
                     <span className="rounded-full bg-cyan-300/10 px-3 py-1 text-xs font-semibold text-cyan-100">
-                      {repertoirePartFilterLabel(partFilter, voicingFilter)}
+                      {partFilter}
                     </span>
                   )}
                   {sungStatusFilter !== "all" && (
@@ -2019,10 +1995,8 @@ export default function RepertoireManager() {
                     Clear filters
                   </button>
                 </div>
-              ) : (
-                <p className="text-sm text-slate-400">No filters active</p>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="mt-4 space-y-2">
               {visibleItems.length === 0 && (

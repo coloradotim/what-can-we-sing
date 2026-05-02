@@ -30,9 +30,11 @@ describe("repertoire empty state", () => {
 
   it("keeps saved-song filters separate from adding songs", () => {
     expect(repertoireManager).toContain("hasSavedSongs &&");
-    expect(repertoireManager).toContain("Filter saved songs");
     expect(repertoireManager).toContain("Search My Songs");
     expect(repertoireManager).toContain("Filter songs you've already added");
+    expect(repertoireManager).toContain("Arrangement");
+    expect(repertoireManager).toContain("All arrangements");
+    expect(repertoireManager).toContain("All parts");
     expect(repertoireManager).toContain("Sung status");
     expect(repertoireManager).toContain("Not marked yet");
     expect(repertoireManager).toContain("Mark sung today");
@@ -40,16 +42,17 @@ describe("repertoire empty state", () => {
     expect(repertoireManager).not.toContain("Search by title");
   });
 
-  it("protects the saved-song summary width while filters wrap responsively", () => {
+  it("keeps search primary and stacks filters cleanly", () => {
     expect(repertoireManager).toContain(
-      "xl:grid-cols-[minmax(14rem,16rem)_minmax(0,1fr)]"
+      "lg:grid-cols-[minmax(18rem,1fr)_minmax(12rem,14rem)]"
     );
-    expect(repertoireManager).toContain("sm:whitespace-nowrap");
+    expect(repertoireManager).toContain("md:grid-cols-3");
+    expect(repertoireManager).toContain("text-base text-white");
     expect(repertoireManager).toContain(
-      "lg:grid-cols-4 2xl:grid-cols-[minmax(20rem,1.5fr)_repeat(4,minmax(10rem,1fr))]"
+      "Based on songs you've marked as sung."
     );
-    expect(repertoireManager).toContain(
-      "sm:col-span-2 lg:col-span-2 2xl:col-span-1"
+    expect(repertoireManager).not.toContain(
+      "Use Sung status to find songs you have or have not marked"
     );
   });
 });
