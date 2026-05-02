@@ -139,8 +139,8 @@ npm run song-sources:import:supabase
 Use `npm run song-suggestions:import -- --dry-run` to parse and deduplicate the
 catalog file without writing to Supabase.
 
-To refresh Barbershop Connections, BarbershopTracks, BHS Published Music, or
-Harmony Brigade suggestion sources and merge them into
+To refresh Barbershop Connections, BarbershopTracks, TimTracks, BHS Published
+Music, or Harmony Brigade suggestion sources and merge them into
 `data/song_suggestion_catalog.psv`, follow
 [docs/song-sources.md](docs/song-sources.md). The catalog transforms are
 conservative: they import title, supported voicing, and arranger metadata only,

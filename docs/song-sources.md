@@ -12,6 +12,7 @@ by individual singers.
 
 - `data/sources/barbershop_connections_song_suggestions.psv`
 - `data/sources/barbershoptracks_song_suggestions.psv`
+- `data/sources/timtracks_song_suggestions.psv`
 - `data/sources/bhs_song_catalog_suggestions.psv`
 - `data/sources/harmony_brigade_song_suggestions.psv`
 - `data/song_suggestion_catalog.psv`
@@ -46,6 +47,7 @@ Scrape or import individual source files:
 ```bash
 npm run song-sources:scrape:barbershop-connections
 npm run song-sources:scrape:barbershoptracks
+npm run song-sources:scrape:timtracks
 npm run song-sources:import:bhs
 npm run song-sources:import:harmony-brigade
 ```
@@ -80,6 +82,17 @@ BarbershopTracks:
 - Normalizes `Mens Track` to `TTBB`, `Women’s Track` / `Ladies Track` to
   `SSAA`, and `Mixed Track` to `SATB`.
 
+TimTracks:
+
+- Reads the public TimTracks DataTables endpoint for men's, women's, mixed, and
+  holiday track pages.
+- Uses the men's, women's, and mixed source page type as the primary voicing
+  signal.
+- For holiday tracks, imports only rows that clearly identify a supported
+  four-part voicing from male/female part counts: `4/0` as `TTBB`, `0/4` as
+  `SSAA`, and `2/2` as `SATB`.
+- Writes ambiguous holiday rows to `tmp/song-sources/timtracks-skipped.json`.
+
 BHS Published Music:
 
 - Uses the repo-local CSV by default.
@@ -105,4 +118,3 @@ Required GitHub secrets for the import step:
 
 External scraper credentials remain local unless a future PR intentionally adds
 safe CI support for a specific source.
-

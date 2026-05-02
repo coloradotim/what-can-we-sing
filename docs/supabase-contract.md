@@ -208,6 +208,9 @@ Code:
 - BarbershopTracks source data is scraped from rendered Playwright pages by
   `scripts/song-sources/scrape-barbershoptracks.mjs` into
   `data/sources/barbershoptracks_song_suggestions.psv`
+- TimTracks source data is scraped from the public DataTables endpoint by
+  `scripts/song-sources/scrape-timtracks.mjs` into
+  `data/sources/timtracks_song_suggestions.psv`
 - Harmony Brigade source data is transformed by
   `scripts/song-sources/import-harmony-brigade-db.mjs` into
   `data/sources/harmony_brigade_song_suggestions.psv`
