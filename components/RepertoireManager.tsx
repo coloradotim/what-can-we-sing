@@ -1463,7 +1463,7 @@ export default function RepertoireManager() {
                           onChange={(event) =>
                             setHarmonyBrigadeSearchQuery(event.target.value)
                           }
-                          placeholder="Filter by title, arranger, quartet, or lyrics"
+                          placeholder="Filter by title, arranger, or Brigade acronym like NPHB"
                           className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
                         />
                       </label>
