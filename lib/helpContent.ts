@@ -300,7 +300,7 @@ export const helpAcknowledgments: HelpAcknowledgment[] = [
   {
     name: "Sweet Adelines",
     contribution:
-      "for maintaining the sweetadelines.com published music list used as a song suggestion source",
+      "for maintaining the sweetadelines.com published and arranged music lists used as song suggestion sources",
   },
 ];
 

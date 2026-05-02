@@ -214,6 +214,9 @@ Code:
 - Sweet Adelines published music source data is imported from the public PDF by
   `scripts/song-sources/import-sweet-adelines-published-music.mjs` into
   `data/sources/sweet_adelines_published_music_song_suggestions.psv`
+- Sweet Adelines arranged music source data is imported from a separate public
+  PDF by `scripts/song-sources/import-sweet-adelines-arranged-music.mjs` into
+  `data/sources/sweet_adelines_arranged_music_song_suggestions.psv`
 - Harmony Brigade source data is transformed by
   `scripts/song-sources/import-harmony-brigade-db.mjs` into
   `data/sources/harmony_brigade_song_suggestions.psv`
