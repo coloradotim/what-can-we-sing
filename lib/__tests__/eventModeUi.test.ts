@@ -10,6 +10,10 @@ const detailPage = readFileSync(
   join(process.cwd(), "app/event-mode/[code]/page.tsx"),
   "utf8"
 );
+const eventModeSource = readFileSync(
+  join(process.cwd(), "lib/eventMode.ts"),
+  "utf8"
+);
 
 describe("Event Mode UI copy", () => {
   it("uses Event Mode terminology and the requested core actions", () => {
@@ -19,6 +23,14 @@ describe("Event Mode UI copy", () => {
     expect(landingPage).toContain("Enter with a link or code");
     expect(landingPage).toContain("Use this event");
     expect(detailPage).toContain("Start a quartet");
+    expect(detailPage).toContain("I&apos;m available to sing");
+    expect(detailPage).toContain("Available singers");
+    expect(detailPage).toContain("Turn off my availability");
+    expect(detailPage).toContain("Filter by voice part");
+    expect(detailPage).toContain("Found people to sing with?");
+    expect(detailPage).toContain("Available until");
+    expect(eventModeSource).toContain("TTBB Lead");
+    expect(eventModeSource).toContain("SSAA Alto 1");
   });
 
   it("does not introduce deprecated pickup board or location-discovery language", () => {

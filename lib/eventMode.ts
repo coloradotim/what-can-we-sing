@@ -34,6 +34,66 @@ export type EventModeDuplicateCandidate = {
   reasons: string[];
 };
 
+export type EventModeVoicePart =
+  | "TTBB Tenor"
+  | "TTBB Lead"
+  | "TTBB Baritone"
+  | "TTBB Bass"
+  | "SATB Soprano"
+  | "SATB Alto"
+  | "SATB Tenor"
+  | "SATB Bass"
+  | "SSAA Soprano 1"
+  | "SSAA Soprano 2"
+  | "SSAA Alto 1"
+  | "SSAA Alto 2";
+
+export type EventModeAvailability = {
+  id: string;
+  event_id: string;
+  user_id: string;
+  display_name: string;
+  voice_parts: EventModeVoicePart[];
+  availability_note: string | null;
+  meetup_note: string | null;
+  available_until: string;
+  created_at: string;
+  updated_at: string;
+  turned_off_at: string | null;
+};
+
+export type EventModeAvailabilityInput = {
+  eventId: string;
+  voiceParts: EventModeVoicePart[];
+  availabilityNote?: string;
+  meetupNote?: string;
+  availableUntil: string;
+};
+
+export const eventModeVoicePartGroups = [
+  {
+    voicing: "TTBB",
+    parts: ["TTBB Tenor", "TTBB Lead", "TTBB Baritone", "TTBB Bass"],
+  },
+  {
+    voicing: "SATB",
+    parts: ["SATB Soprano", "SATB Alto", "SATB Tenor", "SATB Bass"],
+  },
+  {
+    voicing: "SSAA",
+    parts: [
+      "SSAA Soprano 1",
+      "SSAA Soprano 2",
+      "SSAA Alto 1",
+      "SSAA Alto 2",
+    ],
+  },
+] satisfies { voicing: string; parts: EventModeVoicePart[] }[];
+
+export const eventModeVoicePartOptions = eventModeVoicePartGroups.flatMap(
+  (group) => group.parts
+);
+
 const eventCodePattern = /^[A-Z0-9]{6}$/;
 
 function cleanText(value: string | null | undefined) {
@@ -115,6 +175,49 @@ export function formatEventModeDateRange(event: {
 
   if (sameDay) return startFormat.format(start);
   return `${startFormat.format(start)}-${endFormat.format(end)}`;
+}
+
+export function defaultEventModeAvailableUntil(
+  event: Pick<EventModeEvent, "end_at">,
+  now = new Date()
+) {
+  const eventEnd = new Date(event.end_at);
+  const fallback = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  if (
+    !Number.isNaN(eventEnd.getTime()) &&
+    eventEnd > now &&
+    eventEnd <= sevenDaysFromNow
+  ) {
+    return eventEnd.toISOString();
+  }
+
+  return fallback.toISOString();
+}
+
+export function formatEventModeVoiceParts(parts: EventModeVoicePart[]) {
+  return parts.join(", ");
+}
+
+export function isEventModeAvailabilityActive(
+  availability: Pick<EventModeAvailability, "available_until" | "turned_off_at">,
+  event: Pick<EventModeEvent, "end_at" | "closed_at">,
+  now = new Date()
+) {
+  if (availability.turned_off_at || event.closed_at) return false;
+  return (
+    Date.parse(availability.available_until) > now.getTime() &&
+    Date.parse(event.end_at) > now.getTime()
+  );
+}
+
+export function filterEventModeAvailabilityByPart(
+  availability: EventModeAvailability[],
+  selectedPart: EventModeVoicePart | "all"
+) {
+  if (selectedPart === "all") return availability;
+  return availability.filter((item) => item.voice_parts.includes(selectedPart));
 }
 
 function rangesOverlap(aStart: string, aEnd: string, bStart: string, bEnd: string) {
@@ -239,6 +342,34 @@ function validateEventModeInput(input: EventModeEventInput) {
   };
 }
 
+function validateEventModeAvailabilityInput(input: EventModeAvailabilityInput) {
+  const availableUntil = new Date(input.availableUntil);
+  const uniqueVoiceParts = Array.from(new Set(input.voiceParts));
+
+  if (uniqueVoiceParts.length === 0) {
+    throw new Error("Choose at least one voice part.");
+  }
+  if (
+    uniqueVoiceParts.some((part) => !eventModeVoicePartOptions.includes(part))
+  ) {
+    throw new Error("Choose valid Event Mode voice parts.");
+  }
+  if (!input.availableUntil || Number.isNaN(availableUntil.getTime())) {
+    throw new Error("Choose when your availability should expire.");
+  }
+  if (availableUntil <= new Date()) {
+    throw new Error("Availability must expire in the future.");
+  }
+
+  return {
+    event_id: input.eventId,
+    voice_parts: uniqueVoiceParts,
+    availability_note: cleanText(input.availabilityNote),
+    meetup_note: cleanText(input.meetupNote),
+    available_until: availableUntil.toISOString(),
+  };
+}
+
 export async function searchEventModeEvents(query: string, now = new Date()) {
   const { data, error } = await supabase
     .from("event_mode_events")
@@ -337,4 +468,66 @@ export async function closeEventModeEvent(eventId: string) {
   if (error) throw error;
   if (!data) throw new Error("Only the event creator can close this event.");
   return data as EventModeEvent;
+}
+
+export async function getEventModeAvailabilityByCode(code: string) {
+  const parsedCode = parseEventModeCode(code);
+  if (!parsedCode) return [];
+
+  const { data, error } = await supabase.rpc(
+    "get_event_mode_availability_by_code",
+    {
+      p_code: parsedCode,
+    }
+  );
+
+  if (error) throw error;
+  return (data ?? []) as EventModeAvailability[];
+}
+
+export async function upsertEventModeAvailability(
+  input: EventModeAvailabilityInput
+) {
+  const user = await getCurrentUser();
+  if (!user) {
+    throw new Error("You must be logged in to mark yourself available.");
+  }
+
+  const values = validateEventModeAvailabilityInput(input);
+  const { data, error } = await supabase
+    .from("event_mode_availability")
+    .upsert(
+      {
+        ...values,
+        user_id: user.id,
+        turned_off_at: null,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "event_id,user_id" }
+    )
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data as Omit<EventModeAvailability, "display_name">;
+}
+
+export async function turnOffEventModeAvailability(eventId: string) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("You must be logged in to turn off availability.");
+
+  const { data, error } = await supabase
+    .from("event_mode_availability")
+    .update({
+      turned_off_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("event_id", eventId)
+    .eq("user_id", user.id)
+    .is("turned_off_at", null)
+    .select()
+    .maybeSingle();
+
+  if (error) throw error;
+  return data as Omit<EventModeAvailability, "display_name"> | null;
 }

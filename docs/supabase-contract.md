@@ -340,7 +340,8 @@ repertoire sharing, a public profile system, or a formal invite-to-quartet
 workflow.
 
 Code:
-- Browser create/search/edit/close helpers: `lib/eventMode.ts`
+- Browser create/search/edit/close and availability helpers:
+  `lib/eventMode.ts`
 - Event Mode landing/search/create route: `app/event-mode/page.tsx`
 - Event detail/code route: `app/event-mode/[code]/page.tsx`
 - Tests: `lib/__tests__/eventMode.test.ts`,
@@ -351,8 +352,7 @@ Expected context:
 - Signed-in users can browse/search listed upcoming or active events.
 - Unlisted events are not returned by listed browse/search helpers.
 - Anyone with a valid event code or link can open the event route through
-  `get_event_mode_event_by_code`; seeing future availability/messaging may
-  require sign-in in follow-up work.
+  `get_event_mode_event_by_code`.
 - Event creators can edit event name, date/time, location note, and visibility.
 - Event creators can close their own event by setting `closed_at`.
 - Other users cannot edit or close events they did not create.
@@ -394,6 +394,80 @@ Required database contract:
 
 Established by migrations:
 - `20260502080000_add_event_mode_events.sql`
+
+### Event Mode Availability
+
+Purpose: temporary, opt-in, event-scoped singer availability for Event Mode.
+It helps singers at the same event see who is open to pickup singing, what
+voice parts they are comfortable covering, and lightweight meet-up context.
+
+Event Mode availability must remain separate from repertoire and quartet
+matching. It must not expose repertoire, notes from My Songs, email addresses,
+last-sung history, exact GPS coordinates, global availability, or a permanent
+public singer profile.
+
+Code:
+- Read active availability for an event code:
+  `lib/eventMode.ts#getEventModeAvailabilityByCode`, through
+  `public.get_event_mode_availability_by_code`
+- Create/update the current user's availability:
+  `lib/eventMode.ts#upsertEventModeAvailability`
+- Turn off the current user's availability:
+  `lib/eventMode.ts#turnOffEventModeAvailability`
+- Event detail UI: `app/event-mode/[code]/page.tsx`
+- Tests: `lib/__tests__/eventMode.test.ts`,
+  `lib/__tests__/eventModeUi.test.ts`, and this Supabase contract test
+
+Expected context:
+- Browser authenticated user.
+- Signed-in users can mark only themselves available for an event.
+- Signed-in users can update or turn off only their own availability row.
+- One row is stored per `(event_id, user_id)`. Updating availability upserts
+  that row and clears `turned_off_at`.
+- Availability is active only while `turned_off_at is null`,
+  `available_until > now()`, and the event is not closed or ended.
+- The event detail page reads active availability for the current event by
+  link/code and filters it by voice part in the browser.
+- Display names come from `profiles.display_name`; availability rows do not
+  own display names.
+- Voice parts are stored with unambiguous voicing-prefixed labels:
+  `TTBB Tenor`, `TTBB Lead`, `TTBB Baritone`, `TTBB Bass`,
+  `SATB Soprano`, `SATB Alto`, `SATB Tenor`, `SATB Bass`,
+  `SSAA Soprano 1`, `SSAA Soprano 2`, `SSAA Alto 1`, and `SSAA Alto 2`.
+- The UI may provide a Start Quartet shortcut after singers find each other,
+  but Event Mode availability does not create quartet invitations.
+
+Required database contract:
+- `event_mode_availability`
+  - `id uuid primary key`
+  - `event_id uuid references public.event_mode_events(id) on delete cascade`
+  - `user_id uuid references auth.users(id) on delete cascade`
+  - `voice_parts text[] not null`
+  - optional `availability_note text`
+  - optional `meetup_note text`
+  - `available_until timestamptz not null`
+  - `created_at timestamptz not null default now()`
+  - `updated_at timestamptz not null default now()`
+  - optional `turned_off_at timestamptz`
+- Check constraint requires at least one voice part.
+- Check constraint allows only the supported Event Mode voice-part labels.
+- Unique index on `(event_id, user_id)` for one active or historical row per
+  singer per event.
+- Active availability index on `(event_id, available_until)` where
+  `turned_off_at is null`.
+- RLS enabled.
+- Authenticated users can read their own rows.
+- Authenticated users can read other active rows for listed, open events.
+- Authenticated users can insert/update only rows where `user_id = auth.uid()`.
+- `public.get_event_mode_availability_by_code(text)` is a security-definer
+  function granted only to authenticated users. It returns active rows for the
+  event code, joins `profiles.display_name`, and must not return email,
+  repertoire, user notes, quartet membership, or song history.
+- No authenticated delete policy; turning availability off updates
+  `turned_off_at`.
+
+Established by migrations:
+- `20260502100000_add_event_mode_availability.sql`
 
 ### `sessions`
 

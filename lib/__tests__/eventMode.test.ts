@@ -1,15 +1,20 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import type { EventModeEvent } from "@/lib/eventMode";
+import type { EventModeAvailability, EventModeEvent } from "@/lib/eventMode";
 
 process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key";
 
 const {
+  defaultEventModeAvailableUntil,
+  eventModeVoicePartOptions,
   eventModeSearchMatches,
+  filterEventModeAvailabilityByPart,
   findEventModeDuplicateCandidates,
+  formatEventModeVoiceParts,
   getEventModeLifecycle,
+  isEventModeAvailabilityActive,
   normalizeEventModeText,
   parseEventModeCode,
 } = await import("@/lib/eventMode");
@@ -119,5 +124,110 @@ describe("Event Mode helpers", () => {
     expect(storeSource).toContain('.is("closed_at", null)');
     expect(storeSource).toContain('.gte("end_at", now.toISOString())');
     expect(storeSource).toContain("get_event_mode_event_by_code");
+  });
+
+  it("uses unambiguous Event Mode voice part labels", () => {
+    expect(eventModeVoicePartOptions).toContain("TTBB Lead");
+    expect(eventModeVoicePartOptions).toContain("SATB Tenor");
+    expect(eventModeVoicePartOptions).toContain("SSAA Alto 1");
+    expect(eventModeVoicePartOptions).not.toContain("Lead");
+    expect(eventModeVoicePartOptions).not.toContain("Tenor");
+    expect(formatEventModeVoiceParts(["TTBB Lead", "SATB Tenor"])).toBe(
+      "TTBB Lead, SATB Tenor"
+    );
+  });
+
+  it("defaults availability expiry to the event end when it is soon", () => {
+    expect(
+      defaultEventModeAvailableUntil(
+        event({ end_at: "2026-10-11T18:00:00.000Z" }),
+        new Date("2026-10-10T18:00:00.000Z")
+      )
+    ).toBe("2026-10-11T18:00:00.000Z");
+  });
+
+  it("falls back to a one-day availability expiry for far-future events", () => {
+    expect(
+      defaultEventModeAvailableUntil(
+        event({ end_at: "2026-11-11T18:00:00.000Z" }),
+        new Date("2026-10-10T18:00:00.000Z")
+      )
+    ).toBe("2026-10-11T18:00:00.000Z");
+  });
+
+  it("filters Event Mode availability by selected voice part", () => {
+    const items: EventModeAvailability[] = [
+      {
+        id: "availability-1",
+        event_id: "event-1",
+        user_id: "user-1",
+        display_name: "Tim",
+        voice_parts: ["TTBB Lead", "TTBB Bass"],
+        availability_note: null,
+        meetup_note: null,
+        available_until: "2026-10-10T20:00:00.000Z",
+        created_at: "2026-10-10T18:00:00.000Z",
+        updated_at: "2026-10-10T18:00:00.000Z",
+        turned_off_at: null,
+      },
+      {
+        id: "availability-2",
+        event_id: "event-1",
+        user_id: "user-2",
+        display_name: "Alex",
+        voice_parts: ["SSAA Alto 1"],
+        availability_note: null,
+        meetup_note: null,
+        available_until: "2026-10-10T20:00:00.000Z",
+        created_at: "2026-10-10T18:00:00.000Z",
+        updated_at: "2026-10-10T18:00:00.000Z",
+        turned_off_at: null,
+      },
+    ];
+
+    expect(filterEventModeAvailabilityByPart(items, "all")).toHaveLength(2);
+    expect(filterEventModeAvailabilityByPart(items, "TTBB Bass")).toEqual([
+      items[0],
+    ]);
+    expect(filterEventModeAvailabilityByPart(items, "SATB Alto")).toEqual([]);
+  });
+
+  it("treats expired, ended, and turned-off availability as inactive", () => {
+    const now = new Date("2026-10-10T18:00:00.000Z");
+    const active = {
+      available_until: "2026-10-10T20:00:00.000Z",
+      turned_off_at: null,
+    };
+
+    expect(isEventModeAvailabilityActive(active, event(), now)).toBe(true);
+    expect(
+      isEventModeAvailabilityActive(
+        { ...active, available_until: "2026-10-10T17:00:00.000Z" },
+        event(),
+        now
+      )
+    ).toBe(false);
+    expect(
+      isEventModeAvailabilityActive(
+        { ...active, turned_off_at: "2026-10-10T17:30:00.000Z" },
+        event(),
+        now
+      )
+    ).toBe(false);
+    expect(
+      isEventModeAvailabilityActive(
+        active,
+        event({ closed_at: "2026-10-10T17:30:00.000Z" }),
+        now
+      )
+    ).toBe(false);
+  });
+
+  it("writes availability as one row per user and event", () => {
+    expect(storeSource).toContain(".from(\"event_mode_availability\")");
+    expect(storeSource).toContain("{ onConflict: \"event_id,user_id\" }");
+    expect(storeSource).toContain("get_event_mode_availability_by_code");
+    expect(storeSource).toContain('.eq("user_id", user.id)');
+    expect(storeSource).not.toContain("event_mode_messages");
   });
 });
