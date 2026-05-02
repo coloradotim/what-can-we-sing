@@ -171,7 +171,7 @@ describe("help content", () => {
       "voicing terminology"
     );
     expect(helpAcknowledgments.map((item) => item.contribution).join(" ")).toContain(
-      "sweetadelines.com published music list"
+      "sweetadelines.com published and arranged music lists"
     );
   });
 });

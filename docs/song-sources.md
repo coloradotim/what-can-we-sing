@@ -15,6 +15,7 @@ by individual singers.
 - `data/sources/timtracks_song_suggestions.psv`
 - `data/sources/bhs_song_catalog_suggestions.psv`
 - `data/sources/sweet_adelines_published_music_song_suggestions.psv`
+- `data/sources/sweet_adelines_arranged_music_song_suggestions.psv`
 - `data/sources/harmony_brigade_song_suggestions.psv`
 - `data/song_suggestion_catalog.psv`
 
@@ -51,6 +52,7 @@ npm run song-sources:scrape:barbershoptracks
 npm run song-sources:scrape:timtracks
 npm run song-sources:import:bhs
 npm run song-sources:import:sweet-adelines
+npm run song-sources:import:sweet-adelines-arranged
 npm run song-sources:import:harmony-brigade
 ```
 
@@ -110,6 +112,17 @@ Sweet Adelines published music:
   `FREE DOWNLOAD`.
 - Writes ambiguous rows to
   `tmp/song-sources/sweet-adelines-published-music-skipped.json`.
+
+Sweet Adelines arranged music:
+
+- Downloads the public Sweet Adelines arranged music PDF by default.
+- Can read a local PDF with
+  `npm run song-sources:import:sweet-adelines-arranged -- --pdf-path=/path/to/ArrangedMusic.pdf`.
+- Treats every confidently parsed row as canonical `SSAA`.
+- Tracks output separately from the published music source at
+  `data/sources/sweet_adelines_arranged_music_song_suggestions.psv`.
+- Writes ambiguous rows to
+  `tmp/song-sources/sweet-adelines-arranged-music-skipped.json`.
 
 Harmony Brigade:
 
