@@ -38,6 +38,14 @@ describe("Harmony Brigade repertoire UI", () => {
     expect(repertoireManager).not.toContain("Apply your part and confidence");
   });
 
+  it("renders grouped Brigade picker cards with clean primary metadata", () => {
+    expect(repertoireManager).toContain("groupHarmonyBrigadeCandidates");
+    expect(repertoireManager).toContain("harmonyBrigadeAppearanceSummary");
+    expect(repertoireManager).toContain("harmonyBrigadeGroupedCandidateKey");
+    expect(repertoireManager).not.toContain("As sung by");
+    expect(repertoireManager).not.toContain("Starts &quot;");
+  });
+
   it("keeps Brigade songs out of normal typeahead suggestions", () => {
     expect(repertoireManager).toContain("searchRepertoireSongSuggestions");
     expect(repertoireManager).toContain("harmonyBrigadeSearchQuery");

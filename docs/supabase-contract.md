@@ -267,6 +267,9 @@ Expected context:
   only unique songs. If a user selects parts from multiple appearances of the
   same normalized song + arranger, the app writes one `user_repertoire` row with
   combined TTBB part confidences.
+- The picker groups visible cards by normalized title + `TTBB` + normalized
+  arranger while preserving an appearances list for year/brigade/track context.
+  Blank arranger and literal `Unknown` remain different identities.
 - The UI scopes event-song reads by the selected year/brigade event ids and
   paginates Supabase reads. It must not depend on one unbounded
   `harmony_brigade_event_songs` select and then filter a potentially capped

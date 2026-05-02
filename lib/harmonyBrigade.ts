@@ -41,6 +41,13 @@ export type HarmonyBrigadeCandidate = HarmonyBrigadeEventSong & {
   duplicateStatus: "eligible" | "exact";
 };
 
+export type HarmonyBrigadeGroupedCandidate = {
+  key: string;
+  song: HarmonyBrigadeSong;
+  duplicateStatus: "eligible" | "exact";
+  appearances: HarmonyBrigadeEventSong[];
+};
+
 export type HarmonyBrigadeAddInput = {
   songTitle: string;
   voicing: typeof HARMONY_BRIGADE_DEFAULT_VOICING;
@@ -236,6 +243,65 @@ export function harmonyBrigadeEventSongKey(
   return `${row.event.id}:${row.song.id}`;
 }
 
+export function harmonyBrigadeSongIdentityKey(
+  row: Pick<HarmonyBrigadeEventSong, "song">
+) {
+  return exactSongKey({
+    songTitle: row.song.songTitle,
+    arrangerName: row.song.arranger,
+  });
+}
+
+export function harmonyBrigadeGroupedCandidateKey(
+  row: Pick<HarmonyBrigadeGroupedCandidate, "key">
+) {
+  return row.key;
+}
+
+function harmonyBrigadeTrackLabel(row: Pick<HarmonyBrigadeEventSong, "trackNumber">) {
+  return row.trackNumber ? ` track ${row.trackNumber}` : "";
+}
+
+export function harmonyBrigadeAppearanceSummary(
+  group: Pick<HarmonyBrigadeGroupedCandidate, "appearances">,
+  maxVisible = 4
+) {
+  const appearances = [...group.appearances].sort((a, b) => {
+    return (
+      b.event.yearHeld - a.event.yearHeld ||
+      a.event.brigadeAbbr.localeCompare(b.event.brigadeAbbr) ||
+      (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999) ||
+      (a.trackNumber ?? 9999) - (b.trackNumber ?? 9999)
+    );
+  });
+
+  if (appearances.length === 0) return "";
+
+  if (appearances.length === 1) {
+    const [appearance] = appearances;
+    return `${appearance.event.eventLabel}${harmonyBrigadeTrackLabel(appearance)}`;
+  }
+
+  const years = new Set(appearances.map((appearance) => appearance.event.yearHeld));
+  const prefix = years.size === 1
+    ? `Appears in ${appearances[0].event.yearHeld}: `
+    : "Appears in: ";
+  const visible = appearances.slice(0, maxVisible);
+  const hiddenCount = appearances.length - visible.length;
+  const labels = visible.map((appearance) => {
+    const yearPrefix = years.size === 1 ? "" : `${appearance.event.yearHeld} `;
+    return `${yearPrefix}${appearance.event.brigadeAbbr}${harmonyBrigadeTrackLabel(
+      appearance
+    )}`;
+  });
+
+  if (hiddenCount > 0) {
+    labels.push(`+${hiddenCount} more`);
+  }
+
+  return `${prefix}${labels.join(", ")}`;
+}
+
 export function harmonyBrigadeSelectionDescription(
   selectedYear: string | number,
   selectedBrigade: string,
@@ -296,6 +362,43 @@ export function resolveHarmonyBrigadeCandidates(
   }));
 }
 
+export function groupHarmonyBrigadeCandidates(
+  candidates: HarmonyBrigadeCandidate[]
+): HarmonyBrigadeGroupedCandidate[] {
+  const groups = new Map<string, HarmonyBrigadeGroupedCandidate>();
+
+  for (const candidate of candidates) {
+    const key = harmonyBrigadeSongIdentityKey(candidate);
+    const existing = groups.get(key);
+
+    if (existing) {
+      existing.appearances.push(candidate);
+      if (candidate.duplicateStatus === "exact") {
+        existing.duplicateStatus = "exact";
+      }
+      continue;
+    }
+
+    groups.set(key, {
+      key,
+      song: candidate.song,
+      duplicateStatus: candidate.duplicateStatus,
+      appearances: [candidate],
+    });
+  }
+
+  return Array.from(groups.values()).sort((a, b) => {
+    return (
+      a.song.songTitle.localeCompare(b.song.songTitle, undefined, {
+        sensitivity: "base",
+      }) ||
+      (a.song.arranger ?? "").localeCompare(b.song.arranger ?? "", undefined, {
+        sensitivity: "base",
+      })
+    );
+  });
+}
+
 export function searchHarmonyBrigadeCandidates(
   candidates: HarmonyBrigadeCandidate[],
   query: string
@@ -312,6 +415,29 @@ export function searchHarmonyBrigadeCandidates(
       row.song.startingWords,
       row.event.brigadeAbbr,
       row.event.brigadeName,
+    ].some((value) => normalizeSongText(value).includes(normalizedQuery));
+  });
+}
+
+export function searchHarmonyBrigadeGroupedCandidates(
+  candidates: HarmonyBrigadeGroupedCandidate[],
+  query: string
+) {
+  const normalizedQuery = normalizeSongText(query);
+  if (!normalizedQuery) return candidates;
+
+  return candidates.filter((group) => {
+    return [
+      group.song.songTitle,
+      group.song.arranger,
+      group.song.asSungBy,
+      group.song.learningTrackProvider,
+      group.song.startingWords,
+      ...group.appearances.flatMap((appearance) => [
+        appearance.event.brigadeAbbr,
+        appearance.event.brigadeName,
+        appearance.event.eventLabel,
+      ]),
     ].some((value) => normalizeSongText(value).includes(normalizedQuery));
   });
 }
@@ -350,12 +476,19 @@ export function buildHarmonyBrigadeAddInputs(
   for (const row of candidates
     .filter(
       (row) =>
-        Object.keys(selections[harmonyBrigadeEventSongKey(row)] ?? {}).length >
+        Object.keys(
+          selections[harmonyBrigadeEventSongKey(row)] ??
+            selections[harmonyBrigadeSongIdentityKey(row)] ??
+            {}
+        ).length >
           0 &&
         row.duplicateStatus === "eligible"
     )
   ) {
-    const rowSelections = selections[harmonyBrigadeEventSongKey(row)] ?? {};
+    const rowSelections =
+      selections[harmonyBrigadeEventSongKey(row)] ??
+      selections[harmonyBrigadeSongIdentityKey(row)] ??
+      {};
     const partConfidences = Object.entries(rowSelections)
       .filter((entry): entry is [Part, Confidence] => Boolean(entry[1]))
       .map(([part, confidence]) => ({ part, confidence }));
