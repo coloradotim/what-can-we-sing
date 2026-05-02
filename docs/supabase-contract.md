@@ -430,10 +430,13 @@ Expected context:
   link/code and filters it by voice part in the browser.
 - Display names come from `profiles.display_name`; availability rows do not
   own display names.
-- Voice parts are stored with unambiguous voicing-prefixed labels:
+- Voice parts are stored with unambiguous canonical voicing-prefixed labels:
   `TTBB Tenor`, `TTBB Lead`, `TTBB Baritone`, `TTBB Bass`,
   `SATB Soprano`, `SATB Alto`, `SATB Tenor`, `SATB Bass`,
   `SSAA Soprano 1`, `SSAA Soprano 2`, `SSAA Alto 1`, and `SSAA Alto 2`.
+- User-facing availability displays those stored values as arrangement range
+  family plus barbershop functional part, such as `Lower voice (TTBB) Lead`,
+  `Mixed (SATB) Baritone`, or `Treble (SSAA) Tenor`.
 - The UI may provide a Start Quartet shortcut after singers find each other,
   but Event Mode availability does not create quartet invitations.
 

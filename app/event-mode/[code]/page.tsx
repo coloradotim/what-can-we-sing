@@ -7,6 +7,7 @@ import {
   eventModeVoicePartGroups,
   eventModeVoicePartOptions,
   filterEventModeAvailabilityByPart,
+  formatEventModeVoicePart,
   formatEventModeVoiceParts,
   formatEventModeDateRange,
   getEventModeAvailabilityByCode,
@@ -369,7 +370,7 @@ export default function EventModeDetailPage() {
                               className="rounded-xl border border-white/10 bg-slate-950/40 p-3"
                             >
                               <p className="text-xs font-bold uppercase text-cyan-200">
-                                {group.voicing}
+                                {group.label}
                               </p>
                               <div className="mt-2 grid gap-2 sm:grid-cols-2">
                                 {group.parts.map((part) => (
@@ -384,7 +385,7 @@ export default function EventModeDetailPage() {
                                       )}
                                       onChange={() => toggleAvailabilityPart(part)}
                                     />
-                                    <span>{part}</span>
+                                    <span>{formatEventModeVoicePart(part)}</span>
                                   </label>
                                 ))}
                               </div>
@@ -497,7 +498,7 @@ export default function EventModeDetailPage() {
                         <option value="all">All parts</option>
                         {eventModeVoicePartOptions.map((part) => (
                           <option key={part} value={part}>
-                            {part}
+                            {formatEventModeVoicePart(part)}
                           </option>
                         ))}
                       </select>

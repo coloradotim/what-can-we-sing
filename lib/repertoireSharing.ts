@@ -6,6 +6,7 @@ import {
   type RepertoireRow,
 } from "@/lib/repertoireStore";
 import { getCurrentUser } from "@/lib/profileStore";
+import { voicingDisplayLabel } from "@/lib/partAbbreviations";
 
 export type RepertoireShare = {
   id: string;
@@ -254,7 +255,9 @@ export async function copySharedSongsToMyRepertoire(
   for (const song of copyableSongs) {
     const selection = selectionsByVoicing[song.voicing];
     if (!selection) {
-      throw new Error(`Choose a part and confidence for ${song.voicing}.`);
+      throw new Error(
+        `Choose a part and confidence for ${voicingDisplayLabel(song.voicing)}.`
+      );
     }
 
     await addRepertoireItem({

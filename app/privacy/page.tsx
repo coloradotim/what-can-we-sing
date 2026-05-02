@@ -24,10 +24,10 @@ export default function PrivacyPage() {
             <ul className="mt-3 list-disc space-y-2 pl-5 text-slate-300">
               <li>Your display name for profile and quartet screens.</li>
               <li>
-                Your My Songs entries, including song title, voicing, parts
-                known, confidence, arranger if entered, notes if entered, date
-                added or updated, and last-sung information when you mark a song
-                as sung in the app.
+                Your My Songs entries, including song title, arrangement
+                voicing, parts known, confidence, arranger if entered, notes if
+                entered, date added or updated, and last-sung information when
+                you mark a song as sung in the app.
               </li>
               <li>
                 Quartet/session data, including join codes, active membership,
@@ -47,9 +47,9 @@ export default function PrivacyPage() {
               manage My Songs, let you join or leave quartets, refresh
               quartet snapshots, and show songs the group may be able to sing.
               Song title suggestions are generated from distinct song title,
-              voicing, and arranger values that singers have entered before.
-              Those suggestions do not include who entered the song, notes,
-              parts, confidence, or other personal details.
+              arrangement voicing, and arranger values that singers have entered
+              before. Those suggestions do not include who entered the song,
+              notes, parts, confidence, or other personal details.
             </p>
           </div>
 
@@ -57,12 +57,12 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold">Song suggestions</h2>
             <p className="mt-2 text-slate-300">
               Suggestions help singers enter songs faster. They may use safe song
-              identity fields such as title, voicing, and arranger from catalog
-              imports or previously saved song identities. Suggestions are not
-              authoritative, and adding a song to My Songs does not add it to
-              anyone else&apos;s My Songs. Personal details such as notes,
-              confidence, last-sung history, user identity, and email address are
-              not exposed as suggestions.
+              identity fields such as title, arrangement voicing, and arranger
+              from catalog imports or previously saved song identities.
+              Suggestions are not authoritative, and adding a song to My Songs
+              does not add it to anyone else&apos;s My Songs. Personal details
+              such as notes, confidence, last-sung history, user identity, and
+              email address are not exposed as suggestions.
             </p>
           </div>
 
@@ -71,11 +71,12 @@ export default function PrivacyPage() {
             <p className="mt-2 text-slate-300">
               If you choose Let another singer copy songs from My Songs, the app
               creates a private code/link. Anyone with an active code/link can
-              view safe song identity fields: title, voicing, and arranger. They
-              must sign in before copying songs, and copied songs become their
-              own My Songs entries with their chosen part and confidence. The
-              shared view does not expose notes, confidence, last-sung history,
-              email address, or account details, and you can revoke the link.
+              view safe song identity fields: title, arrangement voicing, and
+              arranger. They must sign in before copying songs, and copied songs
+              become their own My Songs entries with their chosen part and
+              confidence. The shared view does not expose notes, confidence,
+              last-sung history, email address, or account details, and you can
+              revoke the link.
             </p>
           </div>
 
@@ -108,10 +109,10 @@ export default function PrivacyPage() {
             <p className="mt-2 text-slate-300">
               When you join a quartet, other singers in that quartet may see
               your display name and saved-song information needed for
-              matching, such as songs, voicing, parts, confidence, and possible
-              arrangement details or warnings. This sharing is the core purpose
-              of the app: helping the quartet answer what can we sing together
-              right now.
+              matching, such as songs, arrangement voicing, parts, confidence,
+              and possible arrangement details or warnings. This sharing is the
+              core purpose of the app: helping the quartet answer what can we
+              sing together right now.
             </p>
             <p className="mt-2 text-slate-300">
               Personal notes are stored for you and are not included

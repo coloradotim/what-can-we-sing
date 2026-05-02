@@ -10,7 +10,8 @@ important question is "what can these singers sing right now?"
 Current source-of-truth model:
 
 - `profiles` stores the singer display name.
-- `user_repertoire` stores each singer's saved songs, voicing, parts,
+- `user_repertoire` stores each singer's saved songs, arrangement voicing,
+  parts,
   per-part confidence values, optional arranger, private notes, and personal
   sung metadata.
 - `repertoire_shares` stores opt-in private share codes for copying safe song
@@ -71,12 +72,13 @@ After changing auth settings or email templates, run the manual checklist in
 The Supabase project should have the current production schema applied:
 
 - `profiles` stores each user's required `display_name`.
-- `user_repertoire` stores each user's songs, voicing, part/confidence pairs,
+- `user_repertoire` stores each user's songs, arrangement voicing,
+  part/confidence pairs,
   optional arranger name, private notes, and personal sung-count metadata.
 - `repertoire_shares` stores private, revocable, six-character copy codes for
   copying song identity fields from another singer. Copy links expose song
-  title, voicing, and arranger only; recipients choose their own part and
-  confidence.
+  title, arrangement voicing, and arranger only; recipients choose their own
+  part and confidence.
 - `sessions` stores quartet codes and `last_activity_at` for 24-hour inactivity
   expiration.
 - `session_participants` stores participant repertoire snapshots and is keyed by
@@ -103,9 +105,9 @@ The Supabase project should have the current production schema applied:
   events can be discovered by signed-in users, unlisted events require a
   link/code, and creators can edit or close their own events.
 - `event_mode_availability` stores temporary, event-scoped "I'm available to
-  sing" rows keyed by `(event_id, user_id)`. Availability uses explicit labels
-  such as `TTBB Lead`, `SATB Tenor`, and `SSAA Alto 1`, expires automatically,
-  and does not expose repertoire or contact details.
+  sing" rows keyed by `(event_id, user_id)`. Availability displays arrangement
+  range plus barbershop functional parts, expires automatically, and does not
+  expose repertoire or contact details.
 
 The app/database contract is documented in
 [docs/supabase-contract.md](docs/supabase-contract.md). Any PR that changes

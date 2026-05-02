@@ -72,7 +72,12 @@ describe("help content", () => {
     expect(guideText).toContain("Suggestions are optional");
     expect(guideText).toContain("does not add it to anyone else’s My Songs");
     expect(guideText).toContain("More Ways To Build My Songs");
-    expect(guideText).toContain("TTBB means Tenor, Lead, Baritone, Bass");
+    expect(guideText).toContain("Treble (SSAA)");
+    expect(guideText).toContain("Mixed (SATB)");
+    expect(guideText).toContain("Lower voice (TTBB)");
+    expect(guideText).toContain("S1 usually maps to Tenor");
+    expect(guideText).toContain("Alto to Lead");
+    expect(guideText).toContain("T2 to Lead");
     expect(guideText).toContain("add it more than once");
     expect(guideText).toContain("A singer may know multiple parts");
     expect(guideText).toContain("each singer can only cover one required part");
@@ -95,7 +100,7 @@ describe("help content", () => {
     expect(guideText).toContain("If the quartet is full");
     expect(guideText).toContain("Ready to Sing");
     expect(guideText).toContain("Possible matches");
-    expect(guideText).toContain("voicing, required part coverage");
+    expect(guideText).toContain("arrangement voicing, required part coverage");
     expect(guideText).toContain("distinct singers");
     expect(guideText).toContain("Title variants");
     expect(guideText).toContain("arranger differences");

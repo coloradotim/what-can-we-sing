@@ -29,8 +29,8 @@ describe("Event Mode UI copy", () => {
     expect(detailPage).toContain("Filter by voice part");
     expect(detailPage).toContain("Found people to sing with?");
     expect(detailPage).toContain("Available until");
-    expect(eventModeSource).toContain("TTBB Lead");
-    expect(eventModeSource).toContain("SSAA Alto 1");
+    expect(eventModeSource).toContain("Lower voice (TTBB)");
+    expect(eventModeSource).toContain("Treble (SSAA)");
   });
 
   it("does not introduce deprecated pickup board or location-discovery language", () => {

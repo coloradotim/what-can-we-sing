@@ -7,9 +7,11 @@ The app is for practical, in-the-room decision-making, not archival repertoire m
 
 ## Core domain rules
 - A valid quartet match requires distinct singers assigned to distinct required parts.
-- TTBB parts: Tenor, Lead, Baritone, Bass.
-- SATB parts: Soprano, Alto, Tenor, Bass.
-- SSAA parts: Soprano 1, Soprano 2, Alto 1, Alto 2.
+- Canonical stored voicing values remain `SSAA`, `SATB`, and `TTBB`.
+- User-facing voicing labels are Treble (SSAA), Mixed (SATB), and
+  Lower voice (TTBB).
+- Use barbershop functional part names across all voicings: Tenor, Lead,
+  Baritone, Bass.
 - Same title + same voicing can be grouped. Different explicit arranger names
   should be flagged for confirmation, while missing arranger information should
   be shown as context rather than treated as a problem.
@@ -24,10 +26,17 @@ The app is for practical, in-the-room decision-making, not archival repertoire m
 ## Barbershop-specific context
 - Pickup quartets often form informally at rehearsals, conventions, afterglows, or social singing events.
 - The core user question is: “What can we sing together right now?”
-- Barbershop voice parts are not interchangeable:
-  - TTBB: Tenor, Lead, Baritone, Bass
-  - SSAA: Soprano 1, Soprano 2, Alto 1, Alto 2
-  - SATB: Soprano, Alto, Tenor, Bass
+- Arrangement voicing describes the music's range family, not the singer's
+  identity:
+  - SSAA = Treble (SSAA)
+  - SATB = Mixed (SATB)
+  - TTBB = Lower voice (TTBB)
+- Barbershop functional parts are Tenor, Lead, Baritone, and Bass across all
+  voicings.
+- Mapping from printed notation:
+  - Treble / SSAA: S1 = Tenor, S2 = Lead, A1 = Baritone, A2 = Bass
+  - Mixed / SATB: Soprano = Tenor, Alto = Lead, Tenor = Baritone, Bass = Bass
+  - Lower voice / TTBB: T1 = Tenor, T2 = Lead, B1 = Baritone, B2 = Bass
 - “Lead” is the melody part in most TTBB barbershop arrangements; do not rename it to “Melody.”
 - Do not treat “Tenor” in TTBB and “Tenor” in SATB as equivalent across voicings.
 - A singer may know multiple parts to the same arrangement, but a single valid quartet assignment cannot use one singer for more than one part.
@@ -37,31 +46,47 @@ The app is for practical, in-the-room decision-making, not archival repertoire m
   information, not as an arrangement problem.
 - The app should be forgiving of imperfect data and help singers decide quickly, not enforce a perfect catalog.
 
-## Part abbreviations (UI standard)
+## Arrangement voicing and barbershop parts
 
-Use the following abbreviations consistently in all user-facing UI:
+Canonical stored voicing values remain:
+- SSAA
+- SATB
+- TTBB
 
-TTBB:
+User-facing labels:
+- SSAA = Treble (SSAA)
+- SATB = Mixed (SATB)
+- TTBB = Lower voice (TTBB)
+
+Use barbershop functional part names across all voicings:
 - T = Tenor
 - L = Lead
 - Bari = Baritone
 - Bass = Bass
 
-SATB:
-- S = Soprano
-- A = Alto
-- T = Tenor
-- Bass = Bass
+Mapping from printed notation:
+- Treble / SSAA: S1 = Tenor, S2 = Lead, A1 = Baritone, A2 = Bass
+- Mixed / SATB: Soprano = Tenor, Alto = Lead, Tenor = Baritone, Bass = Bass
+- Lower voice / TTBB: T1 = Tenor, T2 = Lead, B1 = Baritone, B2 = Bass
 
-SSAA:
-- S1 = Soprano 1
-- S2 = Soprano 2
-- A1 = Alto 1
-- A2 = Alto 2
+Do not use “women’s,” “men’s,” “male,” or “female” as primary voicing labels.
+Prefer range/arrangement labels. Do not treat same-named printed/choral parts
+across voicings as equivalent. Do not combine different voicings in matching.
+
+## Part abbreviations (UI standard)
+
+Use the following abbreviations consistently in all user-facing UI:
+
+Across all voicings:
+- T = Tenor
+- L = Lead
+- Bari = Baritone
+- Bass = Bass
 
 Notes:
 - Do not invent alternative abbreviations.
-- Do not spell out full part names in compact list views.
+- Do not make printed/choral notation labels such as S1, Alto, or T1 primary
+  in compact list views; show them only as helper context when useful.
 - Always prioritize readability and scannability on mobile.
 
 ## Tech stack

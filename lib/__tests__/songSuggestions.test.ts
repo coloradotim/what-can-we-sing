@@ -88,9 +88,9 @@ describe("getSongSuggestions", () => {
       },
     ]);
     expect(suggestions.map(songSuggestionSubtitle)).toEqual([
-      "No arranger entered · TTBB",
-      "Joe Arranger · TTBB",
-      "Unknown · TTBB",
+      "No arranger entered · Lower voice (TTBB)",
+      "Joe Arranger · Lower voice (TTBB)",
+      "Unknown · Lower voice (TTBB)",
     ]);
   });
 
