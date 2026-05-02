@@ -93,6 +93,13 @@ const harmonyBrigadeMigration = readFileSync(
   ),
   "utf8"
 );
+const eventModeMigration = readFileSync(
+  join(
+    repoRoot,
+    "supabase/migrations/20260502080000_add_event_mode_events.sql"
+  ),
+  "utf8"
+);
 
 describe("Supabase contract guardrails", () => {
   const tables = [
@@ -105,6 +112,7 @@ describe("Supabase contract guardrails", () => {
     "harmony_brigade_songs",
     "harmony_brigade_events",
     "harmony_brigade_event_songs",
+    "event_mode_events",
   ];
   const baseMigrationTables = tables.filter(
     (table) =>
@@ -113,6 +121,7 @@ describe("Supabase contract guardrails", () => {
         "harmony_brigade_songs",
         "harmony_brigade_events",
         "harmony_brigade_event_songs",
+        "event_mode_events",
       ].includes(table)
   );
 
@@ -322,5 +331,29 @@ describe("Supabase contract guardrails", () => {
     expect(harmonyBrigadeMigration).not.toContain("for insert");
     expect(harmonyBrigadeMigration).not.toContain("for update");
     expect(harmonyBrigadeMigration).not.toContain("for delete");
+  });
+
+  it("documents and migrates Event Mode event discovery", () => {
+    expect(contract).toContain("Event Mode Events");
+    expect(contract).toContain("event_mode_events");
+    expect(contract).toContain("get_event_mode_event_by_code");
+    expect(contract).toContain("listed");
+    expect(contract).toContain("unlisted");
+    expect(contract).toContain("Event creators can update");
+    expect(eventModeMigration).toContain(
+      "create table if not exists public.event_mode_events"
+    );
+    expect(eventModeMigration).toContain("visibility in ('listed', 'unlisted')");
+    expect(eventModeMigration).toContain("join_code ~ '^[A-Z0-9]{6}$'");
+    expect(eventModeMigration).toContain("end_at > start_at");
+    expect(eventModeMigration).toContain("enable row level security");
+    expect(eventModeMigration).toContain("visibility = 'listed'");
+    expect(eventModeMigration).toContain("created_by_user_id = auth.uid()");
+    expect(eventModeMigration).toContain("get_event_mode_event_by_code");
+    expect(eventModeMigration).toContain("security definer");
+    expect(eventModeMigration).toContain("grant execute");
+    expect(eventModeMigration).toContain("to anon");
+    expect(eventModeMigration).not.toContain("event_mode_availability");
+    expect(eventModeMigration).not.toContain("event_mode_messages");
   });
 });

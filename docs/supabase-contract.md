@@ -326,6 +326,75 @@ Required database contract:
 Established by migrations:
 - `20260501200000_add_harmony_brigade_reference_tables.sql`
 
+### Event Mode Events
+
+Purpose: source of truth for user-created Event Mode event spaces. Event Mode
+helps signed-in singers find the right convention, afterglow, Brigade weekend,
+chapter event, retreat, or informal singing event without requiring an
+admin-created listing or a private quartet code.
+
+Event Mode is temporary, opt-in, event-scoped, and a bridge back to the
+existing Start/Join quartet flow. It must not become GPS tracking, exact
+location discovery, a global singer directory, permanent availability,
+repertoire sharing, a public profile system, or a formal invite-to-quartet
+workflow.
+
+Code:
+- Browser create/search/edit/close helpers: `lib/eventMode.ts`
+- Event Mode landing/search/create route: `app/event-mode/page.tsx`
+- Event detail/code route: `app/event-mode/[code]/page.tsx`
+- Tests: `lib/__tests__/eventMode.test.ts`,
+  `lib/__tests__/eventModeUi.test.ts`, and this Supabase contract test
+
+Expected context:
+- Signed-in users can create listed or unlisted events.
+- Signed-in users can browse/search listed upcoming or active events.
+- Unlisted events are not returned by listed browse/search helpers.
+- Anyone with a valid event code or link can open the event route through
+  `get_event_mode_event_by_code`; seeing future availability/messaging may
+  require sign-in in follow-up work.
+- Event creators can edit event name, date/time, location note, and visibility.
+- Event creators can close their own event by setting `closed_at`.
+- Other users cannot edit or close events they did not create.
+- Lifecycle is derived from `start_at`, `end_at`, and `closed_at` as upcoming,
+  active, or ended.
+- Duplicate prevention is an app helper that compares normalized name, date
+  overlap, and location context before final create.
+
+Required database contract:
+- `event_mode_events`
+  - `id uuid primary key`
+  - `name text not null`
+  - `normalized_name text not null`
+  - optional `city text`
+  - optional `venue_or_location_note text`
+  - `start_at timestamptz not null`
+  - `end_at timestamptz not null`
+  - `visibility text not null default 'listed'`
+  - `join_code text not null`
+  - `created_by_user_id uuid references auth.users(id)`
+  - `created_at timestamptz not null default now()`
+  - `updated_at timestamptz not null default now()`
+  - optional `closed_at timestamptz`
+- Check constraint keeps `end_at > start_at`.
+- Check constraint keeps visibility to `listed` or `unlisted`.
+- Check constraint keeps join codes to six uppercase alphanumeric characters.
+- Unique index on `join_code`.
+- Browse index on visibility and event dates for open events.
+- Creator index on `created_by_user_id`.
+- RLS enabled.
+- Authenticated users can select listed events and their own events.
+- Authenticated users can insert rows only with
+  `created_by_user_id = auth.uid()`.
+- Event creators can update only their own rows.
+- No authenticated delete policy; closing an event updates `closed_at`.
+- `get_event_mode_event_by_code(text)` is a security-definer function granted
+  to anon and authenticated users so unlisted events can be opened by link/code
+  without appearing in browse/search.
+
+Established by migrations:
+- `20260502080000_add_event_mode_events.sql`
+
 ### `sessions`
 
 Purpose: source of truth for quartet join codes and session activity.
