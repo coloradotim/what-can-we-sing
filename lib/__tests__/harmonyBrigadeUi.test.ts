@@ -56,4 +56,13 @@ describe("Harmony Brigade repertoire UI", () => {
       "searchRepertoireSongSuggestions(harmonyBrigadeSearchQuery"
     );
   });
+
+  it("describes Brigade picker search without promising lyrics or quartet search", () => {
+    expect(repertoireManager).toContain(
+      "Filter by title, arranger, or Brigade acronym like NPHB"
+    );
+    expect(repertoireManager).not.toContain(
+      "Filter by title, arranger, quartet, or lyrics"
+    );
+  });
 });
