@@ -297,6 +297,11 @@ export const helpAcknowledgments: HelpAcknowledgment[] = [
     name: "Marcie Jones and Ann Monaghan McAlexander",
     contribution: "for crucial feedback on voicing terminology",
   },
+  {
+    name: "Sweet Adelines",
+    contribution:
+      "for maintaining the sweetadelines.com published music list used as a song suggestion source",
+  },
 ];
 
 export const helpWelcomeCopy =
