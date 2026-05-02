@@ -157,6 +157,81 @@ and literal `Unknown` stays `Unknown`. Dedupe uses normalized title + voicing +
 normalized arranger. This import adds optional suggestions only; it never writes
 to any user's My Songs.
 
+## BarbershopTracks Suggestions Refresh
+
+BarbershopTracks suggestions are scraped from the rendered browser page at:
+
+```text
+http://barbershoptracks.com/database.html
+```
+
+The scraper intentionally uses Chromium through Playwright. Do not replace this
+with curl, raw HTML, a sitemap, or detail-page URLs; the source contract is the
+rendered paginated list. Page 1 starts at:
+
+```text
+http://barbershoptracks.com/database.html?limit=50&order=name&dir=asc
+```
+
+Later pages add `p=2`, `p=3`, and so on. The scraper reads the rendered page
+count from text such as `Items 1 to 50 of 7910 total`; if that text is missing,
+it falls back to 159 pages.
+
+Run a small debug scrape before a full refresh:
+
+```bash
+npm run song-suggestions:scrape:barbershoptracks -- --max-pages=5 --debug
+```
+
+Debug page text snapshots are written under `tmp/barbershoptracks-debug/` and
+skipped rows are written to `tmp/barbershoptracks-skipped.json`; neither should
+be committed. The source PSV is written to:
+
+```text
+data/sources/barbershoptracks_song_suggestions.psv
+```
+
+The scraper imports only song title, supported voicing, and arranger. It does
+not import artist, artist website, genre, contestability, images, lyrics, or
+track media. Voicing labels are normalized as:
+
+- `Mens Track` / `Men's Track` -> `TTBB`
+- `Womens Track` / `Women's Track` / `Ladies Track` -> `SSAA`
+- `Mixed Track` -> `SATB`
+
+Unknown voicing values are skipped and reported in
+`tmp/barbershoptracks-skipped.json`.
+
+Title normalization fixes trailing articles, for example
+`Closest Thing To Crazy, The` becomes `The Closest Thing To Crazy`. Punctuation,
+apostrophes, parentheticals, and capitalization are otherwise preserved.
+Arranger normalization collapses whitespace, converts semicolon-separated names
+to comma-separated names, and changes ampersands between names to `and`.
+Multiple arrangers remain a single suggestion row.
+
+After reviewing the source PSV, merge it into the deployed suggestion catalog:
+
+```bash
+npm run song-suggestions:merge -- --dry-run
+npm run song-suggestions:merge
+```
+
+The merge script reads the existing `data/song_suggestion_catalog.psv` plus the
+BarbershopTracks source PSV, deduplicates by lowercased title + voicing +
+lowercased arranger, sorts the result, and writes a timestamped local backup to
+`data/backups/` before replacing the catalog. Backups are local safety files and
+should not be committed.
+
+Finally, dry-run and apply the Supabase catalog import:
+
+```bash
+npm run song-suggestions:import -- --dry-run
+SUPABASE_SERVICE_ROLE_KEY=... npm run song-suggestions:import
+```
+
+This refresh affects only optional song-entry suggestions. It never writes to
+any user's My Songs and does not affect quartet matching.
+
 ## Harmony Brigade Songs
 
 Harmony Brigade data comes from Ross Wilkins' read-only Harmony Brigade MySQL

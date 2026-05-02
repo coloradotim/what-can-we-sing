@@ -195,8 +195,9 @@ Established by migrations:
 
 Purpose: optional autocomplete reference data for song entry, imported from
 `data/song_suggestion_catalog.psv`. The PSV catalog is maintained from
-controlled metadata sources including `data/bhs_published_music_catalog.csv`
-and `data/international_songs_with_arranger.csv`; see `docs/imports.md`.
+controlled metadata sources including `data/bhs_published_music_catalog.csv`,
+`data/international_songs_with_arranger.csv`, and
+`data/sources/barbershoptracks_song_suggestions.psv`; see `docs/imports.md`.
 
 Code:
 - Imported by `scripts/import-song-suggestions.mjs`
@@ -205,11 +206,17 @@ Code:
 - International Songs source data is transformed by
   `scripts/import-international-songs.mjs` before being merged into
   `data/song_suggestion_catalog.psv`
+- BarbershopTracks source data is scraped from rendered Playwright pages by
+  `scripts/scrape-barbershoptracks-suggestions.mjs` into
+  `data/sources/barbershoptracks_song_suggestions.psv`
+- `scripts/merge-song-suggestion-sources.mjs` safely merges committed source
+  PSVs into `data/song_suggestion_catalog.psv` with a timestamped local backup
 - Preserved by `scripts/delete-user.mjs`; catalog rows are global suggestions,
   not user-owned data.
 - Read only through `public.search_repertoire_song_suggestions`
 - Parsed/deduplicated by `lib/__tests__/songSuggestionCatalogImport.test.ts`
-  and `lib/__tests__/bhsPublishedMusicImport.test.mjs`
+  and import-source tests including `lib/__tests__/bhsPublishedMusicImport.test.mjs`
+  and `lib/__tests__/barbershoptracksParser.test.mjs`
 
 Expected context:
 - Server/local import script with `SUPABASE_SERVICE_ROLE_KEY`

@@ -16,6 +16,8 @@
     "harmony-brigade:export-source": "node scripts/export-harmony-brigade-source.mjs",
     "harmony-brigade:import": "node scripts/import-harmony-brigade-songs.mjs",
     "international-songs:import": "node scripts/import-international-songs.mjs",
+    "song-suggestions:merge": "node scripts/merge-song-suggestion-sources.mjs",
+    "song-suggestions:scrape:barbershoptracks": "node scripts/scrape-barbershoptracks-suggestions.mjs",
     "song-suggestions:import": "node scripts/import-song-suggestions.mjs",
     "test": "vitest",
     "test:run": "vitest run",
@@ -41,6 +43,7 @@
     "eslint-config-next": "16.2.4",
     "husky": "^9.1.7",
     "mysql2": "^3.22.3",
+    "playwright": "^1.57.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.5"
