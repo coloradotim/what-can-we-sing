@@ -92,7 +92,8 @@ The Supabase project should have the current production schema applied:
   rows are not added to anyone's repertoire unless a user chooses to save one.
   Import expands comma-separated voicing values into one row per supported
   voicing (`TTBB`, `SSAA`, `SATB`). The BHS Published Music source CSV and
-  refresh process are documented in [docs/imports.md](docs/imports.md).
+  BarbershopTracks/International refresh processes are documented in
+  [docs/imports.md](docs/imports.md).
 - Harmony Brigade reference data is maintained from Ross Wilkins' read-only
   MySQL source through controlled CSV snapshots in `data/harmony-brigade/`.
   The app reads dedicated Supabase reference tables for the secondary
@@ -128,12 +129,13 @@ SUPABASE_SERVICE_ROLE_KEY=... npm run song-suggestions:import
 Use `npm run song-suggestions:import -- --dry-run` to parse and deduplicate the
 catalog file without writing to Supabase.
 
-To refresh the BHS Published Music or International Songs source data and merge
-it into `data/song_suggestion_catalog.psv`, follow
+To refresh BHS Published Music, International Songs, or BarbershopTracks source
+data and merge it into `data/song_suggestion_catalog.psv`, follow
 [docs/imports.md](docs/imports.md). The catalog transforms are conservative:
 they import title, supported voicing, and arranger metadata only, skip ambiguous
 rows, preserve blank arranger versus literal `Unknown`, and split clearly
-multi-voicing rows into separate catalog rows.
+multi-voicing rows into separate catalog rows where a source provides multiple
+supported voicings.
 
 To refresh Harmony Brigade data, export read-only upstream snapshots and then
 import them into the Supabase reference tables after migrations are applied:
