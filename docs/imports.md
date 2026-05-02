@@ -169,6 +169,11 @@ Use a dry run to parse and summarize without writing:
 npm run harmony-brigade:import -- --dry-run
 ```
 
+Both dry runs and imports print per-event song counts. Counts below 10 are
+flagged as suspicious so missing or truncated event-song data is visible before
+using the picker, while still allowing historical/special events that may
+legitimately have fewer than a standard 12-song list.
+
 The import creates or updates:
 
 - `harmony_brigade_songs`
@@ -188,7 +193,9 @@ value for each selected part. If multiple appearances of the same normalized
 title + arranger are selected, they are saved as one My Songs row with the
 combined part confidences. Adding Harmony Brigade songs writes only to the
 current user's `user_repertoire`; it does not expose the user's Brigade
-selection publicly.
+selection publicly. The picker fetches event-song rows for the selected
+year/brigade scope and paginates Supabase reads so complete event lists are not
+truncated by PostgREST response caps.
 
 Duplicate detection uses normalized title + `TTBB` + normalized arranger,
 preserving the distinction between a blank arranger and literal `Unknown`.

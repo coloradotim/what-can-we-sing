@@ -6,6 +6,7 @@ export const HARMONY_BRIGADE_SOURCE =
 export const HARMONY_BRIGADE_DEFAULT_VOICING = "TTBB" as const;
 export const HARMONY_BRIGADE_ALL_YEARS = "All years";
 export const HARMONY_BRIGADE_ALL_BRIGADES = "All brigades";
+export const HARMONY_BRIGADE_EVENT_SONG_PAGE_SIZE = 500;
 
 export type HarmonyBrigadeEvent = {
   id: string;
@@ -75,11 +76,23 @@ type RawHarmonyBrigadeSong = {
 };
 
 type RawHarmonyBrigadeEventSong = {
+  id?: string;
+  event_id?: string;
   track_number: number | null;
   sort_order: number | null;
   event: RawHarmonyBrigadeEvent | RawHarmonyBrigadeEvent[];
   song: RawHarmonyBrigadeSong | RawHarmonyBrigadeSong[];
 };
+
+type HarmonyBrigadeEventSongQueryResult = {
+  data: RawHarmonyBrigadeEventSong[] | null;
+  error: unknown;
+};
+
+type HarmonyBrigadeEventSongQueryRunner = (
+  from: number,
+  to: number
+) => PromiseLike<HarmonyBrigadeEventSongQueryResult>;
 
 function normalizeSongText(value?: string | null) {
   return (value ?? "")
@@ -190,14 +203,29 @@ export function filterHarmonyBrigadeSongs(
   selectedYear: string | number,
   selectedBrigade: string
 ) {
+  const events = rows.map((row) => row.event);
+  const eventIds = new Set(
+    filterHarmonyBrigadeEvents(events, selectedYear, selectedBrigade).map(
+      (event) => event.id
+    )
+  );
+
+  return rows.filter((row) => eventIds.has(row.event.id));
+}
+
+export function filterHarmonyBrigadeEvents(
+  events: HarmonyBrigadeEvent[],
+  selectedYear: string | number,
+  selectedBrigade: string
+) {
   const year =
     selectedYear === HARMONY_BRIGADE_ALL_YEARS ? null : Number(selectedYear);
   const brigade =
     selectedBrigade === HARMONY_BRIGADE_ALL_BRIGADES ? null : selectedBrigade;
 
-  return rows.filter((row) => {
-    if (year && row.event.yearHeld !== year) return false;
-    if (brigade && row.event.brigadeAbbr !== brigade) return false;
+  return events.filter((event) => {
+    if (year && event.yearHeld !== year) return false;
+    if (brigade && event.brigadeAbbr !== brigade) return false;
     return true;
   });
 }
@@ -359,6 +387,46 @@ export function buildHarmonyBrigadeAddInputs(
   return Array.from(inputs.values());
 }
 
+function mapEventSongRows(rows: RawHarmonyBrigadeEventSong[]) {
+  return rows
+    .map((row) => ({
+      event: mapEvent(firstRelated(row.event)),
+      song: mapSong(firstRelated(row.song)),
+      trackNumber: row.track_number,
+      sortOrder: row.sort_order,
+    }))
+    .sort((a, b) => {
+      return (
+        b.event.yearHeld - a.event.yearHeld ||
+        a.event.brigadeAbbr.localeCompare(b.event.brigadeAbbr) ||
+        (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999) ||
+        (a.trackNumber ?? 9999) - (b.trackNumber ?? 9999) ||
+        a.song.songTitle.localeCompare(b.song.songTitle)
+      );
+    });
+}
+
+export async function fetchHarmonyBrigadeEventSongPages(
+  runQuery: HarmonyBrigadeEventSongQueryRunner,
+  pageSize = HARMONY_BRIGADE_EVENT_SONG_PAGE_SIZE
+) {
+  const rows: RawHarmonyBrigadeEventSong[] = [];
+
+  for (let from = 0; ; from += pageSize) {
+    const to = from + pageSize - 1;
+    const { data, error } = await runQuery(from, to);
+
+    if (error) throw error;
+
+    const page = data ?? [];
+    rows.push(...page);
+
+    if (page.length < pageSize) break;
+  }
+
+  return rows;
+}
+
 export async function getHarmonyBrigadeEvents() {
   const { supabase } = await import("@/lib/supabase");
   const { data, error } = await supabase
@@ -372,29 +440,51 @@ export async function getHarmonyBrigadeEvents() {
 }
 
 export async function getHarmonyBrigadeEventSongs() {
+  return getHarmonyBrigadeEventSongsByEventIds();
+}
+
+export async function getHarmonyBrigadeEventSongsForScope(
+  events: HarmonyBrigadeEvent[],
+  selectedYear: string | number,
+  selectedBrigade: string
+) {
+  const isAllEventsScope =
+    selectedYear === HARMONY_BRIGADE_ALL_YEARS &&
+    selectedBrigade === HARMONY_BRIGADE_ALL_BRIGADES;
+  const scopedEventIds = filterHarmonyBrigadeEvents(
+    events,
+    selectedYear,
+    selectedBrigade
+  ).map((event) => event.id);
+
+  return getHarmonyBrigadeEventSongsByEventIds(
+    isAllEventsScope ? undefined : scopedEventIds
+  );
+}
+
+async function getHarmonyBrigadeEventSongsByEventIds(eventIds?: string[]) {
+  if (eventIds && eventIds.length === 0) return [];
+
   const { supabase } = await import("@/lib/supabase");
-  const { data, error } = await supabase
-    .from("harmony_brigade_event_songs")
-    .select(
-      "track_number,sort_order,event:harmony_brigade_events(id,year_held,brigade_abbr,brigade_name,event_label),song:harmony_brigade_songs(id,source_song_id,song_title,arranger,default_voicing,song_key,starting_words,as_sung_by,learning_track_provider,song_style,song_length)"
-    )
-    .order("sort_order", { ascending: true });
 
-  if (error) throw error;
+  const rows = await fetchHarmonyBrigadeEventSongPages((from, to) => {
+    let query = supabase
+      .from("harmony_brigade_event_songs")
+      .select(
+        "id,event_id,track_number,sort_order,event:harmony_brigade_events(id,year_held,brigade_abbr,brigade_name,event_label),song:harmony_brigade_songs(id,source_song_id,song_title,arranger,default_voicing,song_key,starting_words,as_sung_by,learning_track_provider,song_style,song_length)"
+      )
+      .order("event_id", { ascending: true })
+      .order("sort_order", { ascending: true })
+      .order("track_number", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to);
 
-  return ((data ?? []) as RawHarmonyBrigadeEventSong[])
-    .map((row) => ({
-      event: mapEvent(firstRelated(row.event)),
-      song: mapSong(firstRelated(row.song)),
-      trackNumber: row.track_number,
-      sortOrder: row.sort_order,
-    }))
-    .sort((a, b) => {
-      return (
-        b.event.yearHeld - a.event.yearHeld ||
-        a.event.brigadeAbbr.localeCompare(b.event.brigadeAbbr) ||
-        (a.sortOrder ?? 9999) - (b.sortOrder ?? 9999) ||
-        a.song.songTitle.localeCompare(b.song.songTitle)
-      );
-    });
+    if (eventIds) {
+      query = query.in("event_id", eventIds);
+    }
+
+    return query as PromiseLike<HarmonyBrigadeEventSongQueryResult>;
+  });
+
+  return mapEventSongRows(rows);
 }

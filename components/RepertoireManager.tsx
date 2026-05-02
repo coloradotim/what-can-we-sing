@@ -50,10 +50,9 @@ import { arrangerDisplayName } from "@/lib/arrangerDisplay";
 import { hasQuartetWorkflowHistory } from "@/lib/activeQuartet";
 import {
   buildHarmonyBrigadeAddInputs,
-  filterHarmonyBrigadeSongs,
   getHarmonyBrigadeBrigadeOptions,
   getHarmonyBrigadeEvents,
-  getHarmonyBrigadeEventSongs,
+  getHarmonyBrigadeEventSongsForScope,
   getHarmonyBrigadeYearOptions,
   HARMONY_BRIGADE_ALL_BRIGADES,
   HARMONY_BRIGADE_ALL_YEARS,
@@ -375,14 +374,44 @@ export default function RepertoireManager() {
     setIsHarmonyBrigadeLoading(true);
 
     try {
-      const [events, rows] = await Promise.all([
-        getHarmonyBrigadeEvents(),
-        getHarmonyBrigadeEventSongs(),
-      ]);
+      const events = await getHarmonyBrigadeEvents();
+      const rows = await getHarmonyBrigadeEventSongsForScope(
+        events,
+        HARMONY_BRIGADE_ALL_YEARS,
+        HARMONY_BRIGADE_ALL_BRIGADES
+      );
       setHarmonyBrigadeEvents(events);
       setHarmonyBrigadeRows(rows);
       setHarmonyBrigadeYear(HARMONY_BRIGADE_ALL_YEARS);
       setHarmonyBrigadeBrigade(HARMONY_BRIGADE_ALL_BRIGADES);
+    } catch (err) {
+      console.error(err);
+      setHarmonyBrigadeMessage(
+        "Could not load Harmony Brigade songs. Please try again."
+      );
+    } finally {
+      setIsHarmonyBrigadeLoading(false);
+    }
+  }
+
+  async function loadHarmonyBrigadeSongsForScope(
+    events: HarmonyBrigadeEvent[],
+    selectedYear: string | number,
+    selectedBrigade: string
+  ) {
+    setHarmonyBrigadeRows([]);
+    setHarmonyBrigadePartSelections({});
+    setHarmonyBrigadeSearchQuery("");
+    setHarmonyBrigadeMessage("");
+    setIsHarmonyBrigadeLoading(true);
+
+    try {
+      const rows = await getHarmonyBrigadeEventSongsForScope(
+        events,
+        selectedYear,
+        selectedBrigade
+      );
+      setHarmonyBrigadeRows(rows);
     } catch (err) {
       console.error(err);
       setHarmonyBrigadeMessage(
@@ -1020,13 +1049,8 @@ export default function RepertoireManager() {
   )
     ? harmonyBrigadeBrigade
     : HARMONY_BRIGADE_ALL_BRIGADES;
-  const harmonyBrigadeScopedRows = filterHarmonyBrigadeSongs(
-    harmonyBrigadeRows,
-    harmonyBrigadeYear,
-    selectedHarmonyBrigadeBrigade
-  );
   const harmonyBrigadeCandidates = resolveHarmonyBrigadeCandidates(
-    harmonyBrigadeScopedRows,
+    harmonyBrigadeRows,
     items
   );
   const visibleHarmonyBrigadeCandidates = searchHarmonyBrigadeCandidates(
@@ -1357,15 +1381,17 @@ export default function RepertoireManager() {
                               harmonyBrigadeEvents
                             );
                           setHarmonyBrigadeYear(nextYear);
-                          setHarmonyBrigadeBrigade(
-                            nextBrigadeOptions.some(
-                              (option) => option.value === harmonyBrigadeBrigade
-                            )
-                              ? harmonyBrigadeBrigade
-                              : HARMONY_BRIGADE_ALL_BRIGADES
+                          const nextBrigade = nextBrigadeOptions.some(
+                            (option) => option.value === harmonyBrigadeBrigade
+                          )
+                            ? harmonyBrigadeBrigade
+                            : HARMONY_BRIGADE_ALL_BRIGADES;
+                          setHarmonyBrigadeBrigade(nextBrigade);
+                          void loadHarmonyBrigadeSongsForScope(
+                            harmonyBrigadeEvents,
+                            nextYear,
+                            nextBrigade
                           );
-                          setHarmonyBrigadePartSelections({});
-                          setHarmonyBrigadeSearchQuery("");
                         }}
                         className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
                       >
@@ -1383,9 +1409,13 @@ export default function RepertoireManager() {
                       <select
                         value={selectedHarmonyBrigadeBrigade}
                         onChange={(event) => {
-                          setHarmonyBrigadeBrigade(event.target.value);
-                          setHarmonyBrigadePartSelections({});
-                          setHarmonyBrigadeSearchQuery("");
+                          const nextBrigade = event.target.value;
+                          setHarmonyBrigadeBrigade(nextBrigade);
+                          void loadHarmonyBrigadeSongsForScope(
+                            harmonyBrigadeEvents,
+                            harmonyBrigadeYear,
+                            nextBrigade
+                          );
                         }}
                         className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
                       >

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { RepertoireRow } from "@/lib/repertoireStore";
 import {
   buildHarmonyBrigadeAddInputs,
+  fetchHarmonyBrigadeEventSongPages,
   filterHarmonyBrigadeSongs,
   getHarmonyBrigadeBrigadeOptions,
   getHarmonyBrigadeYearOptions,
@@ -114,6 +115,30 @@ describe("Harmony Brigade source helpers", () => {
     expect(
       filterHarmonyBrigadeSongs(rows, HARMONY_BRIGADE_ALL_YEARS, "AHB")
     ).toEqual(rows);
+  });
+
+  it("paginates event-song queries instead of relying on one capped response", async () => {
+    const calls: Array<[number, number]> = [];
+    const pages = [
+      [{ id: "1" }, { id: "2" }],
+      [{ id: "3" }, { id: "4" }],
+      [{ id: "5" }],
+    ];
+
+    const rows = await fetchHarmonyBrigadeEventSongPages((from, to) => {
+      calls.push([from, to]);
+      return Promise.resolve({
+        data: pages[calls.length - 1] as never,
+        error: null,
+      });
+    }, 2);
+
+    expect(calls).toEqual([
+      [0, 1],
+      [2, 3],
+      [4, 5],
+    ]);
+    expect(rows).toHaveLength(5);
   });
 
   it("uses natural preview copy for selected scope", () => {

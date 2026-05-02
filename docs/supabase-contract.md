@@ -267,6 +267,14 @@ Expected context:
   only unique songs. If a user selects parts from multiple appearances of the
   same normalized song + arranger, the app writes one `user_repertoire` row with
   combined TTBB part confidences.
+- The UI scopes event-song reads by the selected year/brigade event ids and
+  paginates Supabase reads. It must not depend on one unbounded
+  `harmony_brigade_event_songs` select and then filter a potentially capped
+  result set in the browser.
+- The import script prints per-event song counts before writing, and after
+  writing when not in dry-run mode. Counts below 10 are flagged as suspicious
+  data-quality warnings, not hard failures, because some historical/special
+  events may legitimately have shorter lists.
 
 Required database contract:
 - `harmony_brigade_songs`
