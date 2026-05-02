@@ -100,6 +100,13 @@ const eventModeMigration = readFileSync(
   ),
   "utf8"
 );
+const eventModeAvailabilityMigration = readFileSync(
+  join(
+    repoRoot,
+    "supabase/migrations/20260502100000_add_event_mode_availability.sql"
+  ),
+  "utf8"
+);
 
 describe("Supabase contract guardrails", () => {
   const tables = [
@@ -113,6 +120,7 @@ describe("Supabase contract guardrails", () => {
     "harmony_brigade_events",
     "harmony_brigade_event_songs",
     "event_mode_events",
+    "event_mode_availability",
   ];
   const baseMigrationTables = tables.filter(
     (table) =>
@@ -122,6 +130,7 @@ describe("Supabase contract guardrails", () => {
         "harmony_brigade_events",
         "harmony_brigade_event_songs",
         "event_mode_events",
+        "event_mode_availability",
       ].includes(table)
   );
 
@@ -355,5 +364,52 @@ describe("Supabase contract guardrails", () => {
     expect(eventModeMigration).toContain("to anon");
     expect(eventModeMigration).not.toContain("event_mode_availability");
     expect(eventModeMigration).not.toContain("event_mode_messages");
+  });
+
+  it("documents and migrates Event Mode singer availability", () => {
+    expect(contract).toContain("Event Mode Availability");
+    expect(contract).toContain("event_mode_availability");
+    expect(contract).toContain("get_event_mode_availability_by_code");
+    expect(contract).toContain("profiles.display_name");
+    expect(contract).toContain("TTBB Lead");
+    expect(contract).toContain("SATB Tenor");
+    expect(contract).toContain("SSAA Alto 1");
+    expect(contract).toContain("must not expose repertoire");
+    expect(eventModeAvailabilityMigration).toContain(
+      "create table if not exists public.event_mode_availability"
+    );
+    expect(eventModeAvailabilityMigration).toContain(
+      "event_id uuid not null references public.event_mode_events(id)"
+    );
+    expect(eventModeAvailabilityMigration).toContain(
+      "user_id uuid not null references auth.users(id)"
+    );
+    expect(eventModeAvailabilityMigration).toContain(
+      "event_mode_availability_event_user_key"
+    );
+    expect(eventModeAvailabilityMigration).toContain("(event_id, user_id)");
+    expect(eventModeAvailabilityMigration).toContain(
+      "event_mode_availability_voice_parts_supported_chk"
+    );
+    expect(eventModeAvailabilityMigration).toContain("'TTBB Lead'");
+    expect(eventModeAvailabilityMigration).toContain("'SATB Tenor'");
+    expect(eventModeAvailabilityMigration).toContain("'SSAA Alto 1'");
+    expect(eventModeAvailabilityMigration).toContain(
+      "alter table public.event_mode_availability enable row level security"
+    );
+    expect(eventModeAvailabilityMigration).toContain("user_id = auth.uid()");
+    expect(eventModeAvailabilityMigration).toContain("available_until > now()");
+    expect(eventModeAvailabilityMigration).toContain("turned_off_at is null");
+    expect(eventModeAvailabilityMigration).toContain(
+      "get_event_mode_availability_by_code"
+    );
+    expect(eventModeAvailabilityMigration).toContain("security definer");
+    expect(eventModeAvailabilityMigration).toContain("auth.role() = 'authenticated'");
+    expect(eventModeAvailabilityMigration).toContain("profiles.display_name");
+    expect(eventModeAvailabilityMigration).toContain("grant execute");
+    expect(eventModeAvailabilityMigration).toContain("to authenticated");
+    expect(eventModeAvailabilityMigration).not.toContain("to anon");
+    expect(eventModeAvailabilityMigration).not.toContain("user_repertoire");
+    expect(eventModeAvailabilityMigration).not.toContain("session_participants");
   });
 });

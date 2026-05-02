@@ -102,6 +102,10 @@ The Supabase project should have the current production schema applied:
 - `event_mode_events` stores user-created Event Mode event spaces. Listed
   events can be discovered by signed-in users, unlisted events require a
   link/code, and creators can edit or close their own events.
+- `event_mode_availability` stores temporary, event-scoped "I'm available to
+  sing" rows keyed by `(event_id, user_id)`. Availability uses explicit labels
+  such as `TTBB Lead`, `SATB Tenor`, and `SSAA Alto 1`, expires automatically,
+  and does not expose repertoire or contact details.
 
 The app/database contract is documented in
 [docs/supabase-contract.md](docs/supabase-contract.md). Any PR that changes

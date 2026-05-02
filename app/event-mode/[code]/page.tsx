@@ -3,12 +3,22 @@
 import { AppNav } from "@/components/AppNav";
 import {
   closeEventModeEvent,
+  defaultEventModeAvailableUntil,
+  eventModeVoicePartGroups,
+  eventModeVoicePartOptions,
+  filterEventModeAvailabilityByPart,
+  formatEventModeVoiceParts,
   formatEventModeDateRange,
+  getEventModeAvailabilityByCode,
   getEventModeEventByCode,
   getEventModeLifecycle,
+  turnOffEventModeAvailability,
   updateEventModeEvent,
+  upsertEventModeAvailability,
+  type EventModeAvailability,
   type EventModeEvent,
   type EventModeVisibility,
+  type EventModeVoicePart,
 } from "@/lib/eventMode";
 import { getCurrentUser } from "@/lib/profileStore";
 import { useParams } from "next/navigation";
@@ -23,10 +33,31 @@ type EventFormState = {
   visibility: EventModeVisibility;
 };
 
+type AvailabilityFormState = {
+  voiceParts: EventModeVoicePart[];
+  availabilityNote: string;
+  meetupNote: string;
+  availableUntil: string;
+};
+
 function toLocalDateTimeValue(value: string) {
   const date = new Date(value);
   const offsetMs = date.getTimezoneOffset() * 60 * 1000;
   return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+}
+
+function availabilityFormFromEvent(
+  event: EventModeEvent,
+  availability?: EventModeAvailability | null
+): AvailabilityFormState {
+  return {
+    voiceParts: availability?.voice_parts ?? [],
+    availabilityNote: availability?.availability_note ?? "",
+    meetupNote: availability?.meetup_note ?? "",
+    availableUntil: toLocalDateTimeValue(
+      availability?.available_until ?? defaultEventModeAvailableUntil(event)
+    ),
+  };
 }
 
 function formFromEvent(event: EventModeEvent): EventFormState {
@@ -53,7 +84,15 @@ export default function EventModeDetailPage() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [savingAvailability, setSavingAvailability] = useState(false);
+  const [turningOffAvailability, setTurningOffAvailability] = useState(false);
   const [form, setForm] = useState<EventFormState | null>(null);
+  const [availabilityForm, setAvailabilityForm] =
+    useState<AvailabilityFormState | null>(null);
+  const [availability, setAvailability] = useState<EventModeAvailability[]>([]);
+  const [selectedPart, setSelectedPart] = useState<EventModeVoicePart | "all">(
+    "all"
+  );
   const [message, setMessage] = useState("");
   const [messageTone, setMessageTone] = useState<"error" | "success">("error");
 
@@ -64,9 +103,20 @@ export default function EventModeDetailPage() {
           getEventModeEventByCode(code),
           getCurrentUser().catch(() => null),
         ]);
+        let loadedAvailability: EventModeAvailability[] = [];
+        if (loadedEvent && user) {
+          loadedAvailability = await getEventModeAvailabilityByCode(code);
+        }
         setEvent(loadedEvent);
         setForm(loadedEvent ? formFromEvent(loadedEvent) : null);
         setCurrentUserId(user?.id ?? null);
+        setAvailability(loadedAvailability);
+        const myAvailability = loadedAvailability.find(
+          (item) => item.user_id === user?.id
+        );
+        setAvailabilityForm(
+          loadedEvent ? availabilityFormFromEvent(loadedEvent, myAvailability) : null
+        );
       } catch (err) {
         console.error("Could not load Event Mode event", err);
         setMessageTone("error");
@@ -83,12 +133,49 @@ export default function EventModeDetailPage() {
     event && currentUserId && event.created_by_user_id === currentUserId
   );
   const lifecycle = event ? getEventModeLifecycle(event) : null;
+  const currentAvailability = availability.find(
+    (item) => item.user_id === currentUserId
+  );
+  const visibleAvailability = filterEventModeAvailabilityByPart(
+    availability,
+    selectedPart
+  );
 
   function updateForm<K extends keyof EventFormState>(
     key: K,
     value: EventFormState[K]
   ) {
     setForm((current) => (current ? { ...current, [key]: value } : current));
+  }
+
+  function updateAvailabilityForm<K extends keyof AvailabilityFormState>(
+    key: K,
+    value: AvailabilityFormState[K]
+  ) {
+    setAvailabilityForm((current) =>
+      current ? { ...current, [key]: value } : current
+    );
+  }
+
+  function toggleAvailabilityPart(part: EventModeVoicePart) {
+    setAvailabilityForm((current) => {
+      if (!current) return current;
+      const selected = new Set(current.voiceParts);
+      if (selected.has(part)) selected.delete(part);
+      else selected.add(part);
+      return { ...current, voiceParts: Array.from(selected) };
+    });
+  }
+
+  async function reloadAvailability() {
+    const loadedAvailability = await getEventModeAvailabilityByCode(code);
+    setAvailability(loadedAvailability);
+    const myAvailability = loadedAvailability.find(
+      (item) => item.user_id === currentUserId
+    );
+    if (event) {
+      setAvailabilityForm(availabilityFormFromEvent(event, myAvailability));
+    }
   }
 
   async function saveEvent() {
@@ -130,6 +217,56 @@ export default function EventModeDetailPage() {
       setMessage(err instanceof Error ? err.message : "Could not close event.");
     } finally {
       setClosing(false);
+    }
+  }
+
+  async function saveAvailability() {
+    if (!event || !availabilityForm) return;
+    setSavingAvailability(true);
+    setMessage("");
+
+    try {
+      await upsertEventModeAvailability({
+        eventId: event.id,
+        voiceParts: availabilityForm.voiceParts,
+        availabilityNote: availabilityForm.availabilityNote,
+        meetupNote: availabilityForm.meetupNote,
+        availableUntil: availabilityForm.availableUntil,
+      });
+      await reloadAvailability();
+      setMessageTone("success");
+      setMessage("You are available to sing at this event.");
+    } catch (err) {
+      console.error("Could not save Event Mode availability", err);
+      setMessageTone("error");
+      setMessage(
+        err instanceof Error ? err.message : "Could not save availability."
+      );
+    } finally {
+      setSavingAvailability(false);
+    }
+  }
+
+  async function turnOffAvailability() {
+    if (!event) return;
+    setTurningOffAvailability(true);
+    setMessage("");
+
+    try {
+      await turnOffEventModeAvailability(event.id);
+      await reloadAvailability();
+      setMessageTone("success");
+      setMessage("Your Event Mode availability is turned off.");
+    } catch (err) {
+      console.error("Could not turn off Event Mode availability", err);
+      setMessageTone("error");
+      setMessage(
+        err instanceof Error
+          ? err.message
+          : "Could not turn off availability."
+      );
+    } finally {
+      setTurningOffAvailability(false);
     }
   }
 
@@ -209,20 +346,213 @@ export default function EventModeDetailPage() {
             )}
 
             {currentUserId && (
-              <section className="mt-8 rounded-2xl border border-white/10 bg-white/10 p-5">
-                <h2 className="text-2xl font-bold">Use this event</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                  This event is ready for Event Mode. Availability and messaging
-                  arrive in follow-up work. For now, use this event as the shared
-                  place singers can find before starting a quartet.
-                </p>
-                <a
-                  href="/session"
-                  className="mt-4 inline-block rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200"
-                >
-                  Start a quartet
-                </a>
-              </section>
+              <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.1fr]">
+                <section className="rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-5">
+                  <h2 className="text-2xl font-bold">
+                    I&apos;m available to sing
+                  </h2>
+                  <p className="mt-2 text-sm leading-6 text-cyan-50/80">
+                    This is only shown for this event. Your availability expires
+                    automatically.
+                  </p>
+
+                  {availabilityForm && (
+                    <div className="mt-5 space-y-5">
+                      <fieldset>
+                        <legend className="text-sm font-semibold text-slate-100">
+                          Voice part(s)
+                        </legend>
+                        <div className="mt-3 space-y-3">
+                          {eventModeVoicePartGroups.map((group) => (
+                            <div
+                              key={group.voicing}
+                              className="rounded-xl border border-white/10 bg-slate-950/40 p-3"
+                            >
+                              <p className="text-xs font-bold uppercase text-cyan-200">
+                                {group.voicing}
+                              </p>
+                              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                                {group.parts.map((part) => (
+                                  <label
+                                    key={part}
+                                    className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={availabilityForm.voiceParts.includes(
+                                        part
+                                      )}
+                                      onChange={() => toggleAvailabilityPart(part)}
+                                    />
+                                    <span>{part}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </fieldset>
+
+                      <label className="block">
+                        <span className="text-sm font-semibold text-slate-100">
+                          When are you available?
+                        </span>
+                        <input
+                          value={availabilityForm.availabilityNote}
+                          onChange={(inputEvent) =>
+                            updateAvailabilityForm(
+                              "availabilityNote",
+                              inputEvent.target.value
+                            )
+                          }
+                          placeholder="After chorus contest"
+                          className="mt-2 w-full rounded-xl bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                        />
+                      </label>
+
+                      <label className="block">
+                        <span className="text-sm font-semibold text-slate-100">
+                          Where should people find you?
+                        </span>
+                        <input
+                          value={availabilityForm.meetupNote}
+                          onChange={(inputEvent) =>
+                            updateAvailabilityForm(
+                              "meetupNote",
+                              inputEvent.target.value
+                            )
+                          }
+                          placeholder="Lobby near registration"
+                          className="mt-2 w-full rounded-xl bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                        />
+                      </label>
+
+                      <label className="block">
+                        <span className="text-sm font-semibold text-slate-100">
+                          Available until
+                        </span>
+                        <input
+                          type="datetime-local"
+                          value={availabilityForm.availableUntil}
+                          onChange={(inputEvent) =>
+                            updateAvailabilityForm(
+                              "availableUntil",
+                              inputEvent.target.value
+                            )
+                          }
+                          className="mt-2 w-full rounded-xl bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                        />
+                      </label>
+
+                      <div className="flex flex-col gap-3 sm:flex-row">
+                        <button
+                          type="button"
+                          onClick={saveAvailability}
+                          disabled={savingAvailability}
+                          className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-50"
+                        >
+                          {savingAvailability
+                            ? "Saving..."
+                            : "I\u2019m available to sing"}
+                        </button>
+                        {currentAvailability && (
+                          <button
+                            type="button"
+                            onClick={turnOffAvailability}
+                            disabled={turningOffAvailability}
+                            className="rounded-xl bg-slate-800 px-5 py-3 font-semibold text-slate-100 hover:bg-slate-700 disabled:opacity-50"
+                          >
+                            {turningOffAvailability
+                              ? "Turning off..."
+                              : "Turn off my availability"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </section>
+
+                <section className="rounded-2xl border border-white/10 bg-white/10 p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <h2 className="text-2xl font-bold">Available singers</h2>
+                      <p className="mt-2 text-sm leading-6 text-slate-300">
+                        Event Mode shows only what singers choose to share for
+                        this event.
+                      </p>
+                    </div>
+                    <label className="block min-w-48">
+                      <span className="text-sm font-semibold text-slate-200">
+                        Filter by voice part
+                      </span>
+                      <select
+                        value={selectedPart}
+                        onChange={(inputEvent) =>
+                          setSelectedPart(
+                            inputEvent.target.value as EventModeVoicePart | "all"
+                          )
+                        }
+                        className="mt-2 w-full rounded-xl bg-slate-900 px-3 py-2 text-white outline-none ring-cyan-300 focus:ring-2"
+                      >
+                        <option value="all">All parts</option>
+                        {eventModeVoicePartOptions.map((part) => (
+                          <option key={part} value={part}>
+                            {part}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="mt-5 space-y-3">
+                    {visibleAvailability.length === 0 && (
+                      <p className="rounded-xl bg-slate-900/70 px-4 py-3 text-sm text-slate-300">
+                        No active available singers match this filter yet.
+                      </p>
+                    )}
+
+                    {visibleAvailability.map((item) => (
+                      <article
+                        key={item.id}
+                        className="rounded-xl border border-white/10 bg-slate-900/80 p-4"
+                      >
+                        <h3 className="text-lg font-bold text-white">
+                          {item.display_name}
+                        </h3>
+                        <p className="mt-1 text-sm font-semibold text-cyan-200">
+                          {formatEventModeVoiceParts(item.voice_parts)}
+                        </p>
+                        {item.availability_note && (
+                          <p className="mt-3 text-sm text-slate-200">
+                            {item.availability_note}
+                          </p>
+                        )}
+                        {item.meetup_note && (
+                          <p className="mt-1 text-sm text-slate-300">
+                            {item.meetup_note}
+                          </p>
+                        )}
+                      </article>
+                    ))}
+                  </div>
+
+                  <div className="mt-6 rounded-xl border border-cyan-300/30 bg-cyan-300/10 p-4">
+                    <p className="font-semibold text-white">
+                      Found people to sing with?
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-cyan-50/80">
+                      Start a quartet and have the others join by QR code or
+                      link.
+                    </p>
+                    <a
+                      href="/session"
+                      className="mt-3 inline-block rounded-xl bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
+                    >
+                      Start a quartet
+                    </a>
+                  </div>
+                </section>
+              </div>
             )}
 
             {isCreator && form && (
