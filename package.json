@@ -15,6 +15,7 @@
     "bhs-published-music:import": "node scripts/import-bhs-published-music.mjs",
     "harmony-brigade:export-source": "node scripts/export-harmony-brigade-source.mjs",
     "harmony-brigade:import": "node scripts/import-harmony-brigade-songs.mjs",
+    "international-songs:import": "node scripts/import-international-songs.mjs",
     "song-suggestions:import": "node scripts/import-song-suggestions.mjs",
     "test": "vitest",
     "test:run": "vitest run",

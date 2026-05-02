@@ -128,11 +128,12 @@ SUPABASE_SERVICE_ROLE_KEY=... npm run song-suggestions:import
 Use `npm run song-suggestions:import -- --dry-run` to parse and deduplicate the
 catalog file without writing to Supabase.
 
-To refresh the BHS Published Music source data and merge it into
-`data/song_suggestion_catalog.psv`, follow
-[docs/imports.md](docs/imports.md). The BHS transform is conservative: it uses
-Product Description as a voicing signal when needed, skips ambiguous rows, and
-splits clearly multi-voicing rows into separate catalog rows.
+To refresh the BHS Published Music or International Songs source data and merge
+it into `data/song_suggestion_catalog.psv`, follow
+[docs/imports.md](docs/imports.md). The catalog transforms are conservative:
+they import title, supported voicing, and arranger metadata only, skip ambiguous
+rows, preserve blank arranger versus literal `Unknown`, and split clearly
+multi-voicing rows into separate catalog rows.
 
 To refresh Harmony Brigade data, export read-only upstream snapshots and then
 import them into the Supabase reference tables after migrations are applied:
