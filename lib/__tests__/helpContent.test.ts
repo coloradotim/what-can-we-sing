@@ -77,7 +77,7 @@ describe("help content", () => {
     expect(guideText).toContain("Treble (SSAA)");
     expect(guideText).toContain("Mixed (SATB)");
     expect(guideText).toContain("Lower voice (TTBB)");
-    expect(guideText).toContain("S1 usually maps to Tenor");
+    expect(guideText).toContain("is often printed as Tenor");
     expect(guideText).toContain("Alto to Lead");
     expect(guideText).toContain("T2 to Lead");
     expect(guideText).toContain("add it more than once");
