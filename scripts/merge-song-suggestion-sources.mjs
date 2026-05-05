@@ -34,6 +34,7 @@ export const defaultSourcePaths = [
     "data/sources/sweet_adelines_arranged_music_song_suggestions.psv"
   ),
   path.join(repoRoot, "data/sources/harmony_brigade_song_suggestions.psv"),
+  path.join(repoRoot, "data/sources/sheet_music_plus_barbershop_song_suggestions.psv"),
 ];
 
 function optionValue(name) {

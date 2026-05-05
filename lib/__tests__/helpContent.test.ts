@@ -192,6 +192,7 @@ describe("help content", () => {
       "timtracks.com",
       "kohlkitzmillermusic.com",
       "melodyhinearrangements.com",
+      "sheetmusicplus.com",
     ]);
     expect(helpSongSuggestionSources.map((item) => item.contribution).join(" ")).toContain(
       "Ross Wilkins’ Harmony Brigade database"

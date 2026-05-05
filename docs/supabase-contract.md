@@ -222,6 +222,13 @@ Code:
   product records by
   `scripts/song-sources/scrape-melody-hine-arrangements.mjs` into
   `data/sources/melody_hine_arrangements_song_suggestions.psv`
+- Sheet Music Plus Barbershop catalog discovery is handled by the explicit
+  manual importer `scripts/song-sources/import-sheet-music-plus-barbershop.mjs`.
+  It reads the public Barbershop genre search/detail pages through text-rendered
+  pages because direct HTTP/browser requests from this environment receive
+  bot-protection challenges. It writes high-confidence rows to
+  `data/sources/sheet_music_plus_barbershop_song_suggestions.psv` and writes
+  debug/skipped files under `tmp/song-sources/`.
 - Sweet Adelines published music source data is imported from the public PDF by
   `scripts/song-sources/import-sweet-adelines-published-music.mjs` into
   `data/sources/sweet_adelines_published_music_song_suggestions.psv`
