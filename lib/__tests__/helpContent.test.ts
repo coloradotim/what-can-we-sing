@@ -161,7 +161,8 @@ describe("help content", () => {
       "Jessica Rodman",
       "Scott Anderson",
       "Marcie Jones and Ann Monaghan McAlexander",
-      "Sweet Adelines",
+      "Sweet Adelines International",
+      "Barbershop Harmony Society",
     ]);
     expect(helpAcknowledgments.map((item) => item.contribution).join(" ")).toContain(
       "Instant Quartet"
@@ -173,7 +174,10 @@ describe("help content", () => {
       "voicing terminology"
     );
     expect(helpAcknowledgments.map((item) => item.contribution).join(" ")).toContain(
-      "sweetadelines.com published and arranged music lists"
+      "sweetadelines.com published and arranged music list PDFs"
+    );
+    expect(helpAcknowledgments.map((item) => item.contribution).join(" ")).toContain(
+      "shop.barbershop.org published music Google sheet"
     );
   });
 

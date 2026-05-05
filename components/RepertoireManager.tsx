@@ -26,6 +26,7 @@ import {
 } from "@/lib/repertoireView";
 import { formatLastSungStatus } from "@/lib/lastSung";
 import { trackEvent } from "@/lib/analytics";
+import { serviceErrorMessage } from "@/lib/runtimeErrors";
 import {
   addRepertoireItem,
   deleteRepertoireItem,
@@ -227,9 +228,7 @@ export default function RepertoireManager() {
       setLoadError("");
     } catch (err) {
       console.error(err);
-      setLoadError(
-        "Could not load your songs. Check your connection and try again."
-      );
+      setLoadError(serviceErrorMessage(err, "database_read"));
       throw err;
     }
   }
@@ -266,9 +265,7 @@ export default function RepertoireManager() {
         setRepertoireShare(await getMyActiveRepertoireShare());
       } catch (err) {
         console.error(err);
-        setLoadError(
-          "Could not load your songs. Check your connection and try again."
-        );
+        setLoadError(serviceErrorMessage(err, "database_read"));
       } finally {
         setLoading(false);
       }
@@ -397,7 +394,7 @@ export default function RepertoireManager() {
     } catch (err) {
       console.error(err);
       setHarmonyBrigadeMessage(
-        "Could not load Harmony Brigade songs. Please try again."
+        serviceErrorMessage(err, "database_read")
       );
     } finally {
       setIsHarmonyBrigadeLoading(false);
@@ -425,7 +422,7 @@ export default function RepertoireManager() {
     } catch (err) {
       console.error(err);
       setHarmonyBrigadeMessage(
-        "Could not load Harmony Brigade songs. Please try again."
+        serviceErrorMessage(err, "database_read")
       );
     } finally {
       setIsHarmonyBrigadeLoading(false);
@@ -666,7 +663,7 @@ export default function RepertoireManager() {
       trackEvent("repertoire_update_failed", {
         action: "add",
       });
-      setMessage("Could not add song. Please try again.");
+      setMessage(serviceErrorMessage(err, "database_write"));
     } finally {
       setIsAdding(false);
     }
@@ -719,7 +716,7 @@ export default function RepertoireManager() {
       trackEvent("repertoire_update_failed", {
         action: "delete",
       });
-      setMessage("Could not delete song. Please try again.");
+      setMessage(serviceErrorMessage(err, "database_write"));
       setItemToDelete(null);
     } finally {
       setDeletingId(null);
@@ -800,7 +797,7 @@ export default function RepertoireManager() {
       trackEvent("repertoire_update_failed", {
         action: "edit",
       });
-      setMessage("Could not save changes. Please try again.");
+      setMessage(serviceErrorMessage(err, "database_write"));
     } finally {
       setSavingEditId(null);
     }
@@ -822,7 +819,7 @@ export default function RepertoireManager() {
       trackEvent("song_mark_sung_failed", {
         source: "my_songs",
       });
-      setMessage("Could not mark song sung. Please try again.");
+      setMessage(serviceErrorMessage(err, "database_write"));
     } finally {
       setMarkingSungId(null);
     }
@@ -839,7 +836,7 @@ export default function RepertoireManager() {
       setShareMessage("Copy link/code created.");
     } catch (err) {
       console.error(err);
-      setShareMessage("Could not create copy link/code. Please try again.");
+      setShareMessage(serviceErrorMessage(err, "database_write"));
     } finally {
       setIsCreatingShare(false);
     }
@@ -904,7 +901,7 @@ export default function RepertoireManager() {
       setShareMessage("Copy link/code revoked.");
     } catch (err) {
       console.error(err);
-      setShareMessage("Could not revoke copy link/code. Please try again.");
+      setShareMessage(serviceErrorMessage(err, "database_write"));
     } finally {
       setIsRevokingShare(false);
     }
@@ -949,11 +946,12 @@ export default function RepertoireManager() {
       return;
     }
 
+    let addedCount = 0;
+
     try {
       setIsAddingHarmonyBrigadeSongs(true);
       setHarmonyBrigadeMessage("");
 
-      let addedCount = 0;
       for (const input of inputs) {
         await addRepertoireItem(input);
         addedCount += 1;
@@ -983,7 +981,16 @@ export default function RepertoireManager() {
       trackEvent("repertoire_update_failed", {
         action: "harmony_brigade_add",
       });
-      setHarmonyBrigadeMessage("Could not add songs. Please try again.");
+      setHarmonyBrigadeMessage(
+        addedCount > 0
+          ? `${addedCount} ${
+              addedCount === 1 ? "song was" : "songs were"
+            } added before saving stopped. ${serviceErrorMessage(
+              err,
+              "database_write"
+            )} Retry the remaining songs.`
+          : serviceErrorMessage(err, "database_write")
+      );
     } finally {
       setIsAddingHarmonyBrigadeSongs(false);
     }

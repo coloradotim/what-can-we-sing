@@ -27,7 +27,7 @@ describe("quartet manage panel markup", () => {
     expect(joinPage).toContain("Nice — marked as sung.");
     expect(joinPage).toContain("celebratingSungKey");
     expect(joinPage).toContain("isSungCelebrating={celebratingSungKey === id}");
-    expect(joinPage).toContain("Could not mark that song as sung.");
+    expect(joinPage).toContain('serviceErrorMessage(err, "database_write")');
   });
 
   it("renders encouraging full-quartet no-match guidance and conversation starters", () => {
