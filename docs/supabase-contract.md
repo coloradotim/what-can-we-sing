@@ -215,6 +215,9 @@ Code:
 - TimTracks source data is scraped from the public DataTables endpoint by
   `scripts/song-sources/scrape-timtracks.mjs` into
   `data/sources/timtracks_song_suggestions.psv`
+- Kohl Kitzmiller Music source data is scraped from public product sitemaps by
+  `scripts/song-sources/scrape-kohl-kitzmiller-music.mjs` into
+  `data/sources/kohl_kitzmiller_music_song_suggestions.psv`
 - Sweet Adelines published music source data is imported from the public PDF by
   `scripts/song-sources/import-sweet-adelines-published-music.mjs` into
   `data/sources/sweet_adelines_published_music_song_suggestions.psv`

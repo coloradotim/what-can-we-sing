@@ -13,6 +13,7 @@ by individual singers.
 - `data/sources/barbershop_connections_song_suggestions.psv`
 - `data/sources/barbershoptracks_song_suggestions.psv`
 - `data/sources/timtracks_song_suggestions.psv`
+- `data/sources/kohl_kitzmiller_music_song_suggestions.psv`
 - `data/sources/bhs_song_catalog_suggestions.psv`
 - `data/sources/sweet_adelines_published_music_song_suggestions.psv`
 - `data/sources/sweet_adelines_arranged_music_song_suggestions.psv`
@@ -52,6 +53,7 @@ Scrape or import individual source files:
 npm run song-sources:scrape:barbershop-connections
 npm run song-sources:scrape:barbershoptracks
 npm run song-sources:scrape:timtracks
+npm run song-sources:scrape:kohl-kitzmiller-music
 npm run song-sources:import:bhs
 npm run song-sources:import:sweet-adelines
 npm run song-sources:import:sweet-adelines-arranged
@@ -103,6 +105,19 @@ TimTracks:
   four-part voicing from male/female part counts: `4/0` as `TTBB`, `0/4` as
   `SSAA`, and `2/2` as `SATB`.
 - Writes ambiguous holiday rows to `tmp/song-sources/timtracks-skipped.json`.
+
+Kohl Kitzmiller Music:
+
+- Discovers product URLs from the public WordPress product sitemaps linked from
+  `https://kohlkitzmillermusic.com/sitemap.xml`.
+- Parses only public product slugs that confidently include title, supported
+  voicing, arranger, and learning-track/full-mix product type metadata.
+- Skips private/authorized copy products and rows without explicit arranger or
+  supported voicing.
+- Writes skipped rows to
+  `tmp/song-sources/kohl-kitzmiller-music-skipped.json`.
+- Use `--limit=25 --debug` for a quick inspectable run; debug discovery reports
+  are written under `tmp/song-sources/kohl-kitzmiller-music/`.
 
 BHS Published Music:
 
