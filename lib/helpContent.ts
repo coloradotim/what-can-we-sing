@@ -338,6 +338,10 @@ export const helpSongSuggestionSources: HelpAcknowledgment[] = [
     name: "timtracks.com",
     contribution: "for song suggestion reference data",
   },
+  {
+    name: "kohlkitzmillermusic.com",
+    contribution: "for song suggestion reference data",
+  },
 ];
 
 export const helpDevelopmentNote =

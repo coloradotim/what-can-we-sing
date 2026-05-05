@@ -218,6 +218,39 @@ Arranger normalization collapses whitespace, converts semicolon-separated names
 to comma-separated names, and changes ampersands between names to `and`.
 Multiple arrangers remain a single suggestion row.
 
+## Kohl Kitzmiller Music Suggestions Refresh
+
+Kohl Kitzmiller Music suggestions are discovered from the public WordPress
+product sitemaps linked from:
+
+```text
+https://kohlkitzmillermusic.com/sitemap.xml
+```
+
+Run a small debug scrape before a full refresh:
+
+```bash
+npm run song-sources:scrape:kohl-kitzmiller-music -- --limit=25 --debug
+```
+
+Then refresh the full source:
+
+```bash
+npm run song-sources:scrape:kohl-kitzmiller-music
+```
+
+The source PSV is written to:
+
+```text
+data/sources/kohl_kitzmiller_music_song_suggestions.psv
+```
+
+The scraper imports only product slugs that clearly expose song title,
+supported voicing, and arranger. It skips private/authorized copy products and
+rows with missing or unsupported voicing or arranger, writing skipped rows to
+`tmp/song-sources/kohl-kitzmiller-music-skipped.json`. It does not import
+pricing, media, sheet music, lyrics, checkout, account, or order metadata.
+
 After reviewing the source PSV, merge it into the deployed suggestion catalog:
 
 ```bash

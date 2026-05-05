@@ -85,6 +85,9 @@ export function normalizeSourceVoicings(value, { noneSpecifiedAsTTBB = false } =
       normalized === "male voices" ||
       normalized === "mens voices" ||
       normalized === "men voices" ||
+      normalized === "mens" ||
+      normalized === "men" ||
+      normalized === "male" ||
       normalized === "m"
     ) {
       voicings.add("TTBB");
@@ -96,6 +99,10 @@ export function normalizeSourceVoicings(value, { noneSpecifiedAsTTBB = false } =
       normalized === "female voices" ||
       normalized === "womens voices" ||
       normalized === "women voices" ||
+      normalized === "womens" ||
+      normalized === "women" ||
+      normalized === "ladies" ||
+      normalized === "female" ||
       normalized === "young ssaa" ||
       normalized === "f"
     ) {
@@ -104,6 +111,7 @@ export function normalizeSourceVoicings(value, { noneSpecifiedAsTTBB = false } =
       normalized === "mixed track" ||
       normalized === "mixed voices" ||
       normalized === "mixed voice" ||
+      normalized === "mixed" ||
       normalized === "x"
     ) {
       voicings.add("SATB");
