@@ -203,5 +203,6 @@ Guardrails:
 - `lib/activeQuartetSnapshot.ts`: refreshes active quartet snapshots after repertoire changes
 - `lib/participantEntries.ts`: combines participant rows with profile display names
 - `app/join/[code]/page.tsx`: session join/results
-- `app/repertoire/page.tsx`: repertoire management
+- `app/songs/page.tsx`: canonical My Songs route
+- `app/repertoire/page.tsx`: legacy My Songs redirect
 - `docs/supabase-contract.md`: app/database contract and Supabase guardrails

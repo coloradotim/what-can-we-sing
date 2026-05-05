@@ -11,8 +11,10 @@ import {
   feedbackHelpCopy,
   helpAcknowledgments,
   helpAcknowledgmentsIntro,
+  helpDevelopmentNote,
   helpGuideSections,
   helpNavItems,
+  helpSongSuggestionSources,
   helpWelcomeCopy,
 } from "@/lib/helpContent";
 import { getCurrentUser } from "@/lib/profileStore";
@@ -229,6 +231,25 @@ export default function HelpPage() {
               </li>
             ))}
           </ul>
+          <p className="mt-5 text-sm font-semibold uppercase text-slate-300">
+            Song suggestion sources
+          </p>
+          <ul className="mt-3 list-disc space-y-2 pl-5 text-base leading-7 text-slate-300">
+            {helpSongSuggestionSources.map((item) => (
+              <li key={item.name}>
+                <span className="font-semibold text-slate-100">
+                  {item.name}
+                </span>
+                , {item.contribution}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-5 text-sm font-semibold uppercase text-slate-300">
+            Development note
+          </p>
+          <p className="mt-3 text-base leading-7 text-slate-300">
+            {helpDevelopmentNote}
+          </p>
         </section>
 
         <section

@@ -75,6 +75,11 @@ under `data/backups/`, and writes `data/song_suggestion_catalog.psv`.
 
 ## Source Notes
 
+When adding or materially changing an external source, check whether the Help
+page acknowledgments need a matching source entry. Keep the source list limited
+to references that support song suggestions or My Songs-building helpers, and
+do not imply endorsement by the upstream source.
+
 Barbershop Connections:
 
 - Uses the `Voices` field as the app voicing.

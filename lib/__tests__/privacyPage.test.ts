@@ -16,6 +16,7 @@ describe("privacy page copy", () => {
   it("discloses account, My Songs, quartet, feedback, analytics, and providers", () => {
     expect(privacyPage).toContain("email address");
     expect(privacyPage).toContain("We do not show your email address");
+    expect(privacyPage).toContain("The songs you add");
     expect(privacyPage).toContain("song title");
     expect(privacyPage).toContain("parts");
     expect(privacyPage).toContain("confidence");
@@ -29,6 +30,9 @@ describe("privacy page copy", () => {
     expect(privacyPage).toContain("Supabase");
     expect(privacyPage).toContain("Vercel");
     expect(privacyPage).toContain("Resend");
+    expect(privacyPage).not.toContain("Your My Songs entries");
+    expect(privacyPage).not.toContain("manage My Songs");
+    expect(privacyPage).not.toContain("their own My Songs entries");
   });
 
   it("does not overstate analytics or provider privacy", () => {

@@ -36,6 +36,9 @@ blank arranger values to `Unknown`, and do not rewrite `Unknown` to blank.
 Current source refresh commands, local credentials, and the manual GitHub import
 workflow are documented in [docs/song-sources.md](song-sources.md).
 
+When adding a new external source or changing a source's role, check the Help
+page acknowledgments and song suggestion source list in the same PR.
+
 ## BHS Published Music Refresh
 
 The BHS Published Music source file is committed at:

@@ -38,6 +38,7 @@ describe("sanitizeAnalyticsProperties", () => {
 describe("getAnalyticsRoute", () => {
   it("keeps public route names safe for dashboard breakdowns", () => {
     expect(getAnalyticsRoute("/")).toBe("/");
+    expect(getAnalyticsRoute("/songs")).toBe("/songs");
     expect(getAnalyticsRoute("/repertoire")).toBe("/repertoire");
     expect(getAnalyticsRoute("/settings?tab=name")).toBe("/settings");
   });

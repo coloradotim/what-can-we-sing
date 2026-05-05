@@ -76,7 +76,7 @@ export const helpGuideSections: HelpGuideSection[] = [
       {
         title: "How Suggestions Are Shared",
         body: [
-          "When you add a song, the title, arrangement voicing, and arranger you enter can help future singers find the same song faster. Adding a song does not add it to anyone else’s My Songs.",
+          "When you add a song, the title, arrangement voicing, and arranger you enter can help future singers find the same song faster. Adding a song does not add it to anyone else’s saved songs.",
           "Suggestions do not expose private user details such as user IDs, singer names, notes, parts, confidence, timestamps, or your full personal song list.",
         ],
       },
@@ -116,7 +116,7 @@ export const helpGuideSections: HelpGuideSection[] = [
       {
         title: "Notes",
         body: [
-          "Notes are for your own memory — for example, version reminders, tags, first words, key, or tricky spots. They help you manage My Songs but are not used to decide whether the quartet can sing a song.",
+          "Notes are for your own memory — for example, version reminders, tags, first words, key, or tricky spots. They help you manage your songs but are not used to decide whether the quartet can sing a song.",
         ],
       },
       {
@@ -147,14 +147,14 @@ export const helpGuideSections: HelpGuideSection[] = [
         title: "What Start Does",
         body: [
           "Start creates a quartet session and gives it a short code. Other singers can enter the code, scan the QR code, or open the shared link to join.",
-          "You are part of the quartet you start. My Songs is used along with the other singers’ saved songs to find matches, so add at least a few songs first.",
+          "You are part of the quartet you start. Your saved songs are used along with the other singers’ saved songs to find matches, so add at least a few songs first.",
         ],
       },
       {
         title: "After Singers Join",
         body: [
           "Once singers join, the app compares the current quartet members’ saved song snapshots. A quartet is full when four singers have joined.",
-          "Starting a quartet does not permanently change anyone else’s My Songs. It only creates a shared place where the group can compare what each singer already has saved.",
+          "Starting a quartet does not permanently change anyone else’s saved songs. It only creates a shared place where the group can compare what each singer already has saved.",
         ],
       },
       {
@@ -175,8 +175,8 @@ export const helpGuideSections: HelpGuideSection[] = [
       {
         title: "What Join Uses",
         body: [
-          "When you join, the app uses My Songs to look for songs the group can sing together. Joining does not add songs to My Songs or change the songs you already saved.",
-          "If My Songs is empty or missing common songs, the group may see fewer matches until you add or update entries.",
+          "When you join, the app uses your saved songs to look for songs the group can sing together. Joining does not add songs to My Songs or change the songs you already saved.",
+          "If your song list is empty or missing common songs, the group may see fewer matches until you add or update entries.",
         ],
       },
       {
@@ -236,7 +236,7 @@ export const helpGuideSections: HelpGuideSection[] = [
     eyebrow: "Managing A Quartet",
     title: "Update, Leave, Or Rejoin A Quartet",
     intro:
-      "Quartet membership and match results come from the current quartet data. Use the quartet controls when someone updates My Songs, changes names, leaves, rejoins, or needs to be removed.",
+      "Quartet membership and match results come from the current quartet data. Use the quartet controls when someone updates saved songs, changes names, leaves, rejoins, or needs to be removed.",
     topics: [
       {
         title: "Managing The Quartet",
@@ -303,6 +303,40 @@ export const helpAcknowledgments: HelpAcknowledgment[] = [
       "for maintaining the sweetadelines.com published and arranged music lists used as song suggestion sources",
   },
 ];
+
+export const helpSongSuggestionSources: HelpAcknowledgment[] = [
+  {
+    name: "barbershopconnections.com",
+    contribution: "for song suggestion reference data",
+  },
+  {
+    name: "barbershoptracks.com",
+    contribution: "for song suggestion reference data",
+  },
+  {
+    name: "gud2brabah.com",
+    contribution: "for Ross Wilkins’ Harmony Brigade database",
+  },
+  {
+    name: "Scott Anderson’s International songs list",
+    contribution: "for songs sung at International",
+  },
+  {
+    name: "shop.barbershop.org",
+    contribution: "for BHS published music suggestion data",
+  },
+  {
+    name: "sweetadelines.com",
+    contribution: "for published and arranged music suggestion data",
+  },
+  {
+    name: "timtracks.com",
+    contribution: "for song suggestion reference data",
+  },
+];
+
+export const helpDevelopmentNote =
+  "What Can We Sing was built by Tim Peterson with substantial coding assistance from OpenAI Codex and ChatGPT. No OpenAI or other AI product runs inside the app or processes user quartet or repertoire activity in real time.";
 
 export const helpWelcomeCopy =
   "We really hope you have a great time using What Can We Sing, and that it makes your convention, afterglow, or Brigade experience that much more fun and worthwhile.";
