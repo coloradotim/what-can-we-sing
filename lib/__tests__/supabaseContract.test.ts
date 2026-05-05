@@ -44,6 +44,13 @@ const participantRemovalMigration = readFileSync(
   ),
   "utf8"
 );
+const safeSessionJoinMigration = readFileSync(
+  join(
+    repoRoot,
+    "supabase/migrations/20260505133000_add_safe_session_join_function.sql"
+  ),
+  "utf8"
+);
 const songSuggestionsMigration = readFileSync(
   join(
     repoRoot,
@@ -168,6 +175,7 @@ describe("Supabase contract guardrails", () => {
     expect(migration).toContain("(session_id, user_id)");
     expect(migration).toContain("supabase_realtime");
     expect(contract).toContain("join/rejoin");
+    expect(contract).toContain("join_session_participant");
     expect(contract).toContain("leave");
     expect(contract).toContain("repertoire snapshot");
     expect(contract).toContain("Match calculation source");
@@ -176,6 +184,13 @@ describe("Supabase contract guardrails", () => {
     expect(appFlows).toContain("Source Of Truth");
     expect(appFlows).toContain("Rejoin Quartet");
     expect(appFlows).toContain("Remove Singer");
+    expect(safeSessionJoinMigration).toContain("join_session_participant");
+    expect(safeSessionJoinMigration).toContain("for update");
+    expect(safeSessionJoinMigration).toContain("auth.uid()");
+    expect(safeSessionJoinMigration).toContain(
+      "This quartet is already full."
+    );
+    expect(safeSessionJoinMigration).toContain("to authenticated");
   });
 
   it("documents and migrates the first-login welcome flag", () => {

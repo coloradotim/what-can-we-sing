@@ -21,6 +21,10 @@ migrations in `supabase/migrations`, and tests or test documentation.
   `/join/[code]`.
 - `/join/[code]` reads fresh session and participant data from Supabase on load.
   Existing participants are recognized by `user_id`, not by display name.
+- Joining or rejoining writes the participant snapshot through
+  `join_session_participant`, which locks the session row, lets existing active
+  participants refresh their snapshot, and rejects new participants when four
+  active participant rows already exist.
 - Local active-quartet state is a shortcut for navigation only. It must not be
   treated as proof that the user still has a current `session_participants` row.
 - My Songs add, edit, delete, and mark-as-sung actions update
@@ -496,8 +500,8 @@ Purpose: source of truth for quartet join codes and session activity.
 Code:
 - Insert new session: `lib/sessionStore.ts#createSession`
 - Read by join code: `lib/sessionStore.ts#getSessionByCode`
-- Update `last_activity_at`: internal helper in `lib/sessionStore.ts`, called
-  after participant snapshot upserts.
+- Update `last_activity_at`: `public.join_session_participant` updates activity
+  after participant snapshot writes.
 - Start quartet flow: `app/session/page.tsx` creates the session before
   inserting the first participant snapshot.
 - Preserved by `scripts/delete-user.mjs`; sessions are shared join-code records.
@@ -526,7 +530,8 @@ from this table, not local-only state.
 
 Code:
 - Read participants: `lib/sessionStore.ts#getParticipants`
-- Insert/update own snapshot: `lib/sessionStore.ts#upsertParticipant`
+- Insert/update own snapshot: `lib/sessionStore.ts#upsertParticipant`, through
+  `public.join_session_participant`
 - Delete own row: `lib/sessionStore.ts#removeParticipant`
 - Remove selected row by id: `lib/sessionStore.ts#removeParticipantById`,
   through `public.remove_session_participant_by_id`
@@ -561,6 +566,12 @@ Required database contract:
 - Authenticated users can select session participants.
 - Authenticated users can insert/update/delete only their own row where
   `user_id = auth.uid()`.
+- `public.join_session_participant(p_session_id uuid, p_display_name text,
+  p_repertoire jsonb, p_last_activity_at timestamptz, p_max_participants integer)`
+  is a security-definer RPC available only to authenticated users. It uses
+  `auth.uid()` for `user_id`, locks the session row before checking capacity,
+  allows an existing active participant to update/rejoin, and rejects a new
+  participant when four active rows already exist.
 - Authenticated users who are current participants in a session can call
   `public.remove_session_participant_by_id(p_session_id, p_participant_id)` to
   remove another participant from that same session.
@@ -570,6 +581,7 @@ Established by migrations:
 - `20260428051000_fix_session_participants_rls.sql`
 - `20260428060000_supabase_contract_alignment.sql`
 - `20260428151000_add_participant_removal_function.sql`
+- `20260505133000_add_safe_session_join_function.sql`
 
 ### `sung_song_events`
 

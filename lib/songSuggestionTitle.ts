@@ -22,3 +22,7 @@ export function normalizeTitleForSuggestionKey(title: string) {
 
   return withoutArticle || normalized;
 }
+
+export function compactTitleKey(title: string) {
+  return normalizeTitleForSuggestionKey(title).replace(/[^a-z0-9]/g, "");
+}

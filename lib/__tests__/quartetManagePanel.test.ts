@@ -36,8 +36,16 @@ describe("quartet manage panel markup", () => {
       "all required parts are covered by different"
     );
     expect(joinPage).toContain("Conversation starters");
-    expect(joinPage).toContain("These are not ready matches");
+    expect(joinPage).toContain("conversationStartersIntro");
+    expect(joinPage).toContain("showConversationStartersSection");
+    expect(joinPage).toContain("Ask if anyone knows another part");
     expect(joinPage).toContain("Review My Songs");
     expect(joinPage).not.toContain("Refresh matches");
+  });
+
+  it("keeps full-quartet failed joiners out of active results", () => {
+    expect(joinPage).toContain("quartetFullMessage");
+    expect(joinPage).toContain("shouldShowQuartetResults");
+    expect(joinPage).toContain("A quartet can have up to four singers.");
   });
 });

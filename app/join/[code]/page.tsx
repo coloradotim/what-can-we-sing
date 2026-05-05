@@ -8,6 +8,10 @@ import { MatchCard } from "@/components/MatchCard";
 import { QuartetActionConfirmation } from "@/components/QuartetActionConfirmation";
 import { noArrangerEnteredLabel } from "@/lib/arrangerDisplay";
 import { trackEvent } from "@/lib/analytics";
+import {
+  conversationStartersIntro,
+  shouldShowConversationStarters,
+} from "@/lib/conversationStarters";
 import { intentionalJoinStorageKey } from "@/lib/joinIntent";
 import { resolveCurrentUserRepertoireForMarkAsSung } from "@/lib/markAsSung";
 import {
@@ -34,6 +38,7 @@ import {
   type DbParticipant,
   getParticipants,
   getSessionByCode,
+  QuartetFullError,
   removeParticipant,
   removeParticipantById,
   subscribeToSessionParticipants,
@@ -72,6 +77,7 @@ import {
   getRecentSungSongs,
   type SungSongEvent,
 } from "@/lib/sungSongStore";
+import { compactTitleKey } from "@/lib/songSuggestionTitle";
 
 const matchSections = [
   {
@@ -92,6 +98,8 @@ const matchSections = [
 ] as const;
 
 const MAX_QUARTET_PARTICIPANTS = 4;
+const quartetFullMessage =
+  "This quartet is already full. Ask the group to start a new quartet.";
 
 type PersonalSongNote = {
   songTitle: string;
@@ -106,7 +114,7 @@ function leftQuartetStorageKey(code: string) {
 }
 
 function normalizeSongTitle(title: string) {
-  return title.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return compactTitleKey(title);
 }
 
 function normalizeOptionalText(value: string | null | undefined) {
@@ -324,7 +332,8 @@ export default function JoinSessionPage() {
           session_id: id,
           participant_count: existingParticipants.length,
         });
-        showStatusMessage("This quartet already has four singers.");
+        setLoadError(quartetFullMessage);
+        showStatusMessage(quartetFullMessage, "error");
         return;
       }
 
@@ -370,6 +379,16 @@ export default function JoinSessionPage() {
       );
     } catch (err) {
       console.error(err);
+      if (err instanceof QuartetFullError) {
+        trackEvent("quartet_join_failed", {
+          session_id: id,
+          reason: "quartet_full",
+        });
+        setLoadError(quartetFullMessage);
+        showStatusMessage(quartetFullMessage, "error");
+        return;
+      }
+
       trackEvent("quartet_join_failed", {
         session_id: id,
         reason: "write_failed",
@@ -933,8 +952,6 @@ export default function JoinSessionPage() {
     profileDisplayNamesByUserId
   );
   const matches = findMatches(allEntries);
-  const conversationStarters =
-    matches.length === 0 ? findConversationStarters(allEntries) : [];
   const groupedMatches = matchSections.map((section) => ({
     ...section,
     matches: matches.filter((match) => match.category === section.category),
@@ -942,6 +959,11 @@ export default function JoinSessionPage() {
   const readyMatchCount = groupedMatches.find(
     (section) => section.category === "ready"
   )?.matches.length ?? 0;
+  const showConversationStartersSection =
+    shouldShowConversationStarters(readyMatchCount);
+  const conversationStarters = showConversationStartersSection
+    ? findConversationStarters(allEntries)
+    : [];
   const possibleMatchCount = groupedMatches.find(
     (section) => section.category === "possible"
   )?.matches.length ?? 0;
@@ -973,6 +995,7 @@ export default function JoinSessionPage() {
     MAX_QUARTET_PARTICIPANTS - participants.length
   );
   const isQuartetFull = participants.length >= MAX_QUARTET_PARTICIPANTS;
+  const shouldShowQuartetResults = isCurrentUserParticipant || !isQuartetFull;
   const showManageButton =
     Boolean(session) &&
     isQuartetFull &&
@@ -1445,7 +1468,31 @@ export default function JoinSessionPage() {
           </div>
         )}
 
-        {!loadError && !quartetExpired && !pendingActiveQuartet && (
+        {!loadError &&
+          !quartetExpired &&
+          !pendingActiveQuartet &&
+          !shouldShowQuartetResults &&
+          isQuartetFull && (
+            <div className="mt-8 rounded-2xl border border-rose-300/20 bg-rose-400/10 p-6">
+              <p className="font-semibold text-rose-100">
+                {quartetFullMessage}
+              </p>
+              <p className="mt-2 text-sm text-rose-100">
+                A quartet can have up to four singers.
+              </p>
+              <a
+                href="/join"
+                className="mt-4 inline-block rounded-xl bg-rose-100 px-5 py-3 font-semibold text-slate-950 hover:bg-white"
+              >
+                Enter a different code
+              </a>
+            </div>
+          )}
+
+        {!loadError &&
+          !quartetExpired &&
+          !pendingActiveQuartet &&
+          shouldShowQuartetResults && (
           <>
             {showJoinInfo && (
               <section className="mt-6 rounded-2xl border border-cyan-300/30 bg-cyan-300/10 p-5">
@@ -1597,23 +1644,10 @@ export default function JoinSessionPage() {
                       </a>
                     </div>
 
-                    {conversationStarters.length > 0 ? (
-                      <div className="mt-6">
-                        <h3 className="text-lg font-semibold text-cyan-100">
-                          Conversation starters
-                        </h3>
-                        <p className="mt-1 text-sm text-slate-300">
-                          These are not ready matches, but they may help the
-                          quartet find songs to talk through or add.
-                        </p>
-                        <div className="mt-3 space-y-3">
-                          {conversationStarters.map(renderConversationStarter)}
-                        </div>
-                      </div>
-                    ) : (
+                    {conversationStarters.length === 0 && (
                       <p className="mt-4 text-sm text-slate-400">
-                        We also did not find any song titles entered by more
-                        than one singer yet.
+                        The prompts below can still help the group compare
+                        songs and parts.
                       </p>
                     )}
                   </section>
@@ -1667,6 +1701,28 @@ export default function JoinSessionPage() {
                         </div>
                       </section>
                     )
+                )}
+
+                {showConversationStartersSection && (
+                  <section className="rounded-2xl border border-cyan-300/15 bg-cyan-300/5 p-5">
+                    <h3 className="text-lg font-semibold text-cyan-100">
+                      Conversation starters
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-300">
+                      {conversationStartersIntro(readyMatchCount)}
+                    </p>
+                    {conversationStarters.length > 0 ? (
+                      <div className="mt-3 space-y-3">
+                        {conversationStarters.map(renderConversationStarter)}
+                      </div>
+                    ) : (
+                      <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-slate-300">
+                        <li>Ask if anyone knows another part on a shared song.</li>
+                        <li>Compare title, voicing, and arranger for near misses.</li>
+                        <li>Add one or two likely shared songs to My Songs.</li>
+                      </ul>
+                    )}
+                  </section>
                 )}
               </div>
             </div>

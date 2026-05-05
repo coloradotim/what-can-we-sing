@@ -32,7 +32,9 @@ Joining by `/join/[code]` reads the session by join code and fetches current
 by `user_id`, not by display name.
 
 New participants can join until the quartet has four singers. The four-singer
-limit is enforced before inserting another `session_participants` row.
+limit is enforced by `join_session_participant`, which locks the session before
+checking active participant count and inserting another `session_participants`
+row.
 
 ### Rejoin Quartet
 

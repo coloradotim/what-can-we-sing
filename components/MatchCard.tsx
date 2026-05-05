@@ -201,20 +201,26 @@ export function MatchCard({
           </p>
         )}
 
-        {match.titleMatchType === "fuzzy" && match.titleVariants?.length ? (
+        {match.titleVariants?.length ? (
           <div className="mt-3 rounded-lg bg-amber-300/10 p-3 text-sm text-amber-50">
             <p className="font-semibold text-amber-100">
-              Potential title match
+              {match.titleMatchType === "fuzzy"
+                ? "Potential title match"
+                : "Title variants"}
             </p>
             <p className="mt-1 text-xs text-amber-50/80">
-              These saved song entries may refer to the same song.
+              {match.titleMatchType === "fuzzy"
+                ? "These saved song entries may refer to the same song."
+                : "Singers saved this match under different title variants."}
             </p>
-            <p className="mt-2 text-xs text-amber-50/70">
-              Comparison key:{" "}
-              {match.titleVariants
-                .map((variant) => variant.normalizedTitle)
-                .join(" / ")}
-            </p>
+            {match.titleMatchType === "fuzzy" && (
+              <p className="mt-2 text-xs text-amber-50/70">
+                Comparison key:{" "}
+                {match.titleVariants
+                  .map((variant) => variant.normalizedTitle)
+                  .join(" / ")}
+              </p>
+            )}
             <div className="mt-3 space-y-3">
               {match.titleVariants.map((variant) => {
                 const arrangerLabels = uniqueArrangerLabels(variant.singers);
@@ -223,7 +229,7 @@ export function MatchCard({
                 return (
                   <div key={variantKey(variant)}>
                     <p className="font-semibold text-white">
-                      "{variant.title}"
+                      &quot;{variant.title}&quot;
                     </p>
                     {showVariantArranger && (
                       <p className="mt-0.5 text-xs text-amber-50/80">
@@ -251,10 +257,12 @@ export function MatchCard({
                 );
               })}
             </div>
-            <p className="mt-3 text-xs text-amber-50/80">
-              If these are the same song, consider updating song titles in My
-              Songs so future matches are clearer.
-            </p>
+            {match.titleMatchType === "fuzzy" && (
+              <p className="mt-3 text-xs text-amber-50/80">
+                If these are the same song, consider updating song titles in My
+                Songs so future matches are clearer.
+              </p>
+            )}
           </div>
         ) : null}
 
