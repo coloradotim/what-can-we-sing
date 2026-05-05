@@ -93,9 +93,9 @@ export const helpGuideSections: HelpGuideSection[] = [
         body: [
           "Barbershop uses four functional voice parts: Tenor, Lead, Baritone, and Bass. That is true whether the music is published for treble voices, mixed voices, or lower voices.",
           "Choose the arrangement voicing that matches the music you have: Treble (SSAA), Mixed (SATB), or Lower voice (TTBB).",
-          "Treble (SSAA) music is often printed as S1, S2, A1, A2. S1 usually maps to Tenor, S2 to Lead, A1 to Baritone, and A2 to Bass.",
-          "Mixed (SATB) music is often printed as Soprano, Alto, Tenor, Bass. Soprano usually maps to Tenor, Alto to Lead, Tenor to Baritone, and Bass to Bass.",
-          "Lower voice (TTBB) music is often printed as T1, T2, B1, B2. T1 usually maps to Tenor, T2 to Lead, B1 to Baritone, and B2 to Bass.",
+          "Treble (SSAA) music is often printed as Tenor, Lead, Baritone, and Bass. But you'll sometimes see (depending on the publisher) S1, S2, A1, A2. S1 then maps to Barbershop Tenor, S2 to Lead, A1 to Baritone, and A2 to Bass.",
+          "Mixed (SATB) music, likewise, is often printed as TLBB. But, you will frequently see Soprano, Alto, Tenor, Bass. In that case, Soprano maps to Barbershop Tenor, Alto to Lead, Tenor to Baritone, and Bass to Bass.",
+          "Lower voice (TTBB) music is usually printed as Tenor, Lead, Baritone, and Bass, but you'll occasionally see T1, T2, B1, B2. T1 then maps to Barbership Tenor, T2 to Lead, B1 to Baritone, and B2 to Bass.",
           "If you know the same song in more than one arrangement voicing, add it more than once — one entry for each voicing.",
         ],
       },
