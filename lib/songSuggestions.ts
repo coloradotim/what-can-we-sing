@@ -1,6 +1,10 @@
 import type { Voicing } from "@/lib/matching";
 import { arrangerDisplayName } from "./arrangerDisplay";
 import { voicingDisplayLabel } from "./partAbbreviations";
+import {
+  normalizeSuggestionText,
+  normalizeTitleForSuggestionKey,
+} from "./songSuggestionTitle";
 
 export type SongSuggestionSource = {
   song_title: string;
@@ -30,16 +34,12 @@ function isVoicing(value: string): value is Voicing {
   return validVoicings.includes(value as Voicing);
 }
 
-function normalizeSearchText(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-}
-
 function suggestionKey(
   suggestion: Pick<SongSuggestion, "songTitle" | "arrangerName">
 ) {
   return [
-    normalizeSearchText(suggestion.songTitle),
-    normalizeSearchText(suggestion.arrangerName),
+    normalizeTitleForSuggestionKey(suggestion.songTitle),
+    normalizeSuggestionText(suggestion.arrangerName),
   ].join(":");
 }
 
@@ -54,7 +54,8 @@ export function getSongSuggestions(
   query: string,
   limit = 6
 ): SongSuggestion[] {
-  const normalizedQuery = normalizeSearchText(query);
+  const normalizedQuery = normalizeSuggestionText(query);
+  const normalizedTitleQuery = normalizeTitleForSuggestionKey(query);
 
   if (normalizedQuery.length < 2) return [];
 
@@ -71,11 +72,15 @@ export function getSongSuggestions(
 
     if (!suggestion.songTitle) continue;
 
-    const normalizedTitle = normalizeSearchText(suggestion.songTitle);
-    const normalizedArranger = normalizeSearchText(suggestion.arrangerName);
+    const normalizedTitle = normalizeSuggestionText(suggestion.songTitle);
+    const normalizedTitleKey = normalizeTitleForSuggestionKey(
+      suggestion.songTitle
+    );
+    const normalizedArranger = normalizeSuggestionText(suggestion.arrangerName);
 
     if (
       !normalizedTitle.includes(normalizedQuery) &&
+      !normalizedTitleKey.includes(normalizedTitleQuery) &&
       !normalizedArranger.includes(normalizedQuery)
     ) {
       continue;

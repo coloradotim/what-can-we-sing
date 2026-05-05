@@ -1,3 +1,5 @@
+import { normalizeTitleForSuggestionKey } from "./song-sources/source-utils.mjs";
+
 const supportedVoicings = new Set(["TTBB", "SATB", "SSAA"]);
 
 function cleanText(value) {
@@ -140,7 +142,7 @@ export function parseBarbershopTracksRenderedText(text) {
 
 function sourceKey(row) {
   return [
-    row.title.trim().toLowerCase(),
+    normalizeTitleForSuggestionKey(row.title),
     row.voicing,
     String(row.arranger ?? "").trim().toLowerCase(),
   ].join("|");

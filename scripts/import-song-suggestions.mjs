@@ -6,6 +6,9 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { loadSongSourcesEnv, requiredEnv } from "./song-sources/env.mjs";
+import { normalizeTitleForSuggestionKey } from "./song-sources/source-utils.mjs";
+
+export { normalizeTitleForSuggestionKey } from "./song-sources/source-utils.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -60,7 +63,7 @@ export function parseSongSuggestionCatalog(contents) {
 
     if (!title || voicings.length === 0) continue;
 
-    const normalizedTitle = normalizeSearchText(title);
+    const normalizedTitle = normalizeTitleForSuggestionKey(title);
     const normalizedArranger = arranger ? normalizeSearchText(arranger) : null;
 
     for (const voicing of voicings) {

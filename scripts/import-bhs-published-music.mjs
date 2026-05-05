@@ -8,6 +8,7 @@ import {
   normalizeSearchText,
   parseSongSuggestionCatalog,
 } from "./import-song-suggestions.mjs";
+import { normalizeTitleForSuggestionKey } from "./song-sources/source-utils.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -243,7 +244,7 @@ function catalogKey(row) {
 }
 
 function toCatalogRow({ title, voicing, arranger, source }) {
-  const normalizedTitle = normalizeSearchText(title);
+  const normalizedTitle = normalizeTitleForSuggestionKey(title);
   const normalizedArranger = arranger ? normalizeSearchText(arranger) : null;
 
   return {

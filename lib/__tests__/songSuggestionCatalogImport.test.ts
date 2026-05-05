@@ -5,6 +5,7 @@ import { join } from "node:path";
 const {
   normalizeSearchText,
   parseSongSuggestionCatalog,
+  normalizeTitleForSuggestionKey,
 } = await import("../../scripts/import-song-suggestions.mjs");
 
 const catalogSource = readFileSync(
@@ -20,6 +21,16 @@ describe("song suggestion catalog import", () => {
     expect(normalizeSearchText("Mam'selle")).toBe("mam selle");
   });
 
+  it("normalizes catalog title keys without leading articles", () => {
+    expect(normalizeTitleForSuggestionKey("The Longest Time")).toBe(
+      "longest time"
+    );
+    expect(normalizeTitleForSuggestionKey("Longest Time")).toBe("longest time");
+    expect(normalizeTitleForSuggestionKey("Example Song, An")).toBe(
+      "example song"
+    );
+  });
+
   it("parses and deduplicates pipe-delimited catalog rows", () => {
     const rows = parseSongSuggestionCatalog(`Song Title|Voicing|Arranger
 The End of the World|TTBB|Hilary Allen
@@ -31,7 +42,7 @@ No Arranger Song|TTBB|
     expect(rows).toEqual([
       {
         title: "A Winter's Tale",
-        normalized_title: "a winter s tale",
+        normalized_title: "winter s tale",
         voicing: "SSAA",
         arranger: "Hilary Allen",
         normalized_arranger: "hilary allen",
@@ -47,7 +58,7 @@ No Arranger Song|TTBB|
       },
       {
         title: "The End of the World",
-        normalized_title: "the end of the world",
+        normalized_title: "end of the world",
         voicing: "TTBB",
         arranger: "Hilary Allen",
         normalized_arranger: "hilary allen",
@@ -128,6 +139,52 @@ Mamselle|ttbb|Lou Perry
         voicing: "TTBB",
         arranger: "Lou Perry",
         normalized_arranger: "lou perry",
+        source: "Barbershop Connections",
+      },
+    ]);
+  });
+
+  it("deduplicates article-only title variants without merging arrangers or voicings", () => {
+    const rows = parseSongSuggestionCatalog(`Song Title|Voicing|Arranger
+The Song|TTBB|Arranger One
+Song|TTBB|Arranger One
+An Old Song|TTBB|Arranger Two
+Old Song|TTBB|Arranger Two
+The Song|TTBB|Arranger Three
+Song|SSAA|Arranger One
+`);
+
+    expect(rows).toEqual([
+      {
+        title: "An Old Song",
+        normalized_title: "old song",
+        voicing: "TTBB",
+        arranger: "Arranger Two",
+        normalized_arranger: "arranger two",
+        source: "Barbershop Connections",
+      },
+      {
+        title: "Song",
+        normalized_title: "song",
+        voicing: "SSAA",
+        arranger: "Arranger One",
+        normalized_arranger: "arranger one",
+        source: "Barbershop Connections",
+      },
+      {
+        title: "The Song",
+        normalized_title: "song",
+        voicing: "TTBB",
+        arranger: "Arranger One",
+        normalized_arranger: "arranger one",
+        source: "Barbershop Connections",
+      },
+      {
+        title: "The Song",
+        normalized_title: "song",
+        voicing: "TTBB",
+        arranger: "Arranger Three",
+        normalized_arranger: "arranger three",
         source: "Barbershop Connections",
       },
     ]);
