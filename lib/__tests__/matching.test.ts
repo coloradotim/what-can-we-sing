@@ -198,6 +198,89 @@ describe("findMatches", () => {
     expect(matches[0].songTitle).toBe("Hello, Mary Lou!");
   });
 
+  it("groups leading-article title variants as ready matches and surfaces variants", () => {
+    const entries: SingerEntry[] = [
+      { userId: "1", displayName: "Tim", songTitle: "A Barbershop Time Of Your Life", voicing: "TTBB", arrangerName: "Joe Liles", partsKnown: ["Tenor"] },
+      { userId: "2", displayName: "Alex", songTitle: "A Barbershop Time Of Your Life", voicing: "TTBB", arrangerName: "Joe Liles", partsKnown: ["Lead"] },
+      { userId: "3", displayName: "Amber", songTitle: "Barbershop Time Of Your Life", voicing: "TTBB", arrangerName: "Joe Liles", partsKnown: ["Baritone"] },
+      { userId: "4", displayName: "Ross", songTitle: "Barbershop Time Of Your Life", voicing: "TTBB", arrangerName: "Joe Liles", partsKnown: ["Bass"] },
+    ];
+
+    const matches = findMatches(entries);
+
+    expect(matches).toHaveLength(1);
+    expect(matches[0]).toMatchObject({
+      songTitle: "A Barbershop Time Of Your Life",
+      category: "ready",
+      missingParts: [],
+      arrangerNames: ["Joe Liles"],
+    });
+    expect(matches[0].titleVariants).toEqual([
+      {
+        title: "A Barbershop Time Of Your Life",
+        normalizedTitle: "barbershop time of your life",
+        singers: [
+          {
+            displayName: "Tim",
+            part: "Tenor",
+            confidence: null,
+            arrangerName: "Joe Liles",
+          },
+          {
+            displayName: "Alex",
+            part: "Lead",
+            confidence: null,
+            arrangerName: "Joe Liles",
+          },
+        ],
+      },
+      {
+        title: "Barbershop Time Of Your Life",
+        normalizedTitle: "barbershop time of your life",
+        singers: [
+          {
+            displayName: "Amber",
+            part: "Baritone",
+            confidence: null,
+            arrangerName: "Joe Liles",
+          },
+          {
+            displayName: "Ross",
+            part: "Bass",
+            confidence: null,
+            arrangerName: "Joe Liles",
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("uses article-insensitive title keys for common article cases", () => {
+    const cases = [
+      ["The Longest Time", "Longest Time"],
+      ["An Old Song", "Old Song"],
+      [
+        "Closest Thing To Crazy, The",
+        "The Closest Thing To Crazy",
+        "Closest Thing To Crazy",
+      ],
+    ];
+
+    for (const titles of cases) {
+      const entries: SingerEntry[] = [
+        { userId: "1", displayName: "T", songTitle: titles[0], voicing: "TTBB", partsKnown: ["Tenor"] },
+        { userId: "2", displayName: "L", songTitle: titles[1], voicing: "TTBB", partsKnown: ["Lead"] },
+        { userId: "3", displayName: "Bari", songTitle: titles[2] ?? titles[0], voicing: "TTBB", partsKnown: ["Baritone"] },
+        { userId: "4", displayName: "Bass", songTitle: titles[1], voicing: "TTBB", partsKnown: ["Bass"] },
+      ];
+
+      expect(findMatches(entries)[0]).toMatchObject({
+        category: "ready",
+        missingParts: [],
+      });
+    }
+  });
+
   it("suggests a possible match for conservative near-duplicate titles", () => {
     const entries: SingerEntry[] = [
       { userId: "1", displayName: "T", songTitle: "Why Try to Change Me", voicing: "TTBB", partsKnown: ["Tenor"] },
@@ -221,7 +304,7 @@ describe("findMatches", () => {
     expect(matches[0].titleVariants).toEqual([
       {
         title: "Why Try to Change Me",
-        normalizedTitle: "whytrytochangeme",
+        normalizedTitle: "why try to change me",
         singers: [
           {
             displayName: "T",
@@ -245,7 +328,7 @@ describe("findMatches", () => {
       },
       {
         title: "Why Try To Change Me Now",
-        normalizedTitle: "whytrytochangemenow",
+        normalizedTitle: "why try to change me now",
         singers: [
           {
             displayName: "Bass",
@@ -301,7 +384,7 @@ describe("findMatches", () => {
     expect(matches[0].titleVariants).toEqual([
       {
         title: "Why Try To Change Me",
-        normalizedTitle: "whytrytochangeme",
+        normalizedTitle: "why try to change me",
         singers: [
           {
             displayName: "Tenor",
@@ -313,7 +396,7 @@ describe("findMatches", () => {
       },
       {
         title: "Why Try To Change Me Now",
-        normalizedTitle: "whytrytochangemenow",
+        normalizedTitle: "why try to change me now",
         singers: [
           {
             displayName: "Lead",
@@ -331,7 +414,7 @@ describe("findMatches", () => {
       },
       {
         title: "Why Try to Change Me Now",
-        normalizedTitle: "whytrytochangemenow",
+        normalizedTitle: "why try to change me now",
         singers: [
           {
             displayName: "Bass",

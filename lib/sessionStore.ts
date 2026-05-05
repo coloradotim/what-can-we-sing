@@ -25,6 +25,24 @@ export class SessionParticipantWriteError extends Error {
   }
 }
 
+export class QuartetFullError extends Error {
+  constructor(message = "This quartet is already full.") {
+    super(message);
+    this.name = "QuartetFullError";
+  }
+}
+
+function isQuartetFullError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+
+  const message =
+    "message" in error && typeof error.message === "string"
+      ? error.message
+      : "";
+
+  return /quartet is already full/i.test(message);
+}
+
 export async function createSession(joinCode: string) {
   const { data, error } = await supabase
     .from("sessions")
@@ -37,15 +55,6 @@ export async function createSession(joinCode: string) {
 
   if (error) throw error;
   return data as DbSession;
-}
-
-async function updateSessionActivity(sessionId: string, lastActivityAt: string) {
-  const { error } = await supabase
-    .from("sessions")
-    .update({ last_activity_at: lastActivityAt })
-    .eq("id", sessionId);
-
-  if (error) throw error;
 }
 
 export async function getSessionByCode(joinCode: string) {
@@ -66,29 +75,32 @@ export async function upsertParticipant(
   repertoire: SingerEntry[],
   lastActivityAt = new Date().toISOString()
 ) {
-  const { data, error } = await supabase
-    .from("session_participants")
-    .upsert(
-      {
-        session_id: sessionId,
-        user_id: userId,
-        display_name: displayName,
-        repertoire,
-      },
-      { onConflict: "session_id,user_id" }
-    )
-    .select()
-    .single();
+  const { data, error } = await supabase.rpc("join_session_participant", {
+    p_session_id: sessionId,
+    p_display_name: displayName,
+    p_repertoire: repertoire,
+    p_last_activity_at: lastActivityAt,
+    p_max_participants: 4,
+  });
 
-  if (error) throw error;
-  if (!data || data.session_id !== sessionId || data.user_id !== userId) {
+  if (error) {
+    if (isQuartetFullError(error)) throw new QuartetFullError();
+    throw error;
+  }
+
+  const participant = Array.isArray(data) ? data[0] : data;
+
+  if (
+    !participant ||
+    participant.session_id !== sessionId ||
+    participant.user_id !== userId
+  ) {
     throw new SessionParticipantWriteError(
       "Could not verify the quartet participant snapshot was saved."
     );
   }
 
-  await updateSessionActivity(sessionId, lastActivityAt);
-  return data as DbParticipant;
+  return participant as DbParticipant;
 }
 
 export async function getParticipants(sessionId: string) {

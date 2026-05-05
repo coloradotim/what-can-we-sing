@@ -66,4 +66,17 @@ describe("session participant resolution", () => {
       participant: existingParticipant,
     });
   });
+
+  it("rejects a new participant when the quartet is full", () => {
+    const participants = [
+      participant("participant-1", "user-1", "Singer 1"),
+      participant("participant-2", "user-2", "Singer 2"),
+      participant("participant-3", "user-3", "Singer 3"),
+      participant("participant-4", "user-4", "Singer 4"),
+    ];
+
+    expect(resolveParticipantForJoin(participants, "user-5", 4)).toEqual({
+      status: "full",
+    });
+  });
 });

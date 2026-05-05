@@ -28,6 +28,7 @@ vi.mock("@/lib/supabase", () => ({
 }));
 
 import {
+  QuartetFullError,
   removeParticipant,
   removeParticipantById,
   SessionParticipantWriteError,
@@ -77,9 +78,10 @@ describe("sessionStore writes", () => {
       repertoire: [],
       joined_at: "2026-04-28T00:00:00.000Z",
     };
-    const participantQuery = query({ data: savedParticipant });
-    const sessionQuery = query({});
-    supabaseMock.queryQueue.push(participantQuery, sessionQuery);
+    supabaseMock.rpc.mockResolvedValueOnce({
+      data: savedParticipant,
+      error: null,
+    });
 
     await expect(
       upsertParticipant(
@@ -91,42 +93,67 @@ describe("sessionStore writes", () => {
       )
     ).resolves.toEqual(savedParticipant);
 
-    expect(supabaseMock.from).toHaveBeenNthCalledWith(
-      1,
-      "session_participants"
-    );
-    expect(participantQuery.upsert).toHaveBeenCalledWith(
-      {
-        session_id: "session-1",
-        user_id: "user-1",
-        display_name: "Tim",
-        repertoire: [],
-      },
-      { onConflict: "session_id,user_id" }
-    );
-    expect(supabaseMock.from).toHaveBeenNthCalledWith(2, "sessions");
-    expect(sessionQuery.update).toHaveBeenCalledWith({
-      last_activity_at: "2026-04-28T19:00:00.000Z",
+    expect(supabaseMock.rpc).toHaveBeenCalledWith("join_session_participant", {
+      p_session_id: "session-1",
+      p_display_name: "Tim",
+      p_repertoire: [],
+      p_last_activity_at: "2026-04-28T19:00:00.000Z",
+      p_max_participants: 4,
     });
-    expect(sessionQuery.eq).toHaveBeenCalledWith("id", "session-1");
+    expect(supabaseMock.from).not.toHaveBeenCalled();
   });
 
   it("rejects unverified participant upserts", async () => {
-    supabaseMock.queryQueue.push(
-      query({
-        data: {
-          id: "participant-1",
-          session_id: "session-2",
-          user_id: "user-1",
-        },
-      })
-    );
+    supabaseMock.rpc.mockResolvedValueOnce({
+      data: {
+        id: "participant-1",
+        session_id: "session-2",
+        user_id: "user-1",
+      },
+      error: null,
+    });
 
     await expect(
       upsertParticipant("session-1", "user-1", "Tim", [])
     ).rejects.toBeInstanceOf(SessionParticipantWriteError);
 
-    expect(supabaseMock.from).toHaveBeenCalledTimes(1);
+    expect(supabaseMock.from).not.toHaveBeenCalled();
+  });
+
+  it("maps full quartet RPC failures to a typed error", async () => {
+    supabaseMock.rpc.mockResolvedValueOnce({
+      data: null,
+      error: {
+        message: "This quartet is already full.",
+      },
+    });
+
+    await expect(
+      upsertParticipant("session-1", "user-1", "Tim", [])
+    ).rejects.toBeInstanceOf(QuartetFullError);
+
+    expect(supabaseMock.from).not.toHaveBeenCalled();
+  });
+
+  it("accepts array-shaped participant RPC responses", async () => {
+    supabaseMock.rpc.mockResolvedValueOnce({
+      data: [
+        {
+          id: "participant-1",
+          session_id: "session-1",
+          user_id: "user-1",
+        },
+      ],
+      error: null,
+    });
+
+    await expect(
+      upsertParticipant("session-1", "user-1", "Tim", [])
+    ).resolves.toMatchObject({
+      id: "participant-1",
+      session_id: "session-1",
+      user_id: "user-1",
+    });
   });
 
   it("deletes the current user's participant row and verifies it is gone", async () => {

@@ -1,6 +1,11 @@
 import { isLikelySameSongTitle } from "./fuzzySongTitles";
 import { areLikelySameArrangerGroup } from "./arrangerDisplay";
 import { functionalPartName } from "./partAbbreviations";
+import {
+  compactTitleKey,
+  normalizeTitleForDisplay,
+  normalizeTitleForSuggestionKey,
+} from "./songSuggestionTitle";
 
 export type Voicing = "TTBB" | "SATB" | "SSAA";
 
@@ -121,7 +126,7 @@ export function normalizeConfidence(confidence?: string | null): Confidence | nu
 }
 
 function normalizeTitle(title: string): string {
-  return title.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return compactTitleKey(title);
 }
 
 function confidenceValue(confidence?: string | null): number {
@@ -327,6 +332,28 @@ function preferredSuggestionTitle(firstTitle: string, secondTitle: string) {
     : secondTitle;
 }
 
+function preferredGroupTitle(entries: SingerEntry[]) {
+  const counts = new Map<string, number>();
+
+  for (const entry of entries) {
+    const title = normalizeTitleForDisplay(entry.songTitle);
+    counts.set(title, (counts.get(title) ?? 0) + 1);
+  }
+
+  return Array.from(counts.entries())
+    .sort(([firstTitle, firstCount], [secondTitle, secondCount]) => {
+      const countDifference = secondCount - firstCount;
+      if (countDifference !== 0) return countDifference;
+
+      const lengthDifference = secondTitle.length - firstTitle.length;
+      if (lengthDifference !== 0) return lengthDifference;
+
+      return firstTitle.localeCompare(secondTitle, undefined, {
+        sensitivity: "base",
+      });
+    })[0][0];
+}
+
 function buildTitleVariants(
   assignment: Record<Part, SingerEntry>
 ): MatchTitleVariant[] {
@@ -349,7 +376,7 @@ function buildTitleVariants(
 
     variants.set(entry.songTitle, {
       title: entry.songTitle,
-      normalizedTitle: normalizeTitle(entry.songTitle),
+      normalizedTitle: normalizeTitleForSuggestionKey(entry.songTitle),
       singers: [singer],
     });
   }
@@ -357,6 +384,11 @@ function buildTitleVariants(
   return Array.from(variants.values()).sort((a, b) =>
     a.title.localeCompare(b.title, undefined, { sensitivity: "base" })
   );
+}
+
+function titleVariantsForMatch(assignment: Record<Part, SingerEntry>) {
+  const variants = buildTitleVariants(assignment);
+  return variants.length > 1 ? variants : undefined;
 }
 
 export function findMatches(entries: SingerEntry[]): MatchResult[] {
@@ -371,7 +403,8 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
   const fuzzyFullMatchGroupKeys = new Set<string>();
 
   for (const [groupKey, group] of groups) {
-    const { songTitle, voicing } = group[0];
+    const { voicing } = group[0];
+    const songTitle = preferredGroupTitle(group);
     const requiredParts = requiredPartsForVoicing(voicing);
 
     const fullAssignment = findDistinctAssignment(requiredParts, group);
@@ -395,6 +428,7 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
         assignments: buildAssignments(fullAssignment),
         warnings,
         score: scoreMatch("ready", fullAssignment, group, requiredParts, warnings),
+        titleVariants: titleVariantsForMatch(fullAssignment),
         sourceGroupKeys: [groupKey],
       });
 
@@ -442,6 +476,7 @@ export function findMatches(entries: SingerEntry[]): MatchResult[] {
           requiredParts,
           warnings
         ),
+        titleVariants: titleVariantsForMatch(bestNearMatch.assignment),
         sourceGroupKeys: [groupKey],
       });
     }
@@ -532,7 +567,8 @@ export function findConversationStarters(
   const starters: ConversationStarter[] = [];
 
   for (const group of groups.values()) {
-    const { songTitle, voicing } = group[0];
+    const { voicing } = group[0];
+    const songTitle = preferredGroupTitle(group);
     const requiredParts = requiredPartsForVoicing(voicing);
     const distinctSingerIds = new Set(group.map((entry) => entry.userId));
 

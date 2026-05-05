@@ -131,6 +131,55 @@ describe("MatchCard", () => {
     expect(html).toContain("Bass Singer (Arranger: No arranger entered)");
   });
 
+  it("shows exact-match saved title variants without fuzzy guidance", () => {
+    const html = renderMatch({
+      songTitle: "A Barbershop Time Of Your Life",
+      voicing: "TTBB",
+      arrangerNames: ["Joe Liles"],
+      hasMissingArrangerInfo: false,
+      category: "ready",
+      missingParts: [],
+      assignments: {},
+      warnings: [],
+      score: 0,
+      titleVariants: [
+        {
+          title: "A Barbershop Time Of Your Life",
+          normalizedTitle: "barbershop time of your life",
+          singers: [
+            {
+              displayName: "Tim",
+              part: "Tenor",
+              confidence: "Good to Go",
+              arrangerName: "Joe Liles",
+            },
+          ],
+        },
+        {
+          title: "Barbershop Time Of Your Life",
+          normalizedTitle: "barbershop time of your life",
+          singers: [
+            {
+              displayName: "Amber",
+              part: "Baritone",
+              confidence: "Good to Go",
+              arrangerName: "Joe Liles",
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(html).toContain("Title variants");
+    expect(html).toContain(
+      "Singers saved this match under different title variants."
+    );
+    expect(html).toContain("A Barbershop Time Of Your Life");
+    expect(html).toContain("Barbershop Time Of Your Life");
+    expect(html).not.toContain("Potential title match");
+    expect(html).not.toContain("If these are the same song");
+  });
+
   it("displays treble and mixed parts as barbershop functional parts", () => {
     const html = renderMatch({
       songTitle: "Treble Song",
