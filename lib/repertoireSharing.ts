@@ -6,7 +6,6 @@ import {
   type RepertoireRow,
 } from "@/lib/repertoireStore";
 import { getCurrentUser } from "@/lib/profileStore";
-import { voicingDisplayLabel } from "@/lib/partAbbreviations";
 
 export type RepertoireShare = {
   id: string;
@@ -43,6 +42,12 @@ export type SharedRepertoire = {
 
 export type CopyableSharedSong = SharedRepertoireSong & {
   duplicateStatus: "eligible" | "exact" | "possible_arrangement";
+};
+
+export type SharedSongCopySelection = {
+  songId: string;
+  part: Part;
+  confidence: Confidence;
 };
 
 export const repertoireCopyRequestMessage =
@@ -242,22 +247,23 @@ export async function getSharedRepertoire(code: string) {
 
 export async function copySharedSongsToMyRepertoire(
   songs: SharedRepertoireSong[],
-  selectionsByVoicing: Record<Voicing, { part: Part; confidence: Confidence }>
+  selections: SharedSongCopySelection[]
 ) {
   const myRepertoire = await getMyRepertoire();
   const copyableSongs = resolveSharedSongCopyability(
     songs,
     myRepertoire
   ).filter((song) => song.duplicateStatus !== "exact");
+  const selectionsBySongId = new Map(
+    selections.map((selection) => [selection.songId, selection])
+  );
   let copiedCount = 0;
   const skippedExactCount = songs.length - copyableSongs.length;
 
   for (const song of copyableSongs) {
-    const selection = selectionsByVoicing[song.voicing];
+    const selection = selectionsBySongId.get(song.id);
     if (!selection) {
-      throw new Error(
-        `Choose a part and confidence for ${voicingDisplayLabel(song.voicing)}.`
-      );
+      throw new Error(`Choose a part and confidence for ${song.songTitle}.`);
     }
 
     await addRepertoireItem({

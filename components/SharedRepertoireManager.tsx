@@ -18,6 +18,7 @@ import {
   type CopyableSharedSong,
   type SharedRepertoire,
   type SharedRepertoireSong,
+  type SharedSongCopySelection,
 } from "@/lib/repertoireSharing";
 
 const confidenceLevels: Confidence[] = [
@@ -32,8 +33,9 @@ const partsByVoicing: Record<Voicing, Part[]> = {
   SSAA: ["Soprano 1", "Soprano 2", "Alto 1", "Alto 2"],
 };
 
-type SelectionByVoicing = Partial<
-  Record<Voicing, { part: Part | ""; confidence: Confidence | "" }>
+type SongCopySelections = Record<
+  string,
+  { part: Part | ""; confidence: Confidence | "" }
 >;
 
 function duplicateLabel(status: CopyableSharedSong["duplicateStatus"]) {
@@ -48,8 +50,8 @@ export function SharedRepertoireManager({ code }: { code: string }) {
   const [share, setShare] = useState<SharedRepertoire | null>(null);
   const [songs, setSongs] = useState<CopyableSharedSong[]>([]);
   const [selectedSongIds, setSelectedSongIds] = useState<Set<string>>(new Set());
-  const [selectionsByVoicing, setSelectionsByVoicing] =
-    useState<SelectionByVoicing>({});
+  const [songCopySelections, setSongCopySelections] =
+    useState<SongCopySelections>({});
   const [isSignedIn, setIsSignedIn] = useState(false);
   const [message, setMessage] = useState("");
   const [copying, setCopying] = useState(false);
@@ -69,6 +71,7 @@ export function SharedRepertoireManager({ code }: { code: string }) {
         if (!sharedRepertoire) {
           setSongs([]);
           setSelectedSongIds(new Set());
+          setSongCopySelections({});
           return;
         }
 
@@ -79,6 +82,7 @@ export function SharedRepertoireManager({ code }: { code: string }) {
           );
           setSongs(anonymousSongs);
           setSelectedSongIds(new Set());
+          setSongCopySelections({});
           return;
         }
 
@@ -88,13 +92,8 @@ export function SharedRepertoireManager({ code }: { code: string }) {
           myRepertoire
         );
         setSongs(resolvedSongs);
-        setSelectedSongIds(
-          new Set(
-            resolvedSongs
-              .filter((song) => song.duplicateStatus !== "exact")
-              .map((song) => song.id)
-          )
-        );
+        setSelectedSongIds(new Set());
+        setSongCopySelections({});
       } catch (err) {
         console.error(err);
         setMessage("Could not load songs to copy. Check the link and try again.");
@@ -110,11 +109,13 @@ export function SharedRepertoireManager({ code }: { code: string }) {
     () => songs.filter((song) => selectedSongIds.has(song.id)),
     [selectedSongIds, songs]
   );
-  const selectedVoicings = useMemo(
-    () => Array.from(new Set(selectedSongs.map((song) => song.voicing))).sort(),
-    [selectedSongs]
-  );
   const eligibleSongs = songs.filter((song) => song.duplicateStatus !== "exact");
+  const incompleteSelectedSongs = selectedSongs.filter((song) => {
+    const selection = songCopySelections[song.id];
+    return !selection?.part || !selection?.confidence;
+  });
+  const canCopySelectedSongs =
+    selectedSongs.length > 0 && incompleteSelectedSongs.length === 0;
   const signInPath = `/login?redirect=${encodeURIComponent(
     `/shared-repertoire/${normalizedCode}`
   )}`;
@@ -141,15 +142,15 @@ export function SharedRepertoireManager({ code }: { code: string }) {
     setSelectedSongIds(new Set());
   }
 
-  function updateVoicingSelection(
-    voicing: Voicing,
+  function updateSongSelection(
+    songId: string,
     patch: Partial<{ part: Part | ""; confidence: Confidence | "" }>
   ) {
-    setSelectionsByVoicing((current) => ({
+    setSongCopySelections((current) => ({
       ...current,
-      [voicing]: {
-        part: current[voicing]?.part ?? "",
-        confidence: current[voicing]?.confidence ?? "",
+      [songId]: {
+        part: current[songId]?.part ?? "",
+        confidence: current[songId]?.confidence ?? "",
         ...patch,
       },
     }));
@@ -166,28 +167,23 @@ export function SharedRepertoireManager({ code }: { code: string }) {
       return;
     }
 
-    const missingVoicing = selectedVoicings.find((voicing) => {
-      const selection = selectionsByVoicing[voicing];
-      return !selection?.part || !selection?.confidence;
-    });
-
-    if (missingVoicing) {
-      setMessage(`Choose a part and confidence for ${missingVoicing}.`);
+    if (incompleteSelectedSongs.length > 0) {
+      setMessage(
+        "Choose a part and confidence for each selected song before copying."
+      );
       return;
     }
 
-    const completeSelections = Object.fromEntries(
-      selectedVoicings.map((voicing) => {
-        const selection = selectionsByVoicing[voicing];
-        return [
-          voicing,
-          {
-            part: selection?.part as Part,
-            confidence: selection?.confidence as Confidence,
-          },
-        ];
-      })
-    ) as Record<Voicing, { part: Part; confidence: Confidence }>;
+    const completeSelections: SharedSongCopySelection[] = selectedSongs.map(
+      (song) => {
+        const selection = songCopySelections[song.id];
+        return {
+          songId: song.id,
+          part: selection?.part as Part,
+          confidence: selection?.confidence as Confidence,
+        };
+      }
+    );
 
     try {
       setCopying(true);
@@ -213,6 +209,7 @@ export function SharedRepertoireManager({ code }: { code: string }) {
       );
       setSongs(refreshedSongs);
       setSelectedSongIds(new Set());
+      setSongCopySelections({});
     } catch (err) {
       console.error(err);
       setMessage("Could not copy songs. Check your connection and try again.");
@@ -245,15 +242,22 @@ export function SharedRepertoireManager({ code }: { code: string }) {
         ) : (
           <>
             <section className="mt-8 rounded-2xl border border-cyan-300/25 bg-cyan-300/10 p-6">
-              <p className="text-sm font-semibold uppercase tracking-normal text-cyan-200">
+              <a
+                href="/songs"
+                className="inline-flex text-sm font-semibold text-cyan-100 hover:text-white"
+              >
+                &larr; Back to My Songs
+              </a>
+              <p className="mt-4 text-sm font-semibold uppercase tracking-normal text-cyan-200">
                 Copy songs from another singer
               </p>
               <h1 className="mt-3 text-4xl font-bold tracking-tight">
-                {share.ownerDisplayName} shared songs with you
+                {share.ownerDisplayName} shared {songs.length}{" "}
+                {songs.length === 1 ? "song" : "songs"} with you
               </h1>
               <p className="mt-3 max-w-3xl text-slate-200">
                 {isSignedIn
-                  ? "You can copy songs into My Songs. You'll choose your own part and confidence before saving."
+                  ? "Choose the songs you want to copy into My Songs. For each selected song, choose the part you usually sing and your confidence. Songs already in My Songs are shown but can't be copied again."
                   : "Sign in to copy songs into My Songs."}
               </p>
               {!isSignedIn && (
@@ -270,8 +274,8 @@ export function SharedRepertoireManager({ code }: { code: string }) {
               <section className="mt-5 rounded-2xl border border-white/10 bg-white/5 p-5">
                 <h2 className="text-2xl font-semibold">Copy songs</h2>
                 <p className="mt-2 text-sm leading-6 text-slate-300">
-                  For copied songs, choose the part you usually sing and your
-                  confidence. You can edit individual songs later.
+                  Review the shared songs below. Selected songs show their own
+                  part and confidence controls.
                 </p>
 
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -280,7 +284,7 @@ export function SharedRepertoireManager({ code }: { code: string }) {
                     onClick={selectAllEligible}
                     className="rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-cyan-100 hover:bg-white/20"
                   >
-                    Select all eligible
+                    Select songs I don&apos;t already have
                   </button>
                   <button
                     type="button"
@@ -291,75 +295,10 @@ export function SharedRepertoireManager({ code }: { code: string }) {
                   </button>
                 </div>
 
-                {selectedVoicings.length > 0 && (
-                  <div className="mt-4 grid gap-3 md:grid-cols-2">
-                    {selectedVoicings.map((voicing) => (
-                      <div
-                        key={voicing}
-                        className="rounded-xl border border-white/10 bg-slate-950/60 p-3"
-                      >
-                        <p className="text-sm font-semibold text-white">
-                          {voicingDisplayLabel(voicing)} copied songs
-                        </p>
-                        <p className="mt-1 text-xs text-slate-400">
-                          {printedNotationSummary(voicing)}
-                        </p>
-                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                          <label className="block">
-                            <span className="text-xs font-semibold uppercase tracking-normal text-slate-400">
-                              Part
-                            </span>
-                            <select
-                              value={selectionsByVoicing[voicing]?.part ?? ""}
-                              onChange={(event) =>
-                                updateVoicingSelection(voicing, {
-                                  part: event.target.value as Part | "",
-                                })
-                              }
-                              className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-                            >
-                              <option value="">Choose part</option>
-                              {partsByVoicing[voicing].map((part) => (
-                                <option key={part} value={part}>
-                                  {partButtonLabel(voicing, part)}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                          <label className="block">
-                            <span className="text-xs font-semibold uppercase tracking-normal text-slate-400">
-                              Confidence
-                            </span>
-                            <select
-                              value={
-                                selectionsByVoicing[voicing]?.confidence ?? ""
-                              }
-                              onChange={(event) =>
-                                updateVoicingSelection(voicing, {
-                                  confidence: event.target
-                                    .value as Confidence | "",
-                                })
-                              }
-                              className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
-                            >
-                              <option value="">Choose confidence</option>
-                              {confidenceLevels.map((confidence) => (
-                                <option key={confidence} value={confidence}>
-                                  {confidence}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
                 <button
                   type="button"
                   onClick={copySelectedSongs}
-                  disabled={copying || selectedSongs.length === 0}
+                  disabled={copying || !canCopySelectedSongs}
                   className="mt-4 rounded-xl bg-cyan-300 px-5 py-3 font-bold text-slate-950 hover:bg-cyan-200 disabled:opacity-40"
                 >
                   {copying
@@ -368,6 +307,13 @@ export function SharedRepertoireManager({ code }: { code: string }) {
                         selectedSongs.length === 1 ? "song" : "songs"
                       }`}
                 </button>
+                {selectedSongs.length > 0 &&
+                  incompleteSelectedSongs.length > 0 && (
+                    <p className="mt-2 text-sm text-slate-300">
+                      Choose a part and confidence for each selected song before
+                      copying.
+                    </p>
+                  )}
               </section>
             )}
 
@@ -392,10 +338,10 @@ export function SharedRepertoireManager({ code }: { code: string }) {
                     const disabled = song.duplicateStatus === "exact";
 
                     return (
-                      <label
+                      <div
                         key={song.id}
                         className={`flex gap-3 p-4 ${
-                          disabled ? "opacity-70" : "cursor-pointer"
+                          disabled ? "bg-slate-950/30 opacity-70" : ""
                         }`}
                       >
                         {isSignedIn && (
@@ -405,9 +351,10 @@ export function SharedRepertoireManager({ code }: { code: string }) {
                             disabled={disabled}
                             onChange={() => toggleSong(song)}
                             className="mt-1 h-4 w-4 rounded border-white/20 bg-slate-900 text-cyan-300"
+                            aria-label={`Select ${song.songTitle}`}
                           />
                         )}
-                        <span className="min-w-0 flex-1">
+                        <div className="min-w-0 flex-1">
                           <span className="block font-semibold text-white">
                             {song.songTitle}
                           </span>
@@ -420,8 +367,69 @@ export function SharedRepertoireManager({ code }: { code: string }) {
                               {label}
                             </span>
                           )}
-                        </span>
-                      </label>
+                          {song.duplicateStatus ===
+                            "possible_arrangement" && (
+                            <span className="mt-2 block text-xs text-slate-400">
+                              Check the arranger before copying.
+                            </span>
+                          )}
+                          {isSignedIn && selectedSongIds.has(song.id) && (
+                            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                              <label className="block">
+                                <span className="text-xs font-semibold uppercase tracking-normal text-slate-400">
+                                  Part
+                                </span>
+                                <select
+                                  value={songCopySelections[song.id]?.part ?? ""}
+                                  onChange={(event) =>
+                                    updateSongSelection(song.id, {
+                                      part: event.target.value as Part | "",
+                                    })
+                                  }
+                                  className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                                >
+                                  <option value="">Choose part</option>
+                                  {partsByVoicing[song.voicing].map((part) => (
+                                    <option key={part} value={part}>
+                                      {partButtonLabel(song.voicing, part)}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              <label className="block">
+                                <span className="text-xs font-semibold uppercase tracking-normal text-slate-400">
+                                  Confidence
+                                </span>
+                                <select
+                                  value={
+                                    songCopySelections[song.id]?.confidence ?? ""
+                                  }
+                                  onChange={(event) =>
+                                    updateSongSelection(song.id, {
+                                      confidence: event.target
+                                        .value as Confidence | "",
+                                    })
+                                  }
+                                  className="mt-1 w-full rounded-xl border border-white/10 bg-slate-900 px-3 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                                >
+                                  <option value="">Choose confidence</option>
+                                  {confidenceLevels.map((confidence) => (
+                                    <option
+                                      key={confidence}
+                                      value={confidence}
+                                    >
+                                      {confidence}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                              <span className="text-xs text-slate-400 sm:col-span-2">
+                                {printedNotationSummary(song.voicing)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
