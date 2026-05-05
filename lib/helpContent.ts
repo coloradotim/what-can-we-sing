@@ -342,6 +342,10 @@ export const helpSongSuggestionSources: HelpAcknowledgment[] = [
     name: "kohlkitzmillermusic.com",
     contribution: "for song suggestion reference data",
   },
+  {
+    name: "melodyhinearrangements.com",
+    contribution: "for song suggestion reference data",
+  },
 ];
 
 export const helpDevelopmentNote =

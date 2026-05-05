@@ -251,6 +251,40 @@ rows with missing or unsupported voicing or arranger, writing skipped rows to
 `tmp/song-sources/kohl-kitzmiller-music-skipped.json`. It does not import
 pricing, media, sheet music, lyrics, checkout, account, or order metadata.
 
+## Melody Hine Arrangements Suggestions Refresh
+
+Melody Hine Arrangements suggestions are discovered from public WooCommerce
+product records through the WordPress REST API:
+
+```text
+https://melodyhinearrangements.com/index.php?rest_route=/wp/v2/product
+```
+
+Run a small debug scrape before a full refresh:
+
+```bash
+npm run song-sources:scrape:melody-hine-arrangements -- --limit=25 --debug
+```
+
+Then refresh the full source:
+
+```bash
+npm run song-sources:scrape:melody-hine-arrangements
+```
+
+The source PSV is written to:
+
+```text
+data/sources/melody_hine_arrangements_song_suggestions.psv
+```
+
+The scraper imports products with a supported voicing category: upper voices as
+`SSAA`, mixed voices as `SATB`, and lower voices as `TTBB`. It uses Melody Hine
+as the arranger for this arranger-owned source and writes rows without a
+supported voicing signal to
+`tmp/song-sources/melody-hine-arrangements-skipped.json`. It does not import
+pricing, media, sheet music, lyrics, checkout, account, or order metadata.
+
 After reviewing the source PSV, merge it into the deployed suggestion catalog:
 
 ```bash

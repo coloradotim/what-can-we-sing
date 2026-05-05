@@ -14,6 +14,7 @@ by individual singers.
 - `data/sources/barbershoptracks_song_suggestions.psv`
 - `data/sources/timtracks_song_suggestions.psv`
 - `data/sources/kohl_kitzmiller_music_song_suggestions.psv`
+- `data/sources/melody_hine_arrangements_song_suggestions.psv`
 - `data/sources/bhs_song_catalog_suggestions.psv`
 - `data/sources/sweet_adelines_published_music_song_suggestions.psv`
 - `data/sources/sweet_adelines_arranged_music_song_suggestions.psv`
@@ -54,6 +55,7 @@ npm run song-sources:scrape:barbershop-connections
 npm run song-sources:scrape:barbershoptracks
 npm run song-sources:scrape:timtracks
 npm run song-sources:scrape:kohl-kitzmiller-music
+npm run song-sources:scrape:melody-hine-arrangements
 npm run song-sources:import:bhs
 npm run song-sources:import:sweet-adelines
 npm run song-sources:import:sweet-adelines-arranged
@@ -118,6 +120,19 @@ Kohl Kitzmiller Music:
   `tmp/song-sources/kohl-kitzmiller-music-skipped.json`.
 - Use `--limit=25 --debug` for a quick inspectable run; debug discovery reports
   are written under `tmp/song-sources/kohl-kitzmiller-music/`.
+
+Melody Hine Arrangements:
+
+- Reads public WooCommerce product records from the WordPress REST API at
+  `https://melodyhinearrangements.com/index.php?rest_route=/wp/v2/product`.
+- Imports products with a supported voicing category: `Upper Voices` as `SSAA`,
+  `Mixed Voices` as `SATB`, and `Lower Voices` as `TTBB`.
+- Uses Melody Hine as the arranger for rows from this arranger-owned source.
+- Skips rows without a supported voicing signal.
+- Writes skipped rows to
+  `tmp/song-sources/melody-hine-arrangements-skipped.json`.
+- Use `--limit=25 --debug` for a quick inspectable run; debug discovery reports
+  are written under `tmp/song-sources/melody-hine-arrangements/`.
 
 BHS Published Music:
 
