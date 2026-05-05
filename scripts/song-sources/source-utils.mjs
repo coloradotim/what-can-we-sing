@@ -82,6 +82,8 @@ export function normalizeSourceVoicings(value, { noneSpecifiedAsTTBB = false } =
     } else if (
       normalized === "mens track" ||
       normalized === "men track" ||
+      normalized === "lower voices" ||
+      normalized === "lower voice" ||
       normalized === "male voices" ||
       normalized === "mens voices" ||
       normalized === "men voices" ||
@@ -96,6 +98,8 @@ export function normalizeSourceVoicings(value, { noneSpecifiedAsTTBB = false } =
       normalized === "women track" ||
       normalized === "ladies track" ||
       normalized === "lady track" ||
+      normalized === "upper voices" ||
+      normalized === "upper voice" ||
       normalized === "female voices" ||
       normalized === "womens voices" ||
       normalized === "women voices" ||

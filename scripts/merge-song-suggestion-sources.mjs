@@ -23,6 +23,7 @@ export const defaultSourcePaths = [
   path.join(repoRoot, "data/sources/barbershoptracks_song_suggestions.psv"),
   path.join(repoRoot, "data/sources/timtracks_song_suggestions.psv"),
   path.join(repoRoot, "data/sources/kohl_kitzmiller_music_song_suggestions.psv"),
+  path.join(repoRoot, "data/sources/melody_hine_arrangements_song_suggestions.psv"),
   path.join(repoRoot, "data/sources/bhs_song_catalog_suggestions.psv"),
   path.join(
     repoRoot,
