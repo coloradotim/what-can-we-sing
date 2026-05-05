@@ -8,6 +8,7 @@ import { MatchCard } from "@/components/MatchCard";
 import { QuartetActionConfirmation } from "@/components/QuartetActionConfirmation";
 import { noArrangerEnteredLabel } from "@/lib/arrangerDisplay";
 import { trackEvent } from "@/lib/analytics";
+import { serviceErrorMessage } from "@/lib/runtimeErrors";
 import {
   conversationStartersIntro,
   shouldShowConversationStarters,
@@ -150,6 +151,7 @@ export default function JoinSessionPage() {
   const [message, setMessage] = useState("");
   const [messageKind, setMessageKind] =
     useState<QuartetStatusMessageKind>("persistent");
+  const [liveUpdatesPaused, setLiveUpdatesPaused] = useState(false);
   const [copyMessage, setCopyMessage] = useState("");
   const [qrUrl, setQrUrl] = useState("");
   const [loadError, setLoadError] = useState("");
@@ -256,7 +258,7 @@ export default function JoinSessionPage() {
     } catch (err) {
       console.error(err);
       if (options.showErrorMessage ?? true) {
-        showStatusMessage("Could not refresh singers. Please try again.", "error");
+        showStatusMessage(serviceErrorMessage(err, "database_read"), "error");
       }
       throw err;
     }
@@ -393,7 +395,7 @@ export default function JoinSessionPage() {
         session_id: id,
         reason: "write_failed",
       });
-      showStatusMessage("Could not join quartet. Please try again.", "error");
+      showStatusMessage(serviceErrorMessage(err, "database_write"), "error");
     } finally {
       setJoiningQuartet(false);
     }
@@ -482,10 +484,7 @@ export default function JoinSessionPage() {
         session_id: sessionId,
         source: "quartet_page",
       });
-      showStatusMessage(
-        "Could not leave quartet. Check your connection and try again.",
-        "error"
-      );
+      showStatusMessage(serviceErrorMessage(err, "database_write"), "error");
       setLeaving(false);
       return false;
     }
@@ -555,10 +554,7 @@ export default function JoinSessionPage() {
       setParticipantToRemove(null);
     } catch (err) {
       console.error(err);
-      showStatusMessage(
-        "Could not remove that singer. Check your connection and try again.",
-        "error"
-      );
+      showStatusMessage(serviceErrorMessage(err, "database_write"), "error");
       setParticipantToRemove(null);
     } finally {
       setRemovingParticipantId("");
@@ -736,7 +732,7 @@ export default function JoinSessionPage() {
         voicing: match.voicing,
       });
       showStatusMessage(
-        "Could not mark that song as sung. Check your connection and try again.",
+        serviceErrorMessage(err, "database_write"),
         "error"
       );
     } finally {
@@ -747,28 +743,35 @@ export default function JoinSessionPage() {
   useEffect(() => {
     if (!sessionId) return;
 
-    return subscribeToSessionParticipants(sessionId, (payload) => {
-      const previousParticipants = participantsRef.current;
-      const updatedParticipants = applyParticipantChange(
-        previousParticipants,
-        payload,
-        sessionId
-      );
-      setTrackedParticipants(updatedParticipants);
-      if (
-        didCurrentParticipantGetRemoved(
+    return subscribeToSessionParticipants(
+      sessionId,
+      (payload) => {
+        setLiveUpdatesPaused(false);
+        const previousParticipants = participantsRef.current;
+        const updatedParticipants = applyParticipantChange(
           previousParticipants,
-          updatedParticipants,
-          currentUserId
-        )
-      ) {
-        markCurrentUserRemovedFromQuartet(sessionId);
+          payload,
+          sessionId
+        );
+        setTrackedParticipants(updatedParticipants);
+        if (
+          didCurrentParticipantGetRemoved(
+            previousParticipants,
+            updatedParticipants,
+            currentUserId
+          )
+        ) {
+          markCurrentUserRemovedFromQuartet(sessionId);
+        }
+        void refreshParticipantProfileNames(updatedParticipants);
+        void refreshParticipants(sessionId, { showErrorMessage: false }).catch(
+          () => undefined
+        );
+      },
+      () => {
+        setLiveUpdatesPaused(true);
       }
-      void refreshParticipantProfileNames(updatedParticipants);
-      void refreshParticipants(sessionId, { showErrorMessage: false }).catch(
-        () => undefined
-      );
-    });
+    );
   }, [currentUserId, sessionId]);
 
   const participantUserIds = Array.from(
@@ -1408,6 +1411,24 @@ export default function JoinSessionPage() {
                 Try again
               </button>
             )}
+          </div>
+        )}
+
+        {!loadError && !quartetExpired && liveUpdatesPaused && (
+          <div className="mt-4 rounded-xl border border-amber-200/20 bg-amber-300/10 p-4 text-sm text-amber-50">
+            <p className="font-semibold">
+              Live updates paused — refresh to get the latest quartet state.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                if (!sessionId) return;
+                void refreshParticipants(sessionId);
+              }}
+              className="mt-3 rounded-xl bg-amber-100 px-4 py-2 font-semibold text-slate-950 hover:bg-white"
+            >
+              Refresh quartet
+            </button>
           </div>
         )}
 

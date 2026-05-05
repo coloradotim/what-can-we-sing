@@ -298,9 +298,14 @@ export const helpAcknowledgments: HelpAcknowledgment[] = [
     contribution: "for crucial feedback on voicing terminology",
   },
   {
-    name: "Sweet Adelines",
+    name: "Sweet Adelines International",
     contribution:
-      "for maintaining the sweetadelines.com published and arranged music lists used as song suggestion sources",
+      "for maintaining the sweetadelines.com published and arranged music list PDFs used as song suggestion sources",
+  },
+  {
+    name: "Barbershop Harmony Society",
+    contribution:
+      "for maintaining the shop.barbershop.org published music Google sheet used as song suggestion sources",
   },
 ];
 

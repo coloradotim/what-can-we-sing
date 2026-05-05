@@ -11,6 +11,7 @@ import {
 } from "@/lib/partAbbreviations";
 import { getCurrentUser } from "@/lib/profileStore";
 import { getMyRepertoire } from "@/lib/repertoireStore";
+import { serviceErrorMessage } from "@/lib/runtimeErrors";
 import {
   copySharedSongsToMyRepertoire,
   getSharedRepertoire,
@@ -94,9 +95,9 @@ export function SharedRepertoireManager({ code }: { code: string }) {
         setSongs(resolvedSongs);
         setSelectedSongIds(new Set());
         setSongCopySelections({});
-      } catch (err) {
-        console.error(err);
-        setMessage("Could not load songs to copy. Check the link and try again.");
+    } catch (err) {
+      console.error(err);
+      setMessage(serviceErrorMessage(err, "database_read"));
       } finally {
         setLoading(false);
       }
@@ -212,7 +213,7 @@ export function SharedRepertoireManager({ code }: { code: string }) {
       setSongCopySelections({});
     } catch (err) {
       console.error(err);
-      setMessage("Could not copy songs. Check your connection and try again.");
+      setMessage(serviceErrorMessage(err, "database_write"));
     } finally {
       setCopying(false);
     }

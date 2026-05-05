@@ -2,6 +2,7 @@
 
 import { getPostLoginRedirectPath } from "@/lib/authRedirect";
 import { loginIntro } from "@/lib/loginContent";
+import { serviceErrorMessage } from "@/lib/runtimeErrors";
 import { supabase } from "@/lib/supabase";
 import { useState } from "react";
 
@@ -12,12 +13,26 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [lastCodeRequest, setLastCodeRequest] = useState<{
+    email: string;
+    sentAt: number;
+  } | null>(null);
 
   async function sendLoginCode() {
     const normalizedEmail = email.trim();
 
     if (!normalizedEmail) {
       setMessage("Enter your email address and we’ll send a login code.");
+      return;
+    }
+
+    if (
+      lastCodeRequest?.email === normalizedEmail &&
+      Date.now() - lastCodeRequest.sentAt < 60_000
+    ) {
+      setMessage(
+        "We just sent a code to that email. Wait a minute before requesting another so email rate limits do not block you."
+      );
       return;
     }
 
@@ -33,16 +48,18 @@ export default function LoginPage() {
       });
 
       if (error) {
-        setMessage(`${error.message} Check the email address and try again.`);
+        console.error("Login email request failed", error);
+        setMessage(serviceErrorMessage(error, "auth_email"));
         return;
       }
 
       setHasSentCode(true);
+      setLastCodeRequest({ email: normalizedEmail, sentAt: Date.now() });
       setCode("");
       setMessage("Enter the code sent to your email.");
     } catch (err) {
       console.error(err);
-      setMessage("Network unavailable. Try again when you have a connection.");
+      setMessage(serviceErrorMessage(err, "auth_email"));
     } finally {
       setIsSending(false);
     }

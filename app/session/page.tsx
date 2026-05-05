@@ -12,6 +12,7 @@ import {
 import { getCurrentUser, getMyProfile } from "@/lib/profileStore";
 import { buildParticipantEntries } from "@/lib/participantEntries";
 import { getMyRepertoire } from "@/lib/repertoireStore";
+import { serviceErrorMessage } from "@/lib/runtimeErrors";
 import { trackEvent } from "@/lib/analytics";
 import {
   createSession,
@@ -105,9 +106,7 @@ export default function SessionPage() {
       return true;
     } catch (err) {
       console.error("Failed to create session", err);
-      setErrorMessage(
-        "Could not create a quartet code. Check your connection and try again."
-      );
+      setErrorMessage(serviceErrorMessage(err, "database_write"));
       return false;
     } finally {
       if (!didNavigate) {
@@ -153,9 +152,7 @@ export default function SessionPage() {
         session_id: activeQuartet.sessionId,
         source: "start_page_existing_quartet",
       });
-      setErrorMessage(
-        "Could not leave your current quartet. Check your connection and try again."
-      );
+      setErrorMessage(serviceErrorMessage(err, "database_write"));
       setLeavingCurrent(false);
     }
   }
