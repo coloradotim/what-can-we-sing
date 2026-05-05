@@ -22,6 +22,7 @@ describe("isPublicAuthPath", () => {
   });
 
   it("protects app routes", () => {
+    expect(isPublicAuthPath("/songs")).toBe(false);
     expect(isPublicAuthPath("/repertoire")).toBe(false);
     expect(isPublicAuthPath("/join/ABC123")).toBe(false);
     expect(isPublicAuthPath("/auth/callback")).toBe(false);

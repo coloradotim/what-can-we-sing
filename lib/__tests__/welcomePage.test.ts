@@ -20,7 +20,7 @@ describe("first-login welcome page", () => {
 
   it("marks the welcome as seen and routes to the right setup step", () => {
     expect(welcomePage).toContain("markWelcomeSeen");
-    expect(welcomePage).toContain('hasDisplayName ? "/repertoire" : "/settings"');
+    expect(welcomePage).toContain('hasDisplayName ? "/songs" : "/settings"');
   });
 
   it("skips returning users with profile, repertoire, or quartet history", () => {

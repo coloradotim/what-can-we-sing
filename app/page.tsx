@@ -22,7 +22,7 @@ const actions = [
     description: "Enter a code from another singer.",
   },
   {
-    href: "/repertoire",
+    href: "/songs",
     title: "My Songs",
     description: "Add or update songs you know.",
   },
@@ -48,7 +48,7 @@ const setupPrompts: Record<
     message: "Add a few songs before starting or joining a quartet.",
     helper:
       "You can type songs in, copy songs from another singer, or add Harmony Brigade songs from My Songs.",
-    href: "/repertoire",
+    href: "/songs",
     action: "Add songs",
   },
 };

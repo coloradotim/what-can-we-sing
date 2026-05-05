@@ -24,10 +24,10 @@ export default function PrivacyPage() {
             <ul className="mt-3 list-disc space-y-2 pl-5 text-slate-300">
               <li>Your display name for profile and quartet screens.</li>
               <li>
-                Your My Songs entries, including song title, arrangement
-                voicing, parts known, confidence, arranger if entered, notes if
-                entered, date added or updated, and last-sung information when
-                you mark a song as sung in the app.
+                The songs you add, including song title, arrangement voicing,
+                parts known, confidence, arranger if entered, notes if entered,
+                date added or updated, and last-sung information when you mark a
+                song as sung in the app.
               </li>
               <li>
                 Quartet/session data, including join codes, active membership,
@@ -44,7 +44,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold">How we use it</h2>
             <p className="mt-2 text-slate-300">
               The app uses your information to sign you in, save your profile,
-              manage My Songs, let you join or leave quartets, refresh
+              manage your songs, let you join or leave quartets, refresh
               quartet snapshots, and show songs the group may be able to sing.
               Song title suggestions are generated from distinct song title,
               arrangement voicing, and arranger values that singers have entered
@@ -60,7 +60,7 @@ export default function PrivacyPage() {
               identity fields such as title, arrangement voicing, and arranger
               from catalog imports or previously saved song identities.
               Suggestions are not authoritative, and adding a song to My Songs
-              does not add it to anyone else&apos;s My Songs. Personal details
+              does not add it to anyone else&apos;s saved songs. Personal details
               such as notes, confidence, last-sung history, user identity, and
               email address are not exposed as suggestions.
             </p>
@@ -73,7 +73,7 @@ export default function PrivacyPage() {
               creates a private code/link. Anyone with an active code/link can
               view safe song identity fields: title, arrangement voicing, and
               arranger. They must sign in before copying songs, and copied songs
-              become their own My Songs entries with their chosen part and
+              become their own saved songs with their chosen part and
               confidence. The shared view does not expose notes, confidence,
               last-sung history, email address, or account details, and you can
               revoke the link.
@@ -84,7 +84,7 @@ export default function PrivacyPage() {
             <h2 className="text-xl font-semibold">Harmony Brigade songs</h2>
             <p className="mt-2 text-slate-300">
               Adding Harmony Brigade songs uses reference data to help you add
-              songs to My Songs. It does not publicly indicate that you attended
+              songs. It does not publicly indicate that you attended
               a Brigade event. Your selected year, brigade, song choices, parts,
               and confidence are not shown to other users by default, except
               through normal quartet matching if you join a quartet.

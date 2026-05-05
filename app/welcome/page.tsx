@@ -7,10 +7,10 @@ import { hasQuartetWorkflowHistory } from "@/lib/activeQuartet";
 import { isSafeAppRedirectPath } from "@/lib/authRedirect";
 
 function getRedirectPath() {
-  if (typeof window === "undefined") return "/repertoire";
+  if (typeof window === "undefined") return "/songs";
 
   const redirect = new URLSearchParams(window.location.search).get("redirect");
-  return isSafeAppRedirectPath(redirect) ? redirect : "/repertoire";
+  return isSafeAppRedirectPath(redirect) ? redirect : "/songs";
 }
 
 export default function WelcomePage() {
@@ -62,7 +62,7 @@ export default function WelcomePage() {
       setSaving(true);
       setMessage("");
       await markWelcomeSeen();
-      window.location.href = hasDisplayName ? "/repertoire" : "/settings";
+      window.location.href = hasDisplayName ? "/songs" : "/settings";
     } catch (err) {
       console.error(err);
       setMessage("Could not save your quick-start progress. Please try again.");

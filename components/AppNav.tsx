@@ -16,9 +16,10 @@ const primaryNavItems = [
     isActive: (pathname: string) => pathname.startsWith("/join"),
   },
   {
-    href: "/repertoire",
+    href: "/songs",
     label: "My Songs",
-    isActive: (pathname: string) => pathname === "/repertoire",
+    isActive: (pathname: string) =>
+      pathname === "/songs" || pathname === "/repertoire",
   },
 ];
 

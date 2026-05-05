@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   helpAcknowledgments,
   helpAcknowledgmentsIntro,
+  helpDevelopmentNote,
   helpGuideSections,
   helpSections,
   feedbackHelpCopy,
   helpFeedbackInvitationCopy,
   helpNavItems,
+  helpSongSuggestionSources,
   helpWelcomeCopy,
   quickStartSteps,
 } from "../helpContent";
@@ -72,7 +74,7 @@ describe("help content", () => {
     expect(guideText).toContain("Harmony Brigade songs");
     expect(guideText).toContain("Song Title Autocomplete");
     expect(guideText).toContain("Suggestions are optional");
-    expect(guideText).toContain("does not add it to anyone else’s My Songs");
+    expect(guideText).toContain("does not add it to anyone else’s saved songs");
     expect(guideText).toContain("More Ways To Build My Songs");
     expect(guideText).toContain("Treble (SSAA)");
     expect(guideText).toContain("Mixed (SATB)");
@@ -173,5 +175,25 @@ describe("help content", () => {
     expect(helpAcknowledgments.map((item) => item.contribution).join(" ")).toContain(
       "sweetadelines.com published and arranged music lists"
     );
+  });
+
+  it("lists song suggestion sources and a clear AI development note", () => {
+    expect(helpSongSuggestionSources.map((item) => item.name)).toEqual([
+      "barbershopconnections.com",
+      "barbershoptracks.com",
+      "gud2brabah.com",
+      "Scott Anderson’s International songs list",
+      "shop.barbershop.org",
+      "sweetadelines.com",
+      "timtracks.com",
+    ]);
+    expect(helpSongSuggestionSources.map((item) => item.contribution).join(" ")).toContain(
+      "Ross Wilkins’ Harmony Brigade database"
+    );
+    expect(helpDevelopmentNote).toContain("built by Tim Peterson");
+    expect(helpDevelopmentNote).toContain("OpenAI Codex and ChatGPT");
+    expect(helpDevelopmentNote).toContain("No OpenAI or other AI product runs inside the app");
+    expect(helpDevelopmentNote).not.toContain("Powered by OpenAI");
+    expect(helpDevelopmentNote).not.toContain("Built by OpenAI");
   });
 });

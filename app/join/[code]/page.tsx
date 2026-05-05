@@ -1205,7 +1205,7 @@ export default function JoinSessionPage() {
               {isCurrentParticipant && (
                 <>
                   <a
-                    href="/repertoire"
+                    href="/songs"
                     className="w-fit rounded-lg border border-cyan-300/30 px-3 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-300/10"
                   >
                     Edit My Songs
@@ -1637,7 +1637,7 @@ export default function JoinSessionPage() {
                     </div>
                     <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                       <a
-                        href="/repertoire"
+                        href="/songs"
                         className="rounded-xl bg-cyan-300 px-5 py-3 text-center font-semibold text-slate-950 hover:bg-cyan-200"
                       >
                         Review My Songs
