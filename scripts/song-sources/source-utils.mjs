@@ -17,6 +17,26 @@ export function normalizeTitleArticle(value) {
   return cleanSourceText(`${articleMatch[2]} ${articleMatch[1]}`);
 }
 
+export function normalizeTitleForDisplay(value) {
+  return normalizeTitleArticle(value);
+}
+
+export function normalizeSuggestionText(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/[’']/g, "'")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+export function normalizeTitleForSuggestionKey(value) {
+  const normalized = normalizeSuggestionText(normalizeTitleForDisplay(value) ?? "");
+  const withoutArticle = normalized.replace(/^(a|an|the)\s+/, "").trim();
+
+  return withoutArticle || normalized;
+}
+
 export function normalizeArrangerName(value, { flipCommaName = false } = {}) {
   const arranger = cleanSourceText(value);
   if (!arranger) return null;
@@ -97,10 +117,16 @@ export function normalizeSourceVoicings(value, { noneSpecifiedAsTTBB = false } =
 
 export function sourceRowKey(row) {
   return [
-    cleanSourceText(row.title)?.toLowerCase() ?? "",
+    normalizeTitleForSuggestionKey(row.title),
     row.voicing,
-    cleanSourceText(row.arranger)?.toLowerCase() ?? "",
+    normalizeSuggestionText(row.arranger ?? ""),
   ].join("|");
+}
+
+function preferredSourceTitle(current, next) {
+  if (next.length > current.length) return next;
+  if (next.length < current.length) return current;
+  return current.localeCompare(next) <= 0 ? current : next;
 }
 
 export function sortSourceRows(rows) {
@@ -132,6 +158,8 @@ export function dedupeSourceRows(rows) {
 
     if (deduped.has(key)) {
       duplicateRows += 1;
+      const existing = deduped.get(key);
+      existing.title = preferredSourceTitle(existing.title, normalizedRow.title);
       continue;
     }
 
@@ -143,4 +171,3 @@ export function dedupeSourceRows(rows) {
     duplicateRows,
   };
 }
-

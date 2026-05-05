@@ -222,6 +222,9 @@ Code:
   `data/sources/harmony_brigade_song_suggestions.psv`
 - `scripts/merge-song-suggestion-sources.mjs` safely merges committed source
   PSVs into `data/song_suggestion_catalog.psv` with a timestamped local backup
+- Suggestion title keys normalize trailing articles, then ignore one leading
+  `A`, `An`, or `The`; display titles stay human-readable and are not blindly
+  article-stripped.
 - Preserved by `scripts/delete-user.mjs`; catalog rows are global suggestions,
   not user-owned data.
 - Read only through `public.search_repertoire_song_suggestions`
@@ -250,6 +253,8 @@ Required database contract:
 - RLS enabled; no direct browser table access is required
 - Import expands comma-separated source voicings into one row per supported
   voicing and ignores unsupported voicing values
+- Search uses the same article-insensitive title key for catalog rows and query
+  matching while preserving direct title matching for display-title variants.
 - The BHS transform also splits clearly multi-voicing product rows into one row
   per supported voicing and skips ambiguous, unsupported, non-four-part, or
   collection products.

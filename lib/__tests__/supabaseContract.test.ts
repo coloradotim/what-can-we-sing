@@ -65,6 +65,13 @@ const songSuggestionSupportedVoicingMigration = readFileSync(
   ),
   "utf8"
 );
+const songSuggestionArticleTitleMigration = readFileSync(
+  join(
+    repoRoot,
+    "supabase/migrations/20260505120000_article_insensitive_song_suggestion_titles.sql"
+  ),
+  "utf8"
+);
 const welcomeSeenMigration = readFileSync(
   join(
     repoRoot,
@@ -298,6 +305,17 @@ describe("Supabase contract guardrails", () => {
     expect(contract).toContain(
       "Import expands comma-separated source voicings"
     );
+    expect(contract).toContain("ignore one leading");
+    expect(songSuggestionArticleTitleMigration).toContain(
+      "duplicate_catalog_rows"
+    );
+    expect(songSuggestionArticleTitleMigration).toContain(
+      "'^(a|an|the)[[:space:]]+'"
+    );
+    expect(songSuggestionArticleTitleMigration).toContain(
+      "search_repertoire_song_suggestions"
+    );
+    expect(songSuggestionArticleTitleMigration).toContain("title_query");
     expect(songSuggestionSupportedVoicingMigration).toContain(
       "song_suggestion_catalog_supported_voicing_chk"
     );

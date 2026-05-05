@@ -20,7 +20,10 @@ Song Title|Voicing|Arranger
 The Supabase import script parses that PSV file, normalizes title and arranger
 text, expands comma-separated supported voicings, deduplicates by
 `normalized_title + voicing + normalized_arranger`, and replaces
-`song_suggestion_catalog` using a server-side service role key:
+`song_suggestion_catalog` using a server-side service role key. The
+`normalized_title` key ignores one leading `A`, `An`, or `The` after applying
+trailing article display normalization, so `Closest Thing To Crazy, The` and
+`The Closest Thing To Crazy` share the same suggestion key.
 
 ```bash
 npm run song-suggestions:import -- --dry-run

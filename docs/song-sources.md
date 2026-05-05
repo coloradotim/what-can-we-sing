@@ -25,9 +25,11 @@ Each source PSV uses this header:
 Song Title|Voicing|Arranger
 ```
 
-Rows are deduped by normalized `title + voicing + arranger`. Different voicings
-remain separate rows. Missing arranger remains blank and is not treated as the
-same thing as explicit `Unknown`.
+Rows are deduped by normalized `title + voicing + arranger`. Title keys normalize
+trailing articles for display-style variants, then ignore one leading `A`, `An`,
+or `The` for suggestion grouping. Different voicings remain separate rows.
+Missing arranger remains blank and is not treated as the same thing as explicit
+`Unknown`.
 
 ## Local Environment
 

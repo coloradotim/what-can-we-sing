@@ -129,4 +129,61 @@ describe("getSongSuggestions", () => {
       },
     ]);
   });
+
+  it("groups title suggestions that differ only by leading article", () => {
+    const suggestions = getSongSuggestions(
+      [
+        {
+          song_title: "A Barbershop Time Of Your Life",
+          voicing: "TTBB",
+          arranger_name: "Joe Liles",
+        },
+        {
+          song_title: "Barbershop Time of Your Life",
+          voicing: "SSAA",
+          arranger_name: "Joe Liles",
+        },
+        {
+          song_title: "The Barbershop Time of Your Life",
+          voicing: "TTBB",
+          arranger_name: "Different Arranger",
+        },
+      ],
+      "barbershop time"
+    );
+
+    expect(suggestions).toEqual([
+      {
+        songTitle: "A Barbershop Time Of Your Life",
+        arrangerName: "Joe Liles",
+        voicings: ["TTBB", "SSAA"],
+      },
+      {
+        songTitle: "The Barbershop Time of Your Life",
+        arrangerName: "Different Arranger",
+        voicings: ["TTBB"],
+      },
+    ]);
+  });
+
+  it("matches searches that include an ignored leading article", () => {
+    expect(
+      getSongSuggestions(
+        [
+          {
+            song_title: "Longest Time",
+            voicing: "TTBB",
+            arranger_name: "Test Arranger",
+          },
+        ],
+        "the longest"
+      )
+    ).toEqual([
+      {
+        songTitle: "Longest Time",
+        arrangerName: "Test Arranger",
+        voicings: ["TTBB"],
+      },
+    ]);
+  });
 });

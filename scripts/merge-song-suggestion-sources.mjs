@@ -6,6 +6,10 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { formatSongSuggestionCatalog } from "./import-bhs-published-music.mjs";
 import { parseSongSuggestionCatalog } from "./import-song-suggestions.mjs";
+import {
+  normalizeSuggestionText,
+  normalizeTitleForSuggestionKey,
+} from "./song-sources/source-utils.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -52,10 +56,16 @@ export function timestamp() {
 
 function catalogKey(row) {
   return [
-    row.title.trim().toLowerCase(),
+    normalizeTitleForSuggestionKey(row.title),
     row.voicing,
-    String(row.arranger ?? "").trim().toLowerCase(),
+    normalizeSuggestionText(row.arranger ?? ""),
   ].join("|");
+}
+
+function preferredCatalogTitle(current, next) {
+  if (next.length > current.length) return next;
+  if (next.length < current.length) return current;
+  return current.localeCompare(next) <= 0 ? current : next;
 }
 
 export function mergeRows(rowSets) {
@@ -67,6 +77,8 @@ export function mergeRows(rowSets) {
       const key = catalogKey(row);
       if (deduped.has(key)) {
         duplicateRows += 1;
+        const existing = deduped.get(key);
+        existing.title = preferredCatalogTitle(existing.title, row.title);
         continue;
       }
       deduped.set(key, row);
