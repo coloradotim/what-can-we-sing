@@ -22,6 +22,7 @@
     "song-sources:scrape:melody-hine-arrangements": "node scripts/song-sources/scrape-melody-hine-arrangements.mjs",
     "song-sources:scrape:timtracks": "node scripts/song-sources/scrape-timtracks.mjs",
     "song-sources:import:bhs": "node scripts/song-sources/import-bhs-catalog.mjs",
+    "song-sources:import:sheet-music-plus": "node scripts/song-sources/import-sheet-music-plus-barbershop.mjs",
     "song-sources:import:sweet-adelines": "node scripts/song-sources/import-sweet-adelines-published-music.mjs",
     "song-sources:import:sweet-adelines-arranged": "node scripts/song-sources/import-sweet-adelines-arranged-music.mjs",
     "song-sources:import:harmony-brigade": "node scripts/song-sources/import-harmony-brigade-db.mjs",

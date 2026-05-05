@@ -346,6 +346,10 @@ export const helpSongSuggestionSources: HelpAcknowledgment[] = [
     name: "melodyhinearrangements.com",
     contribution: "for song suggestion reference data",
   },
+  {
+    name: "sheetmusicplus.com",
+    contribution: "for Barbershop genre catalog song suggestion reference data",
+  },
 ];
 
 export const helpDevelopmentNote =

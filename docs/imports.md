@@ -285,11 +285,52 @@ supported voicing signal to
 `tmp/song-sources/melody-hine-arrangements-skipped.json`. It does not import
 pricing, media, sheet music, lyrics, checkout, account, or order metadata.
 
+## Sheet Music Plus Barbershop Discovery
+
+Sheet Music Plus is a general sheet-music marketplace, so it is handled as an
+explicit manual discovery/import source rather than part of `song-sources:all`.
+Use the public Barbershop genre search through the importer. The importer reads
+the `sz=20` search form, which matches the published robots allowance for sized
+search results, and fetches text-rendered detail pages because direct HTTP and
+headless browser requests from this environment receive bot-protection
+challenges:
+
+```text
+https://www.sheetmusicplus.com/en/explore?q=barbershop&prefn1=genres&prefv1=Barbershop&sz=20
+```
+
+Run a limited discovery pass:
+
+```bash
+npm run song-sources:import:sheet-music-plus -- --limit=60 --pages=5 --debug
+```
+
+When the source produces high-confidence rows, the importer creates:
+
+```text
+data/sources/sheet_music_plus_barbershop_song_suggestions.psv
+```
+
+The importer only accepts product detail pages with all of:
+
+- clear barbershop context
+- clean individual song title
+- exactly one canonical voicing (`SSAA`, `SATB`, or `TTBB`)
+- explicit `Arranged by ...` metadata
+
+It skips collections/books, broad product titles, non-barbershop products,
+missing or ambiguous arranger metadata, missing or ambiguous voicing, and
+multi-voicing products. Skipped rows are written to
+`tmp/song-sources/sheet-music-plus-skipped.json`. Product fetch failures such as
+reader rate limits are skipped and recorded instead of failing the whole run.
+Sheet Music Plus is listed on the Help song suggestion source list while this
+committed source PSV is active.
+
 After reviewing the source PSV, merge it into the deployed suggestion catalog:
 
 ```bash
-npm run song-suggestions:merge -- --dry-run
-npm run song-suggestions:merge
+npm run song-sources:merge -- --dry-run
+npm run song-sources:merge
 ```
 
 The merge script reads the existing `data/song_suggestion_catalog.psv` plus the

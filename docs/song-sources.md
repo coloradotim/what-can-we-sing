@@ -15,6 +15,8 @@ by individual singers.
 - `data/sources/timtracks_song_suggestions.psv`
 - `data/sources/kohl_kitzmiller_music_song_suggestions.psv`
 - `data/sources/melody_hine_arrangements_song_suggestions.psv`
+- `data/sources/sheet_music_plus_barbershop_song_suggestions.psv` (manual
+  discovery/import from the Sheet Music Plus Barbershop genre catalog)
 - `data/sources/bhs_song_catalog_suggestions.psv`
 - `data/sources/sweet_adelines_published_music_song_suggestions.psv`
 - `data/sources/sweet_adelines_arranged_music_song_suggestions.psv`
@@ -56,6 +58,7 @@ npm run song-sources:scrape:barbershoptracks
 npm run song-sources:scrape:timtracks
 npm run song-sources:scrape:kohl-kitzmiller-music
 npm run song-sources:scrape:melody-hine-arrangements
+npm run song-sources:import:sheet-music-plus -- --limit=60 --pages=5 --debug
 npm run song-sources:import:bhs
 npm run song-sources:import:sweet-adelines
 npm run song-sources:import:sweet-adelines-arranged
@@ -133,6 +136,23 @@ Melody Hine Arrangements:
   `tmp/song-sources/melody-hine-arrangements-skipped.json`.
 - Use `--limit=25 --debug` for a quick inspectable run; debug discovery reports
   are written under `tmp/song-sources/melody-hine-arrangements/`.
+
+Sheet Music Plus Barbershop catalog:
+
+- Uses the public Sheet Music Plus Barbershop search/detail pages rendered
+  through a text reader because direct HTTP and headless browser requests from
+  this environment receive bot-protection challenges.
+- Starts as an explicit manual import source and is not included in
+  `song-sources:all`.
+- Reads the `sz=20` search page form, which matches the published robots
+  allowance for sized search results.
+- Imports only product detail pages with a confident title, explicit arranger,
+  clear barbershop context, and one canonical voicing (`SSAA`, `SATB`, or
+  `TTBB`).
+- Skips collections/books, non-barbershop products, ambiguous arranger metadata,
+  missing/ambiguous voicing, multi-voicing rows, and product fetch failures such
+  as reader rate limits.
+- Writes skipped rows to `tmp/song-sources/sheet-music-plus-skipped.json`.
 
 BHS Published Music:
 
