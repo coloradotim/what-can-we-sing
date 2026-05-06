@@ -121,6 +121,13 @@ const eventModeAvailabilityMigration = readFileSync(
   ),
   "utf8"
 );
+const eventModeMessagingMigration = readFileSync(
+  join(
+    repoRoot,
+    "supabase/migrations/20260506100000_add_event_mode_messaging.sql"
+  ),
+  "utf8"
+);
 
 describe("Supabase contract guardrails", () => {
   const tables = [
@@ -135,6 +142,9 @@ describe("Supabase contract guardrails", () => {
     "harmony_brigade_event_songs",
     "event_mode_events",
     "event_mode_availability",
+    "event_mode_messages",
+    "event_mode_message_reports",
+    "event_mode_blocks",
   ];
   const baseMigrationTables = tables.filter(
     (table) =>
@@ -145,6 +155,9 @@ describe("Supabase contract guardrails", () => {
         "harmony_brigade_event_songs",
         "event_mode_events",
         "event_mode_availability",
+        "event_mode_messages",
+        "event_mode_message_reports",
+        "event_mode_blocks",
       ].includes(table)
   );
 
@@ -444,5 +457,48 @@ describe("Supabase contract guardrails", () => {
     expect(eventModeAvailabilityMigration).not.toContain("to anon");
     expect(eventModeAvailabilityMigration).not.toContain("user_repertoire");
     expect(eventModeAvailabilityMigration).not.toContain("session_participants");
+  });
+
+  it("documents and migrates Event Mode messaging safety controls", () => {
+    expect(contract).toContain("Event Mode Messages");
+    expect(contract).toContain("event_mode_messages");
+    expect(contract).toContain("event_mode_message_reports");
+    expect(contract).toContain("event_mode_blocks");
+    expect(contract).toContain("send_event_mode_message");
+    expect(contract).toContain("get_event_mode_messages_by_code");
+    expect(contract).toContain("report_event_mode_message");
+    expect(contract).toContain("block_event_mode_user");
+    expect(contract).toContain("messages they sent or received");
+    expect(contract).toContain("Blocked users cannot send new messages");
+    expect(eventModeMessagingMigration).toContain(
+      "create table if not exists public.event_mode_messages"
+    );
+    expect(eventModeMessagingMigration).toContain(
+      "create table if not exists public.event_mode_message_reports"
+    );
+    expect(eventModeMessagingMigration).toContain(
+      "create table if not exists public.event_mode_blocks"
+    );
+    expect(eventModeMessagingMigration).toContain("enable row level security");
+    expect(eventModeMessagingMigration).toContain(
+      "sender_user_id = auth.uid()"
+    );
+    expect(eventModeMessagingMigration).toContain(
+      "recipient_user_id = auth.uid()"
+    );
+    expect(eventModeMessagingMigration).toContain(
+      "event_mode_user_can_message"
+    );
+    expect(eventModeMessagingMigration).toContain(
+      "available_until > now()"
+    );
+    expect(eventModeMessagingMigration).toContain(
+      "event_mode_blocks.blocker_user_id = p_recipient_user_id"
+    );
+    expect(eventModeMessagingMigration).toContain("security definer");
+    expect(eventModeMessagingMigration).toContain("grant execute");
+    expect(eventModeMessagingMigration).toContain("to authenticated");
+    expect(eventModeMessagingMigration).not.toContain("to anon");
+    expect(eventModeMessagingMigration).not.toContain("user_repertoire");
   });
 });

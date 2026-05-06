@@ -34,6 +34,10 @@ export default function PrivacyPage() {
                 and participant saved-song snapshots used to calculate matches.
               </li>
               <li>
+                Event Mode data you choose to share, including event details,
+                availability, event-scoped messages, message reports, and blocks.
+              </li>
+              <li>
                 Feedback messages you send, including the contact email shown in
                 the form if you leave it there or edit it.
               </li>
@@ -118,6 +122,19 @@ export default function PrivacyPage() {
               Personal notes are stored for you and are not included
               in participant snapshots. Notes may appear to you in your own
               My Songs and match details.
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-xl font-semibold">Event Mode</h2>
+            <p className="mt-2 text-slate-300">
+              Event Mode lets signed-in singers find an event, mark themselves
+              available there, and send private event-scoped messages to
+              coordinate singing. Event Mode does not show your email address or
+              phone number to other singers, does not expose your My Songs
+              repertoire, and does not create a permanent public profile or
+              global singer directory. Message reports and blocks are private
+              safety controls.
             </p>
           </div>
 

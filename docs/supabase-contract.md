@@ -507,6 +507,95 @@ Required database contract:
 Established by migrations:
 - `20260502100000_add_event_mode_availability.sql`
 
+### Event Mode Messages
+
+Purpose: private, event-scoped coordination messages between signed-in singers
+who are using Event Mode. Messages help singers decide where and when to meet;
+they are not a public chat room, global messaging surface, formal
+invite-to-quartet workflow, or repertoire-sharing feature.
+
+Code:
+- Read messages for an event code:
+  `lib/eventMode.ts#getEventModeMessagesByCode`, through
+  `public.get_event_mode_messages_by_code`
+- Send a message or reply:
+  `lib/eventMode.ts#sendEventModeMessage`, through
+  `public.send_event_mode_message`
+- Report a message:
+  `lib/eventMode.ts#reportEventModeMessage`, through
+  `public.report_event_mode_message`
+- Block another event user from messaging the current user:
+  `lib/eventMode.ts#blockEventModeUser`, through
+  `public.block_event_mode_user`
+- Event detail UI: `app/event-mode/[code]/page.tsx`
+- Tests: `lib/__tests__/eventMode.test.ts`,
+  `lib/__tests__/eventModeUi.test.ts`, and this Supabase contract test
+
+Expected context:
+- Browser authenticated user.
+- Users can send a new message only to another singer who has active
+  availability on the same event.
+- Users can reply to another user when a prior valid event message exists
+  between the two users for that event.
+- Users can view only messages they sent or received.
+- Display names come from `profiles.display_name`; message rows do not own
+  display names.
+- Users can report only messages they are authorized to view.
+- Users can block another event user. Blocked users cannot send new messages
+  to the blocker for that event.
+- Message bodies are stored for app-mediated coordination only. They must not
+  expose private email addresses or phone numbers by default, must not expose
+  repertoire, and must not be sent to analytics.
+- Email notification is intentionally deferred until a separate, explicit
+  notification contract is added.
+
+Required database contract:
+- `event_mode_messages`
+  - `id uuid primary key`
+  - `event_id uuid references public.event_mode_events(id) on delete cascade`
+  - `sender_user_id uuid references auth.users(id) on delete cascade`
+  - `recipient_user_id uuid references auth.users(id) on delete cascade`
+  - optional `recipient_availability_id uuid references public.event_mode_availability(id)`
+  - `body text not null`
+  - `created_at timestamptz not null default now()`
+  - optional `read_at timestamptz`
+- `event_mode_message_reports`
+  - `id uuid primary key`
+  - `message_id uuid references public.event_mode_messages(id) on delete cascade`
+  - `reporter_user_id uuid references auth.users(id) on delete cascade`
+  - `event_id uuid references public.event_mode_events(id) on delete cascade`
+  - optional `reason text`
+  - `created_at timestamptz not null default now()`
+- `event_mode_blocks`
+  - `id uuid primary key`
+  - `event_id uuid references public.event_mode_events(id) on delete cascade`
+  - `blocker_user_id uuid references auth.users(id) on delete cascade`
+  - `blocked_user_id uuid references auth.users(id) on delete cascade`
+  - `created_at timestamptz not null default now()`
+- Check constraints prevent self-messages and self-blocks.
+- Check constraint keeps message bodies between 1 and 1000 trimmed characters.
+- Unique report index on `(message_id, reporter_user_id)`.
+- Unique block index on `(event_id, blocker_user_id, blocked_user_id)`.
+- RLS enabled on all three tables.
+- Authenticated users can select only messages they sent or received.
+- Authenticated users can select only their own reports and blocks.
+- Browser writes use security-definer functions with explicit server-side
+  authorization checks rather than direct insert/update policies.
+- `public.event_mode_user_can_message(uuid, uuid, uuid)` checks active event
+  scope, active recipient availability or an existing thread, and block state.
+- `public.send_event_mode_message(uuid, uuid, text, uuid)` inserts messages
+  only when `event_mode_user_can_message` allows the send.
+- `public.get_event_mode_messages_by_code(text)` joins `profiles.display_name`
+  and returns only messages the current user sent or received.
+- `public.report_event_mode_message(uuid, text)` inserts or updates a private
+  report only for a message the current user can view.
+- `public.block_event_mode_user(uuid, uuid)` inserts a private event-scoped
+  block for users connected through event availability or an event message.
+- No authenticated delete policy.
+
+Established by migrations:
+- `20260506100000_add_event_mode_messaging.sql`
+
 ### `sessions`
 
 Purpose: source of truth for quartet join codes and session activity.
