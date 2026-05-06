@@ -187,7 +187,8 @@ export default function PrivacyPage() {
               counts, categories, browser/device information, and coarse action
               details. We do not intentionally send feedback text, My Songs
               notes, song titles, arranger names, singer names, email addresses,
-              or quartet join codes to analytics.
+              quartet join codes, Event Mode message text, availability notes,
+              meetup notes, event names, or event location text to analytics.
             </p>
           </div>
 

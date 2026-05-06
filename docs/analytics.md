@@ -67,6 +67,18 @@ The app currently tracks these events through `lib/analytics.ts`:
 | `help_viewed` | `app/help/page.tsx` when the help page loads | none | No | Product Health context |
 | `feedback_submitted` | `app/help/page.tsx` after feedback API succeeds | `category`, `length` | No message text | Product Health |
 | `feedback_failed` | `app/help/page.tsx` when feedback API fails | `category`, `status_code` or `reason` | No message text | Reliability / Errors |
+| `event_mode_viewed` | `app/event-mode/page.tsx` and `app/event-mode/[code]/page.tsx` when Event Mode landing/detail pages load | `page_area`, `signed_in`, `visibility`, `lifecycle`, `availability_count`, `message_count` | No event names, codes, notes, or message text | Event Mode Beta |
+| `event_mode_event_search_submitted` | `app/event-mode/page.tsx` after a user submits an Event Mode search | `result_count`, `has_search`, `status` | No raw search text | Event Mode Beta |
+| `event_mode_event_created` | `app/event-mode/page.tsx` after Event Mode event creation succeeds or fails | `visibility`, `status` | No event name or location text | Event Mode Beta |
+| `event_mode_event_used` | `app/event-mode/page.tsx` when a user opens an event from search, duplicate detection, or code entry | `source`, `visibility`, `lifecycle` | No event code, name, or location text | Event Mode Beta |
+| `event_mode_availability_created` | `app/event-mode/[code]/page.tsx` after a user first marks themself available, or the save fails | `selected_voice_part_count`, `has_availability`, `has_meetup`, `visibility`, `lifecycle`, `status` | No availability or meetup note text | Event Mode Beta |
+| `event_mode_availability_updated` | `app/event-mode/[code]/page.tsx` after an existing availability save succeeds or fails | `selected_voice_part_count`, `has_availability`, `has_meetup`, `visibility`, `lifecycle`, `status` | No availability or meetup note text | Event Mode Beta |
+| `event_mode_availability_turned_off` | `app/event-mode/[code]/page.tsx` after availability is turned off, or the action fails | `visibility`, `lifecycle`, `status` | No free text | Event Mode Beta |
+| `event_mode_available_singer_filter_used` | `app/event-mode/[code]/page.tsx` when the available-singer voice-part filter changes | `selected_part_count`, `availability_count`, `visibility`, `lifecycle` | No singer names or raw part labels | Event Mode Beta |
+| `event_mode_message_started` | `app/event-mode/[code]/page.tsx` when a user opens the message composer for an available singer | `visibility`, `lifecycle`, `availability_count` | No display name or message text | Event Mode Beta |
+| `event_mode_message_sent` | `app/event-mode/[code]/page.tsx` after a new Event Mode message succeeds or fails | `visibility`, `lifecycle`, `status`, `notification_attempted` | No message text or contact details | Event Mode Beta |
+| `event_mode_message_replied` | `app/event-mode/[code]/page.tsx` after an Event Mode reply succeeds or fails | `visibility`, `lifecycle`, `status`, `notification_attempted` | No message text or contact details | Event Mode Beta |
+| `event_mode_start_quartet_clicked` | `app/event-mode/[code]/page.tsx` when a user clicks the Start quartet handoff from Event Mode | `visibility`, `lifecycle`, `availability_count`, `message_count` | No event code or message text | Event Mode Beta |
 
 ## Reproducible Dashboards
 
@@ -76,6 +88,7 @@ Dashboard definitions live in `analytics/posthog/dashboards.json`. They cover:
 - Quartet Funnel
 - Repertoire & Matching
 - Reliability / Errors
+- Event Mode Beta
 - Browser / Mobile Compatibility
 
 Validate the dashboard spec locally with:
