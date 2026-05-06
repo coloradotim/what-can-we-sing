@@ -150,7 +150,7 @@ export default function EventModePage() {
         <div className="mx-auto max-w-4xl">
           <AppNav variant="public" />
           <p className="mt-8 text-sm font-semibold uppercase text-cyan-300">
-            Event Mode
+            Event Mode Beta
           </p>
           <p className="mt-3 text-slate-300">Loading Event Mode...</p>
         </div>
@@ -164,7 +164,7 @@ export default function EventModePage() {
         <div className="mx-auto max-w-2xl">
           <AppNav variant="public" />
           <p className="mt-10 text-sm font-semibold uppercase text-cyan-300">
-            Event Mode
+            Event Mode Beta
           </p>
           <h1 className="mt-3 text-4xl font-bold tracking-tight">
             Find singers at an event
@@ -172,6 +172,9 @@ export default function EventModePage() {
           <p className="mt-4 text-lg leading-8 text-slate-300">
             Event Mode helps singers find pickup singing opportunities at an
             event. Sign in to find or create an event.
+          </p>
+          <p className="mt-3 text-sm leading-6 text-slate-400">
+            Beta means this feature may be buggy or incomplete.
           </p>
           <a
             href="/login?redirect=/event-mode"
@@ -190,7 +193,7 @@ export default function EventModePage() {
         <AppNav />
 
         <p className="mt-8 text-sm font-semibold uppercase text-cyan-300">
-          Event Mode
+          Event Mode Beta
         </p>
         <h1 className="mt-3 text-4xl font-bold tracking-tight">
           Find singers at an event
@@ -198,6 +201,10 @@ export default function EventModePage() {
         <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-300">
           Find singers at a convention, afterglow, Brigade weekend, or other
           singing event.
+        </p>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
+          Event Mode is still in beta, so it may be buggy or incomplete. It is
+          ready to try at events, and your feedback will help improve it.
         </p>
 
         {message && (
@@ -240,7 +247,8 @@ export default function EventModePage() {
             <div className="mt-5 space-y-3">
               {visibleEvents.length === 0 && (
                 <p className="rounded-xl bg-slate-900/70 px-4 py-3 text-sm text-slate-300">
-                  No active or upcoming listed events found yet.
+                  No matching events found. Create one for your event, or check
+                  the spelling, date, or location.
                 </p>
               )}
 
@@ -306,8 +314,8 @@ export default function EventModePage() {
               <h2 className="text-xl font-bold">Create an event</h2>
               <p className="mt-2 text-sm leading-6 text-cyan-50/80">
                 Create an event so singers using WCWS can find each other while
-                they&apos;re there. This does not create an official event
-                listing.
+                they&apos;re there. Event Mode Beta is event-scoped and
+                temporary; it does not create an official event listing.
               </p>
               <button
                 type="button"

@@ -19,19 +19,25 @@ const eventModeSource = readFileSync(
 
 describe("Event Mode UI copy", () => {
   it("uses Event Mode terminology and the requested core actions", () => {
-    expect(landingPage).toContain("Event Mode");
+    expect(landingPage).toContain("Event Mode Beta");
     expect(appNav).toContain('href: "/event-mode"');
-    expect(appNav).toContain('label: "Event Mode"');
+    expect(appNav).toContain('label: "Event Mode Beta"');
     expect(homePage).toContain("At a convention, afterglow, or singing event?");
+    expect(homePage).toContain("This feature may be buggy or");
     expect(landingPage).toContain("Find my event");
     expect(landingPage).toContain("Create an event");
+    expect(landingPage).toContain("Event Mode is still in beta");
+    expect(landingPage).toContain("No matching events found");
     expect(landingPage).toContain('searchParams.get("create") === "1"');
     expect(landingPage).toContain('<AppNav variant="public" />');
     expect(landingPage).toContain("Enter with a link or code");
     expect(landingPage).toContain("Use this event");
     expect(detailPage).toContain("Start a quartet");
     expect(detailPage).toContain("I&apos;m available to sing");
+    expect(detailPage).toContain("Want to sing at this event?");
+    expect(detailPage).toContain("You are available to sing at this event.");
     expect(detailPage).toContain("Available singers");
+    expect(detailPage).toContain("No one is available yet.");
     expect(detailPage).toContain("Message");
     expect(detailPage).toContain("Send a note to coordinate singing at this");
     expect(detailPage).toContain("Email notification was not sent.");
@@ -72,9 +78,11 @@ describe("Event Mode UI copy", () => {
     );
 
     expect(signedOutBranch).toContain("Sign in to find or create an event");
+    expect(signedOutBranch).toContain("Beta means this feature may be buggy");
     expect(signedOutBranch).toContain('href="/login?redirect=/event-mode"');
     expect(signedOutBranch).not.toContain("visibleEvents.map");
     expect(detailSignedOutBranch).toContain("Sign in to use this event");
+    expect(detailSignedOutBranch).toContain("Beta means this feature may be buggy");
     expect(detailSignedOutBranch).toContain(
       'href={`/login?redirect=/event-mode/${event.join_code}`}'
     );

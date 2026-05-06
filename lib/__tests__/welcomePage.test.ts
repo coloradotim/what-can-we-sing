@@ -16,6 +16,8 @@ describe("first-login welcome page", () => {
     expect(welcomePage).toContain("Start a quartet or join one");
     expect(welcomePage).toContain("Use the match list");
     expect(welcomePage).toContain("You can always add more songs later");
+    expect(welcomePage).toContain("Event Mode Beta can help you find other");
+    expect(welcomePage).toContain("Beta means this feature may be buggy or");
   });
 
   it("marks the welcome as seen and routes to the right setup step", () => {

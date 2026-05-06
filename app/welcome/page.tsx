@@ -112,6 +112,12 @@ export default function WelcomePage() {
             You can always add more songs later.
           </p>
 
+          <p className="mt-3 text-sm leading-6 text-slate-300">
+            At a convention or event? Event Mode Beta can help you find other
+            singers who want to sing. Beta means this feature may be buggy or
+            incomplete.
+          </p>
+
           <button
             type="button"
             onClick={getStarted}

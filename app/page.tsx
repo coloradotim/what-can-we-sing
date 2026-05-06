@@ -199,11 +199,12 @@ export default function Home() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-white">
-                    Event Mode
+                    Event Mode Beta
                   </h2>
                   <p className="mt-1 text-sm leading-6 text-cyan-50/80">
                     At a convention, afterglow, or singing event? Find other
-                    singers who want to sing.
+                    singers who want to sing. This feature may be buggy or
+                    incomplete while it is in beta.
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 sm:min-w-40">
