@@ -24,6 +24,7 @@ describe("public page navigation", () => {
     expect(appNav).toContain('variant?: "app" | "public"');
     expect(publicVariant).toContain('href="/login"');
     expect(publicVariant).toContain("Log in or sign up");
+    expect(publicVariant).not.toContain("/event-mode");
     expect(publicVariant).not.toContain("ActiveQuartetIndicator");
   });
 

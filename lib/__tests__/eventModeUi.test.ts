@@ -10,6 +10,8 @@ const detailPage = readFileSync(
   join(process.cwd(), "app/event-mode/[code]/page.tsx"),
   "utf8"
 );
+const appNav = readFileSync(join(process.cwd(), "components/AppNav.tsx"), "utf8");
+const homePage = readFileSync(join(process.cwd(), "app/page.tsx"), "utf8");
 const eventModeSource = readFileSync(
   join(process.cwd(), "lib/eventMode.ts"),
   "utf8"
@@ -18,8 +20,13 @@ const eventModeSource = readFileSync(
 describe("Event Mode UI copy", () => {
   it("uses Event Mode terminology and the requested core actions", () => {
     expect(landingPage).toContain("Event Mode");
+    expect(appNav).toContain('href: "/event-mode"');
+    expect(appNav).toContain('label: "Event Mode"');
+    expect(homePage).toContain("At a convention, afterglow, or singing event?");
     expect(landingPage).toContain("Find my event");
     expect(landingPage).toContain("Create an event");
+    expect(landingPage).toContain('searchParams.get("create") === "1"');
+    expect(landingPage).toContain('<AppNav variant="public" />');
     expect(landingPage).toContain("Enter with a link or code");
     expect(landingPage).toContain("Use this event");
     expect(detailPage).toContain("Start a quartet");
@@ -52,5 +59,25 @@ describe("Event Mode UI copy", () => {
     expect(combined).not.toContain("Location discovery");
     expect(combined).not.toContain("Public profile");
     expect(combined).not.toContain("Invite to quartet");
+  });
+
+  it("keeps signed-out Event Mode access explanatory instead of browsable", () => {
+    const signedOutBranch = landingPage.slice(
+      landingPage.indexOf("if (!signedIn)"),
+      landingPage.indexOf("\n\n  return (", landingPage.indexOf("if (!signedIn)"))
+    );
+    const detailSignedOutBranch = detailPage.slice(
+      detailPage.indexOf("{!currentUserId && ("),
+      detailPage.indexOf("\n            {currentUserId && (")
+    );
+
+    expect(signedOutBranch).toContain("Sign in to find or create an event");
+    expect(signedOutBranch).toContain('href="/login?redirect=/event-mode"');
+    expect(signedOutBranch).not.toContain("visibleEvents.map");
+    expect(detailSignedOutBranch).toContain("Sign in to use this event");
+    expect(detailSignedOutBranch).toContain(
+      'href={`/login?redirect=/event-mode/${event.join_code}`}'
+    );
+    expect(detailSignedOutBranch).not.toContain("Available singers");
   });
 });

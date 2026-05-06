@@ -6,6 +6,12 @@ import { SignOutButton } from "@/components/SignOutButton";
 
 const primaryNavItems = [
   {
+    href: "/songs",
+    label: "My Songs",
+    isActive: (pathname: string) =>
+      pathname === "/songs" || pathname === "/repertoire",
+  },
+  {
     href: "/session",
     label: "Start",
     isActive: (pathname: string) => pathname === "/session",
@@ -16,14 +22,18 @@ const primaryNavItems = [
     isActive: (pathname: string) => pathname.startsWith("/join"),
   },
   {
-    href: "/songs",
-    label: "My Songs",
-    isActive: (pathname: string) =>
-      pathname === "/songs" || pathname === "/repertoire",
+    href: "/event-mode",
+    label: "Event Mode",
+    isActive: (pathname: string) => pathname.startsWith("/event-mode"),
   },
 ];
 
 const secondaryNavItems = [
+  {
+    href: "/",
+    label: "Home",
+    isActive: (pathname: string) => pathname === "/",
+  },
   {
     href: "/settings",
     label: "Profile",
@@ -75,7 +85,7 @@ export function AppNav({ variant = "app" }: AppNavProps) {
           What Can We Sing
         </a>
 
-        <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
           {primaryNavItems.map((item) => {
             const active = item.isActive(pathname);
 
