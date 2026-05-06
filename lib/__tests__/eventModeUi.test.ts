@@ -27,6 +27,7 @@ describe("Event Mode UI copy", () => {
     expect(detailPage).toContain("Available singers");
     expect(detailPage).toContain("Message");
     expect(detailPage).toContain("Send a note to coordinate singing at this");
+    expect(detailPage).toContain("Email notification was not sent.");
     expect(detailPage).toContain("Messages");
     expect(detailPage).toContain("Reply");
     expect(detailPage).toContain("Report");

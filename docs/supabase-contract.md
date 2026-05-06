@@ -353,7 +353,7 @@ Required database contract:
   - `song_id uuid references harmony_brigade_songs(id) on delete cascade`
   - optional `track_number` and `sort_order`
   - Unique index on `(event_id, song_id)`
-- RLS enabled on all three tables.
+- RLS enabled on all four tables.
 - Authenticated users can select reference rows.
 - No authenticated insert/update/delete policies are granted for reference
   tables.
@@ -546,8 +546,16 @@ Expected context:
 - Message bodies are stored for app-mediated coordination only. They must not
   expose private email addresses or phone numbers by default, must not expose
   repertoire, and must not be sent to analytics.
-- Email notification is intentionally deferred until a separate, explicit
-  notification contract is added.
+- Event Mode message notification email is sent by
+  `app/api/event-mode/messages/notify/route.ts` after a message row is created.
+  The browser sends only the message id. The server re-checks that the
+  authenticated user is the sender, uses the service-role key only on the
+  server to read the recipient auth email, and sends a Resend email that links
+  back to `/event-mode/{code}`.
+- Notification email must not include the message body, sender email address,
+  sender phone number, repertoire, or other contact details. Provider payloads
+  intentionally include recipient email address, sender display name, event
+  name, and the event link only.
 
 Required database contract:
 - `event_mode_messages`
@@ -572,13 +580,27 @@ Required database contract:
   - `blocker_user_id uuid references auth.users(id) on delete cascade`
   - `blocked_user_id uuid references auth.users(id) on delete cascade`
   - `created_at timestamptz not null default now()`
+- `event_mode_message_notifications`
+  - `id uuid primary key`
+  - `message_id uuid references public.event_mode_messages(id) on delete cascade`
+  - `event_id uuid references public.event_mode_events(id) on delete cascade`
+  - `sender_user_id uuid references auth.users(id) on delete cascade`
+  - `recipient_user_id uuid references auth.users(id) on delete cascade`
+  - `status text not null default 'pending'`
+  - optional `provider_message_id text`
+  - optional `error_status integer`
+  - `created_at timestamptz not null default now()`
+  - optional `sent_at timestamptz`
 - Check constraints prevent self-messages and self-blocks.
 - Check constraint keeps message bodies between 1 and 1000 trimmed characters.
 - Unique report index on `(message_id, reporter_user_id)`.
 - Unique block index on `(event_id, blocker_user_id, blocked_user_id)`.
+- Unique notification index on `(message_id)` prevents repeated notification
+  sends for the same Event Mode message.
 - RLS enabled on all three tables.
 - Authenticated users can select only messages they sent or received.
 - Authenticated users can select only their own reports and blocks.
+- Notification rows are server-only; no direct `anon` or `authenticated` grants.
 - Browser writes use security-definer functions with explicit server-side
   authorization checks rather than direct insert/update policies.
 - `public.event_mode_user_can_message(uuid, uuid, uuid)` checks active event
@@ -595,6 +617,17 @@ Required database contract:
 
 Established by migrations:
 - `20260506100000_add_event_mode_messaging.sql`
+- `20260506113000_add_event_mode_message_notifications.sql`
+
+Notification environment:
+- `EVENT_MODE_MESSAGE_FROM_EMAIL`: server-only verified Resend sender address
+  for Event Mode message notifications.
+- `RESEND_API_KEY`: server-only Resend API key shared with other app email
+  delivery.
+- `SUPABASE_SERVICE_ROLE_KEY`: server-only Supabase key used by the
+  notification route to look up the recipient auth email after sender
+  authorization is checked.
+- `NEXT_PUBLIC_SITE_URL`: public app origin used to build the event link.
 
 ### `sessions`
 

@@ -128,6 +128,13 @@ const eventModeMessagingMigration = readFileSync(
   ),
   "utf8"
 );
+const eventModeMessageNotificationsMigration = readFileSync(
+  join(
+    repoRoot,
+    "supabase/migrations/20260506113000_add_event_mode_message_notifications.sql"
+  ),
+  "utf8"
+);
 
 describe("Supabase contract guardrails", () => {
   const tables = [
@@ -145,6 +152,7 @@ describe("Supabase contract guardrails", () => {
     "event_mode_messages",
     "event_mode_message_reports",
     "event_mode_blocks",
+    "event_mode_message_notifications",
   ];
   const baseMigrationTables = tables.filter(
     (table) =>
@@ -158,6 +166,7 @@ describe("Supabase contract guardrails", () => {
         "event_mode_messages",
         "event_mode_message_reports",
         "event_mode_blocks",
+        "event_mode_message_notifications",
       ].includes(table)
   );
 
@@ -464,10 +473,16 @@ describe("Supabase contract guardrails", () => {
     expect(contract).toContain("event_mode_messages");
     expect(contract).toContain("event_mode_message_reports");
     expect(contract).toContain("event_mode_blocks");
+    expect(contract).toContain("event_mode_message_notifications");
     expect(contract).toContain("send_event_mode_message");
     expect(contract).toContain("get_event_mode_messages_by_code");
     expect(contract).toContain("report_event_mode_message");
     expect(contract).toContain("block_event_mode_user");
+    expect(contract).toContain("app/api/event-mode/messages/notify/route.ts");
+    expect(contract).toContain("EVENT_MODE_MESSAGE_FROM_EMAIL");
+    expect(contract).toContain("SUPABASE_SERVICE_ROLE_KEY");
+    expect(contract).toContain("must not include the message body");
+    expect(contract).toContain("prevents repeated notification");
     expect(contract).toContain("messages they sent or received");
     expect(contract).toContain("Blocked users cannot send new messages");
     expect(eventModeMessagingMigration).toContain(
@@ -500,5 +515,18 @@ describe("Supabase contract guardrails", () => {
     expect(eventModeMessagingMigration).toContain("to authenticated");
     expect(eventModeMessagingMigration).not.toContain("to anon");
     expect(eventModeMessagingMigration).not.toContain("user_repertoire");
+    expect(eventModeMessageNotificationsMigration).toContain(
+      "create table if not exists public.event_mode_message_notifications"
+    );
+    expect(eventModeMessageNotificationsMigration).toContain(
+      "event_mode_message_notifications_message_key"
+    );
+    expect(eventModeMessageNotificationsMigration).toContain(
+      "enable row level security"
+    );
+    expect(eventModeMessageNotificationsMigration).toContain(
+      "revoke all on table public.event_mode_message_notifications from authenticated"
+    );
+    expect(eventModeMessageNotificationsMigration).not.toContain("grant ");
   });
 });

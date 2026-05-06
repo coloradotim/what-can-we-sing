@@ -607,6 +607,18 @@ export async function sendEventModeMessage(input: EventModeMessageInput) {
   return ((data ?? []) as EventModeMessage[])[0] ?? null;
 }
 
+export async function notifyEventModeMessage(messageId: string) {
+  const response = await fetch("/api/event-mode/messages/notify", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ messageId }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Could not send message notification.");
+  }
+}
+
 export async function reportEventModeMessage(messageId: string, reason?: string) {
   const { error } = await supabase.rpc("report_event_mode_message", {
     p_message_id: messageId,

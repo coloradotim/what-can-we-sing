@@ -15,6 +15,7 @@ import {
   getEventModeEventByCode,
   getEventModeMessagesByCode,
   getEventModeLifecycle,
+  notifyEventModeMessage,
   reportEventModeMessage,
   sendEventModeMessage,
   turnOffEventModeAvailability,
@@ -298,17 +299,28 @@ export default function EventModeDetailPage() {
     setMessage("");
 
     try {
-      await sendEventModeMessage({
+      const sentMessage = await sendEventModeMessage({
         eventId: event.id,
         recipientUserId: target.user_id,
         recipientAvailabilityId: target.id,
         body: messageBody,
       });
+      let notificationSent = true;
+      if (sentMessage) {
+        await notifyEventModeMessage(sentMessage.id).catch((err) => {
+          notificationSent = false;
+          console.error("Could not send Event Mode message notification", err);
+        });
+      }
       setMessageTarget(null);
       setMessageBody("");
       await reloadMessages();
       setMessageTone("success");
-      setMessage("Message sent.");
+      setMessage(
+        notificationSent
+          ? "Message sent."
+          : "Message sent. Email notification was not sent."
+      );
     } catch (err) {
       console.error("Could not send Event Mode message", err);
       setMessageTone("error");
@@ -325,15 +337,26 @@ export default function EventModeDetailPage() {
     setMessage("");
 
     try {
-      await sendEventModeMessage({
+      const sentMessage = await sendEventModeMessage({
         eventId: event.id,
         recipientUserId,
         body,
       });
+      let notificationSent = true;
+      if (sentMessage) {
+        await notifyEventModeMessage(sentMessage.id).catch((err) => {
+          notificationSent = false;
+          console.error("Could not send Event Mode reply notification", err);
+        });
+      }
       setReplyBodies((current) => ({ ...current, [recipientUserId]: "" }));
       await reloadMessages();
       setMessageTone("success");
-      setMessage("Reply sent.");
+      setMessage(
+        notificationSent
+          ? "Reply sent."
+          : "Reply sent. Email notification was not sent."
+      );
     } catch (err) {
       console.error("Could not send Event Mode reply", err);
       setMessageTone("error");

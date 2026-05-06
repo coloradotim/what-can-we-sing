@@ -244,6 +244,8 @@ describe("Event Mode helpers", () => {
 
     expect(storeSource).toContain("get_event_mode_messages_by_code");
     expect(storeSource).toContain("send_event_mode_message");
+    expect(storeSource).toContain("notifyEventModeMessage");
+    expect(storeSource).toContain("/api/event-mode/messages/notify");
     expect(storeSource).toContain("report_event_mode_message");
     expect(storeSource).toContain("block_event_mode_user");
     expect(storeSource).not.toContain("Invite to quartet");

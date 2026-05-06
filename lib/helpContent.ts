@@ -60,7 +60,7 @@ export const helpGuideSections: HelpGuideSection[] = [
       {
         title: "Finding singers at an event",
         body: [
-          "Event Mode lets signed-in singers find an event, mark themselves available there, and send private event-scoped messages to coordinate where and when to sing. Event Mode messages do not show your email address or phone number, do not expose your My Songs repertoire, and are separate from starting a quartet.",
+          "Event Mode lets signed-in singers find an event, mark themselves available there, and send private event-scoped messages to coordinate where and when to sing. Event Mode messages do not show your email address or phone number, do not expose your My Songs repertoire, and are separate from starting a quartet. Email notifications, when configured, link back to the event without including the message text or sender contact details.",
           "Once singers are physically together, use Start a quartet and have the others join by QR code, code, or link.",
         ],
       },
