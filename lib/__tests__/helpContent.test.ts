@@ -57,6 +57,7 @@ describe("help content", () => {
       "Start A Quartet For The Group",
       "Join A Quartet Someone Else Started",
       "Understand What Your Pick-Up Quartet Can Sing",
+      "Find Singers At An Event",
       "Update, Leave, Or Rejoin A Quartet",
     ]);
 
@@ -66,16 +67,26 @@ describe("help content", () => {
       "starting-a-quartet",
       "joining-a-quartet",
       "quartet-matches",
+      "event-mode",
       "managing-a-quartet",
     ]);
 
     expect(guideText).toContain("First Time Setup");
     expect(guideText).toContain("copy songs from another singer");
     expect(guideText).toContain("Harmony Brigade songs");
-    expect(guideText).toContain("Event Mode lets signed-in singers");
+    expect(guideText).toContain("Event Mode Beta lets signed-in singers");
+    expect(guideText).toContain("Event Mode is in beta");
+    expect(guideText).toContain("buggy, incomplete, or change");
+    expect(guideText).toContain("Find my event");
+    expect(guideText).toContain("Listed events can be found");
+    expect(guideText).toContain("Unlisted events do not appear in search");
+    expect(guideText).toContain("Availability is opt-in");
+    expect(guideText).toContain("does not use GPS or exact location tracking");
     expect(guideText).toContain("private event-scoped messages");
     expect(guideText).toContain("Email notifications");
+    expect(guideText).toContain("report it or block that singer");
     expect(guideText).toContain("do not expose your My Songs repertoire");
+    expect(guideText).toContain("Quartet matching still happens through the normal Start/Join quartet flow");
     expect(guideText).toContain("Song Title Autocomplete");
     expect(guideText).toContain("Suggestions are optional");
     expect(guideText).toContain("does not add it to anyone else’s saved songs");
@@ -127,6 +138,7 @@ describe("help content", () => {
       { id: "starting-a-quartet", label: "Starting a quartet" },
       { id: "joining-a-quartet", label: "Joining a quartet" },
       { id: "quartet-matches", label: "Quartet matches" },
+      { id: "event-mode", label: "Event Mode Beta" },
       { id: "managing-a-quartet", label: "Managing a quartet" },
       { id: "acknowledgments", label: "Acknowledgments" },
       { id: "feedback", label: "Feedback" },
