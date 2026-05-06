@@ -74,6 +74,7 @@ describe("help content", () => {
     expect(guideText).toContain("Harmony Brigade songs");
     expect(guideText).toContain("Event Mode lets signed-in singers");
     expect(guideText).toContain("private event-scoped messages");
+    expect(guideText).toContain("Email notifications");
     expect(guideText).toContain("do not expose your My Songs repertoire");
     expect(guideText).toContain("Song Title Autocomplete");
     expect(guideText).toContain("Suggestions are optional");

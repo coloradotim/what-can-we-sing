@@ -133,8 +133,10 @@ export default function PrivacyPage() {
               coordinate singing. Event Mode does not show your email address or
               phone number to other singers, does not expose your My Songs
               repertoire, and does not create a permanent public profile or
-              global singer directory. Message reports and blocks are private
-              safety controls.
+              global singer directory. When configured, Event Mode sends an
+              email notification for a new message that links you back to the
+              app without including the message text or sender contact details.
+              Message reports and blocks are private safety controls.
             </p>
           </div>
 
