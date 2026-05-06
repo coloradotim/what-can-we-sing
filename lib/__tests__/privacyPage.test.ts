@@ -41,6 +41,9 @@ describe("privacy page copy", () => {
     expect(privacyPage).toContain("other singers in that quartet may see");
     expect(privacyPage).toContain("Feedback forms");
     expect(privacyPage).toContain("PostHog");
+    expect(privacyPage).toContain("Event Mode message text");
+    expect(privacyPage).toContain("availability notes");
+    expect(privacyPage).toContain("event location text");
     expect(privacyPage).toContain("Supabase");
     expect(privacyPage).toContain("Vercel");
     expect(privacyPage).toContain("Resend");

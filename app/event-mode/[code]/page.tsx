@@ -1,6 +1,7 @@
 "use client";
 
 import { AppNav } from "@/components/AppNav";
+import { trackEvent } from "@/lib/analytics";
 import {
   blockEventModeUser,
   closeEventModeEvent,
@@ -82,6 +83,16 @@ function eventLocation(event: EventModeEvent) {
   return [event.city, event.venue_or_location_note].filter(Boolean).join(" · ");
 }
 
+function availabilityAnalyticsProperties(
+  availabilityForm: AvailabilityFormState
+) {
+  return {
+    selected_voice_part_count: availabilityForm.voiceParts.length,
+    has_availability: availabilityForm.availabilityNote.trim().length > 0,
+    has_meetup: availabilityForm.meetupNote.trim().length > 0,
+  };
+}
+
 export default function EventModeDetailPage() {
   const params = useParams<{ code: string }>();
   const code = params.code;
@@ -135,6 +146,16 @@ export default function EventModeDetailPage() {
         setAvailabilityForm(
           loadedEvent ? availabilityFormFromEvent(loadedEvent, myAvailability) : null
         );
+        if (loadedEvent) {
+          trackEvent("event_mode_viewed", {
+            page_area: "detail",
+            signed_in: Boolean(user),
+            visibility: loadedEvent.visibility,
+            lifecycle: getEventModeLifecycle(loadedEvent),
+            availability_count: loadedAvailability.length,
+            message_count: loadedMessages.length,
+          });
+        }
       } catch (err) {
         console.error("Could not load Event Mode event", err);
         setMessageTone("error");
@@ -249,6 +270,7 @@ export default function EventModeDetailPage() {
     setMessage("");
 
     try {
+      const wasAvailable = Boolean(currentAvailability);
       await upsertEventModeAvailability({
         eventId: event.id,
         voiceParts: availabilityForm.voiceParts,
@@ -256,11 +278,33 @@ export default function EventModeDetailPage() {
         meetupNote: availabilityForm.meetupNote,
         availableUntil: availabilityForm.availableUntil,
       });
+      trackEvent(
+        wasAvailable
+          ? "event_mode_availability_updated"
+          : "event_mode_availability_created",
+        {
+          ...availabilityAnalyticsProperties(availabilityForm),
+          visibility: event.visibility,
+          lifecycle: getEventModeLifecycle(event),
+          status: "success",
+        }
+      );
       await reloadAvailability();
       setMessageTone("success");
       setMessage("You are available to sing at this event.");
     } catch (err) {
       console.error("Could not save Event Mode availability", err);
+      trackEvent(
+        currentAvailability
+          ? "event_mode_availability_updated"
+          : "event_mode_availability_created",
+        {
+          ...availabilityAnalyticsProperties(availabilityForm),
+          visibility: event.visibility,
+          lifecycle: getEventModeLifecycle(event),
+          status: "failure",
+        }
+      );
       setMessageTone("error");
       setMessage(
         err instanceof Error ? err.message : "Could not save availability."
@@ -277,11 +321,21 @@ export default function EventModeDetailPage() {
 
     try {
       await turnOffEventModeAvailability(event.id);
+      trackEvent("event_mode_availability_turned_off", {
+        visibility: event.visibility,
+        lifecycle: getEventModeLifecycle(event),
+        status: "success",
+      });
       await reloadAvailability();
       setMessageTone("success");
       setMessage("Your Event Mode availability is turned off.");
     } catch (err) {
       console.error("Could not turn off Event Mode availability", err);
+      trackEvent("event_mode_availability_turned_off", {
+        visibility: event.visibility,
+        lifecycle: getEventModeLifecycle(event),
+        status: "failure",
+      });
       setMessageTone("error");
       setMessage(
         err instanceof Error
@@ -305,6 +359,12 @@ export default function EventModeDetailPage() {
         recipientAvailabilityId: target.id,
         body: messageBody,
       });
+      trackEvent("event_mode_message_sent", {
+        visibility: event.visibility,
+        lifecycle: getEventModeLifecycle(event),
+        status: "success",
+        notification_attempted: Boolean(sentMessage),
+      });
       let notificationSent = true;
       if (sentMessage) {
         await notifyEventModeMessage(sentMessage.id).catch((err) => {
@@ -323,6 +383,11 @@ export default function EventModeDetailPage() {
       );
     } catch (err) {
       console.error("Could not send Event Mode message", err);
+      trackEvent("event_mode_message_sent", {
+        visibility: event.visibility,
+        lifecycle: getEventModeLifecycle(event),
+        status: "failure",
+      });
       setMessageTone("error");
       setMessage(err instanceof Error ? err.message : "Could not send message.");
     } finally {
@@ -342,6 +407,12 @@ export default function EventModeDetailPage() {
         recipientUserId,
         body,
       });
+      trackEvent("event_mode_message_replied", {
+        visibility: event.visibility,
+        lifecycle: getEventModeLifecycle(event),
+        status: "success",
+        notification_attempted: Boolean(sentMessage),
+      });
       let notificationSent = true;
       if (sentMessage) {
         await notifyEventModeMessage(sentMessage.id).catch((err) => {
@@ -359,6 +430,11 @@ export default function EventModeDetailPage() {
       );
     } catch (err) {
       console.error("Could not send Event Mode reply", err);
+      trackEvent("event_mode_message_replied", {
+        visibility: event.visibility,
+        lifecycle: getEventModeLifecycle(event),
+        status: "failure",
+      });
       setMessageTone("error");
       setMessage(err instanceof Error ? err.message : "Could not send reply.");
     } finally {
@@ -636,11 +712,21 @@ export default function EventModeDetailPage() {
                       </span>
                       <select
                         value={selectedPart}
-                        onChange={(inputEvent) =>
-                          setSelectedPart(
-                            inputEvent.target.value as EventModeVoicePart | "all"
-                          )
-                        }
+                        onChange={(inputEvent) => {
+                          const value = inputEvent.target.value as
+                            | EventModeVoicePart
+                            | "all";
+                          setSelectedPart(value);
+                          trackEvent(
+                            "event_mode_available_singer_filter_used",
+                            {
+                              selected_part_count: value === "all" ? 0 : 1,
+                              availability_count: availability.length,
+                              visibility: event.visibility,
+                              lifecycle: getEventModeLifecycle(event),
+                            }
+                          );
+                        }}
                         className="mt-2 w-full rounded-xl bg-slate-900 px-3 py-2 text-white outline-none ring-cyan-300 focus:ring-2"
                       >
                         <option value="all">All parts</option>
@@ -690,6 +776,11 @@ export default function EventModeDetailPage() {
                               onClick={() => {
                                 setMessageTarget(item);
                                 setMessageBody("");
+                                trackEvent("event_mode_message_started", {
+                                  visibility: event.visibility,
+                                  lifecycle: getEventModeLifecycle(event),
+                                  availability_count: availability.length,
+                                });
                               }}
                               className="rounded-xl bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
                             >
@@ -862,6 +953,14 @@ export default function EventModeDetailPage() {
                     </p>
                     <a
                       href="/session"
+                      onClick={() =>
+                        trackEvent("event_mode_start_quartet_clicked", {
+                          visibility: event.visibility,
+                          lifecycle: getEventModeLifecycle(event),
+                          availability_count: availability.length,
+                          message_count: messages.length,
+                        })
+                      }
                       className="mt-3 inline-block rounded-xl bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
                     >
                       Start a quartet

@@ -30,6 +30,7 @@ describe("PostHog dashboard spec", () => {
       "quartet-funnel",
       "repertoire-matching",
       "reliability-errors",
+      "event-mode",
       "browser-mobile-compatibility",
     ]);
   });
@@ -95,6 +96,8 @@ describe("PostHog dashboard spec", () => {
       "join-by-route": "ActionsBar",
       "repertoire-updates": "ActionsBar",
       "join-errors": "ActionsBar",
+      "event-mode-create-by-visibility": "ActionsBar",
+      "event-mode-start-quartet-handoff": "BoldNumber",
       "leave-flow-by-browser": "ActionsBar",
     });
   });

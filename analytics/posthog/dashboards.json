@@ -252,6 +252,87 @@
       ]
     },
     {
+      "key": "event-mode",
+      "name": "What Can We Sing - Event Mode Beta",
+      "description": "Event Mode discovery, availability, messaging, and handoff to Start a quartet.",
+      "insights": [
+        {
+          "key": "event-mode-entry-activity",
+          "name": "Event Mode entry activity",
+          "description": "Views, searches, event opens, and event creation.",
+          "type": "trend",
+          "display": "ActionsLineGraph",
+          "dateFrom": "-30d",
+          "series": [
+            { "event": "event_mode_viewed" },
+            { "event": "event_mode_event_search_submitted" },
+            { "event": "event_mode_event_used" },
+            { "event": "event_mode_event_created" }
+          ]
+        },
+        {
+          "key": "event-mode-search-results",
+          "name": "Average Event Mode search results",
+          "description": "Average listed event result count for submitted searches.",
+          "type": "trend",
+          "display": "ActionsLineGraph",
+          "dateFrom": "-30d",
+          "series": [
+            {
+              "event": "event_mode_event_search_submitted",
+              "math": "avg",
+              "mathProperty": "result_count"
+            }
+          ]
+        },
+        {
+          "key": "event-mode-create-by-visibility",
+          "name": "Event Mode created by visibility",
+          "description": "Listed vs unlisted events created.",
+          "type": "trend",
+          "display": "ActionsBar",
+          "dateFrom": "-30d",
+          "breakdown": "visibility",
+          "series": [{ "event": "event_mode_event_created" }]
+        },
+        {
+          "key": "event-mode-availability",
+          "name": "Event Mode availability activity",
+          "description": "Availability created, updated, and turned off.",
+          "type": "trend",
+          "display": "ActionsBar",
+          "dateFrom": "-30d",
+          "series": [
+            { "event": "event_mode_availability_created" },
+            { "event": "event_mode_availability_updated" },
+            { "event": "event_mode_availability_turned_off" }
+          ]
+        },
+        {
+          "key": "event-mode-messaging",
+          "name": "Event Mode messaging activity",
+          "description": "Message starts, sends, and replies.",
+          "type": "trend",
+          "display": "ActionsBar",
+          "dateFrom": "-30d",
+          "series": [
+            { "event": "event_mode_message_started" },
+            { "event": "event_mode_message_sent" },
+            { "event": "event_mode_message_replied" }
+          ]
+        },
+        {
+          "key": "event-mode-start-quartet-handoff",
+          "name": "Event Mode to Start quartet handoff",
+          "description": "Clicks from Event Mode into the Start quartet flow.",
+          "type": "trend",
+          "display": "BoldNumber",
+          "dateFrom": "-30d",
+          "series": [{ "event": "event_mode_start_quartet_clicked" }]
+        }
+      ]
+    },
+    {
       "key": "browser-mobile-compatibility",
       "name": "What Can We Sing - Browser / Mobile Compatibility",
       "description": "Key action success and failure by browser, operating system, and device type.",

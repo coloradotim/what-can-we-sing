@@ -1,6 +1,7 @@
 "use client";
 
 import { AppNav } from "@/components/AppNav";
+import { trackEvent } from "@/lib/analytics";
 import {
   createEventModeEvent,
   eventModePathFromCode,
@@ -57,13 +58,29 @@ export default function EventModePage() {
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  async function loadEvents(searchQuery = query) {
+  async function loadEvents(
+    searchQuery = query,
+    options: { trackSearch?: boolean } = {}
+  ) {
     setLoadingEvents(true);
     try {
       const listedEvents = await searchEventModeEvents(searchQuery);
       setEvents(listedEvents);
+      if (options.trackSearch) {
+        trackEvent("event_mode_event_search_submitted", {
+          result_count: listedEvents.length,
+          has_search: searchQuery.trim().length > 0,
+          status: "success",
+        });
+      }
     } catch (err) {
       console.error("Could not load Event Mode events", err);
+      if (options.trackSearch) {
+        trackEvent("event_mode_event_search_submitted", {
+          has_search: searchQuery.trim().length > 0,
+          status: "failure",
+        });
+      }
       setMessageTone("error");
       setMessage("Could not load events. Check your connection and try again.");
     } finally {
@@ -80,6 +97,15 @@ export default function EventModePage() {
           const searchParams = new URLSearchParams(window.location.search);
           setShowCreateForm(searchParams.get("create") === "1");
           await loadEvents("");
+          trackEvent("event_mode_viewed", {
+            page_area: "landing",
+            signed_in: true,
+          });
+        } else {
+          trackEvent("event_mode_viewed", {
+            page_area: "landing",
+            signed_in: false,
+          });
         }
         setAuthChecked(true);
       } catch (err) {
@@ -110,6 +136,9 @@ export default function EventModePage() {
       return;
     }
 
+    trackEvent("event_mode_event_used", {
+      source: "code_entry",
+    });
     window.location.href = path;
   }
 
@@ -133,11 +162,19 @@ export default function EventModePage() {
       }
 
       const event = await createEventModeEvent(form);
+      trackEvent("event_mode_event_created", {
+        visibility: event.visibility,
+        status: "success",
+      });
       setMessageTone("success");
       setMessage("Event created.");
       window.location.href = `/event-mode/${event.join_code}`;
     } catch (err) {
       console.error("Could not create Event Mode event", err);
+      trackEvent("event_mode_event_created", {
+        visibility: form.visibility,
+        status: "failure",
+      });
       setMessageTone("error");
       setMessage(err instanceof Error ? err.message : "Could not create event.");
       setCreating(false);
@@ -170,8 +207,8 @@ export default function EventModePage() {
             Find singers at an event
           </h1>
           <p className="mt-4 text-lg leading-8 text-slate-300">
-            Event Mode helps singers find pickup singing opportunities at an
-            event. Sign in to find or create an event.
+              Event Mode helps singers find pickup singing opportunities at an
+              event. Sign in to find or create an event.
           </p>
           <p className="mt-3 text-sm leading-6 text-slate-400">
             Beta means this feature may be buggy or incomplete.
@@ -228,7 +265,9 @@ export default function EventModePage() {
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   onKeyDown={(event) => {
-                    if (event.key === "Enter") loadEvents(query);
+                    if (event.key === "Enter") {
+                      loadEvents(query, { trackSearch: true });
+                    }
                   }}
                   placeholder="Search by event name, city, or shorthand like AHB"
                   className="mt-2 w-full rounded-xl bg-slate-900 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
@@ -236,7 +275,7 @@ export default function EventModePage() {
               </label>
               <button
                 type="button"
-                onClick={() => loadEvents(query)}
+                onClick={() => loadEvents(query, { trackSearch: true })}
                 disabled={loadingEvents}
                 className="rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-50 sm:self-end"
               >
@@ -271,6 +310,13 @@ export default function EventModePage() {
                     </div>
                     <a
                       href={`/event-mode/${event.join_code}`}
+                      onClick={() =>
+                        trackEvent("event_mode_event_used", {
+                          source: "search_result",
+                          visibility: event.visibility,
+                          lifecycle: getEventModeLifecycle(event),
+                        })
+                      }
                       className="rounded-xl bg-cyan-300 px-4 py-2 text-center text-sm font-semibold text-slate-950 hover:bg-cyan-200"
                     >
                       Use this event
@@ -438,6 +484,13 @@ export default function EventModePage() {
                       </p>
                       <a
                         href={`/event-mode/${candidate.event.join_code}`}
+                        onClick={() =>
+                          trackEvent("event_mode_event_used", {
+                            source: "duplicate_candidate",
+                            visibility: candidate.event.visibility,
+                            lifecycle: getEventModeLifecycle(candidate.event),
+                          })
+                        }
                         className="mt-3 inline-block rounded-xl bg-amber-200 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-amber-100"
                       >
                         Use existing event

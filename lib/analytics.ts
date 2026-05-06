@@ -28,7 +28,19 @@ export type AnalyticsEventName =
   | "song_mark_sung_failed"
   | "help_viewed"
   | "feedback_submitted"
-  | "feedback_failed";
+  | "feedback_failed"
+  | "event_mode_viewed"
+  | "event_mode_event_search_submitted"
+  | "event_mode_event_created"
+  | "event_mode_event_used"
+  | "event_mode_availability_created"
+  | "event_mode_availability_updated"
+  | "event_mode_availability_turned_off"
+  | "event_mode_available_singer_filter_used"
+  | "event_mode_message_started"
+  | "event_mode_message_sent"
+  | "event_mode_message_replied"
+  | "event_mode_start_quartet_clicked";
 
 export const ANALYTICS_EVENT_NAMES = [
   "analytics_client_ready",
@@ -59,6 +71,18 @@ export const ANALYTICS_EVENT_NAMES = [
   "help_viewed",
   "feedback_submitted",
   "feedback_failed",
+  "event_mode_viewed",
+  "event_mode_event_search_submitted",
+  "event_mode_event_created",
+  "event_mode_event_used",
+  "event_mode_availability_created",
+  "event_mode_availability_updated",
+  "event_mode_availability_turned_off",
+  "event_mode_available_singer_filter_used",
+  "event_mode_message_started",
+  "event_mode_message_sent",
+  "event_mode_message_replied",
+  "event_mode_start_quartet_clicked",
 ] as const satisfies readonly AnalyticsEventName[];
 
 type AnalyticsPropertyValue = string | number | boolean | null | undefined;
@@ -115,6 +139,10 @@ export function getAnalyticsRoute(pathname: string | null | undefined) {
 
   if (segments[0] === "join" && segments.length > 1) {
     return "/join/[code]";
+  }
+
+  if (segments[0] === "event-mode" && segments.length > 1) {
+    return "/event-mode/[code]";
   }
 
   return normalizedPathname || "/";

@@ -25,6 +25,11 @@ describe("sanitizeAnalyticsProperties", () => {
         arranger_name: "Arranger",
         feedback_text: "Please add this",
         display_name: "Singer",
+        event_name: "District Convention",
+        availability_note: "After contest",
+        meetup_note: "Lobby",
+        message_body: "Want to sing?",
+        raw_search_text: "Denver afterglow",
         notes: "Private note",
         email: "singer@example.com",
         song_count: 12,
@@ -47,6 +52,13 @@ describe("getAnalyticsRoute", () => {
     expect(getAnalyticsRoute("/join/ABC123")).toBe("/join/[code]");
     expect(getAnalyticsRoute("/join/ABC123?intent=join")).toBe(
       "/join/[code]"
+    );
+  });
+
+  it("does not expose Event Mode codes in route analytics", () => {
+    expect(getAnalyticsRoute("/event-mode/ABC123")).toBe("/event-mode/[code]");
+    expect(getAnalyticsRoute("/event-mode/ABC123?from=email")).toBe(
+      "/event-mode/[code]"
     );
   });
 });
