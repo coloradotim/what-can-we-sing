@@ -60,7 +60,7 @@ export const helpGuideSections: HelpGuideSection[] = [
       {
         title: "Finding singers at an event",
         body: [
-          "Event Mode lets signed-in singers find an event, mark themselves available there, and send private event-scoped messages to coordinate where and when to sing. Event Mode messages do not show your email address or phone number, do not expose your My Songs repertoire, and are separate from starting a quartet. Email notifications, when configured, link back to the event without including the message text or sender contact details.",
+          "Event Mode Beta lets signed-in singers find an event, mark themselves available there, and send private event-scoped messages to coordinate where and when to sing. Event Mode messages do not show your email address or phone number, do not expose your My Songs repertoire, and are separate from starting a quartet. Email notifications, when configured, link back to the event without including the message text or sender contact details.",
           "Once singers are physically together, use Start a quartet and have the others join by QR code, code, or link.",
         ],
       },
@@ -239,6 +239,53 @@ export const helpGuideSections: HelpGuideSection[] = [
     ],
   },
   {
+    id: "event-mode",
+    eyebrow: "Event Mode Beta",
+    title: "Find Singers At An Event",
+    intro:
+      "Use Event Mode Beta when you are at a convention, afterglow, Brigade weekend, chapter event, or other gathering and want to find singers at that event.",
+    topics: [
+      {
+        title: "What Beta Means",
+        body: [
+          "Event Mode is in beta. That means it is ready to try at events, but it may be buggy, incomplete, or change as we learn what singers need.",
+          "Please send feedback if something is confusing, missing, or useful. That feedback helps shape what Event Mode becomes.",
+        ],
+      },
+      {
+        title: "Find Or Create An Event",
+        body: [
+          "Use Find my event to search active or upcoming listed events by event name, city, or location note. Listed events can be found by signed-in users.",
+          "Use an event code or link for an unlisted event. Unlisted events do not appear in search and require the code or link from another singer.",
+          "If your event is not listed yet, use Create an event. Create a listed event when you want signed-in singers to find it, or an unlisted event when you only want people with the link or code to enter.",
+        ],
+      },
+      {
+        title: "Make Yourself Available",
+        body: [
+          "Use I’m available to sing when you want other singers at that event to know you are open to singing. Availability is opt-in, event-scoped, and temporary.",
+          "Choose the voice parts you are willing to sing, add an availability note for when you are free, and add a meetup note for where people should find you. Meetup notes are text you enter; the app does not use GPS or exact location tracking.",
+          "Your availability expires automatically, and you can turn it off at any time.",
+        ],
+      },
+      {
+        title: "Message And Meet Up",
+        body: [
+          "Available singers can send private event-scoped messages to coordinate when and where to sing. Messages are for coordination, not formal quartet invitations.",
+          "Event Mode does not show your private email address or phone number to other singers. Message email notifications, when configured, link back to the event without including the message text or sender contact details.",
+          "If a message feels wrong, you can report it or block that singer for that event.",
+        ],
+      },
+      {
+        title: "Start A Quartet After You Connect",
+        body: [
+          "Once people are physically together, use Start a quartet and have the others join by QR code, code, or link.",
+          "Event Mode does not share your My Songs repertoire. Quartet matching still happens through the normal Start/Join quartet flow.",
+        ],
+      },
+    ],
+  },
+  {
     id: "managing-a-quartet",
     eyebrow: "Managing A Quartet",
     title: "Update, Leave, Or Rejoin A Quartet",
@@ -269,6 +316,7 @@ export const helpNavItems: HelpNavItem[] = [
   { id: "starting-a-quartet", label: "Starting a quartet" },
   { id: "joining-a-quartet", label: "Joining a quartet" },
   { id: "quartet-matches", label: "Quartet matches" },
+  { id: "event-mode", label: "Event Mode Beta" },
   { id: "managing-a-quartet", label: "Managing a quartet" },
   { id: "acknowledgments", label: "Acknowledgments" },
   { id: "feedback", label: "Feedback" },

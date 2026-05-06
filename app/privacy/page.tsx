@@ -126,18 +126,47 @@ export default function PrivacyPage() {
           </div>
 
           <div>
-            <h2 className="text-xl font-semibold">Event Mode</h2>
+            <h2 className="text-xl font-semibold">Event Mode Beta</h2>
             <p className="mt-2 text-slate-300">
-              Event Mode lets signed-in singers find an event, mark themselves
-              available there, and send private event-scoped messages to
-              coordinate singing. Event Mode does not show your email address or
-              phone number to other singers, does not expose your My Songs
-              repertoire, and does not create a permanent public profile or
-              global singer directory. When configured, Event Mode sends an
-              email notification for a new message that links you back to the
-              app without including the message text or sender contact details.
-              Message reports and blocks are private safety controls.
+              Event Mode is a beta feature. Its event, availability, messaging,
+              and related coordination features may change as the feature
+              improves, but these privacy principles still apply to the
+              implemented behavior.
             </p>
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-slate-300">
+              <li>
+                Event Mode is event-scoped and temporary. Listed events can be
+                found by signed-in users; unlisted events require a link or
+                code.
+              </li>
+              <li>
+                Availability is opt-in, visible for that event, and expires.
+                Voice parts, availability notes, and meetup notes are shown to
+                signed-in singers using that event.
+              </li>
+              <li>
+                Meetup notes are text you enter. The app does not use GPS or
+                exact location tracking for Event Mode.
+              </li>
+              <li>
+                Event Mode does not expose your My Songs repertoire, song notes,
+                confidence, last-sung history, or quartet membership.
+              </li>
+              <li>
+                Event Mode messages are app-mediated and event-scoped. Your
+                private email address and phone number are not shown to other
+                singers by default.
+              </li>
+              <li>
+                When configured, Event Mode sends an email notification for a
+                new message that links you back to the app without including the
+                message text or sender contact details.
+              </li>
+              <li>
+                Message reports and blocks are private safety controls for the
+                event.
+              </li>
+            </ul>
           </div>
 
           <div>
