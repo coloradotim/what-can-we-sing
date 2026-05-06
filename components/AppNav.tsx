@@ -23,7 +23,7 @@ const primaryNavItems = [
   },
   {
     href: "/event-mode",
-    label: "Event Mode",
+    label: "Event Mode Beta",
     isActive: (pathname: string) => pathname.startsWith("/event-mode"),
   },
 ];

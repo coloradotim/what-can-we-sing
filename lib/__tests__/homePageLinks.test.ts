@@ -26,10 +26,11 @@ describe("home page links", () => {
     expect(homePage).toContain("Start a quartet");
     expect(homePage).toContain("Join a quartet");
     expect(homePage).toContain("My Songs");
-    expect(homePage).toContain("Event Mode");
+    expect(homePage).toContain("Event Mode Beta");
     expect(homePage).toContain(
       "At a convention, afterglow, or singing event? Find other"
     );
+    expect(homePage).toContain("incomplete while it is in beta");
     expect(homePage).toContain('href="/event-mode"');
     expect(homePage).toContain('href="/event-mode?create=1"');
     expect(homePage).toContain("Find my event");

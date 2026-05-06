@@ -430,7 +430,7 @@ export default function EventModeDetailPage() {
         {event && (
           <>
             <p className="mt-8 text-sm font-semibold uppercase text-cyan-300">
-              Event Mode
+              Event Mode Beta
             </p>
             <div className="mt-3 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
               <div>
@@ -444,6 +444,11 @@ export default function EventModeDetailPage() {
                 </p>
                 <p className="mt-2 text-sm font-semibold uppercase text-cyan-200">
                   {lifecycle} · {event.visibility}
+                </p>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
+                  Event Mode is still in beta, so it may be buggy or incomplete.
+                  It is ready to try at events, and your feedback will help
+                  improve it.
                 </p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm text-slate-200">
@@ -471,6 +476,9 @@ export default function EventModeDetailPage() {
                   Event Mode helps singers find pickup singing opportunities at
                   an event. Sign in to use this event.
                 </p>
+                <p className="mt-2 text-sm leading-6 text-cyan-50/70">
+                  Beta means this feature may be buggy or incomplete.
+                </p>
                 <a
                   href={`/login?redirect=/event-mode/${event.join_code}`}
                   className="mt-4 inline-block rounded-xl bg-cyan-300 px-5 py-3 font-semibold text-slate-950 hover:bg-cyan-200"
@@ -490,6 +498,12 @@ export default function EventModeDetailPage() {
                     This is only shown for this event. Your availability expires
                     automatically.
                   </p>
+                  {!currentAvailability && (
+                    <p className="mt-2 text-sm leading-6 text-cyan-50/80">
+                      Want to sing at this event? Make yourself available and
+                      add a short note about when and where to find you.
+                    </p>
+                  )}
 
                   {availabilityForm && (
                     <div className="mt-5 space-y-5">
@@ -530,7 +544,7 @@ export default function EventModeDetailPage() {
 
                       <label className="block">
                         <span className="text-sm font-semibold text-slate-100">
-                          When are you available?
+                          When are you available at this event?
                         </span>
                         <input
                           value={availabilityForm.availabilityNote}
@@ -547,7 +561,7 @@ export default function EventModeDetailPage() {
 
                       <label className="block">
                         <span className="text-sm font-semibold text-slate-100">
-                          Where should people find you?
+                          Where should people find you at this event?
                         </span>
                         <input
                           value={availabilityForm.meetupNote}
@@ -642,7 +656,9 @@ export default function EventModeDetailPage() {
                   <div className="mt-5 space-y-3">
                     {visibleAvailability.length === 0 && (
                       <p className="rounded-xl bg-slate-900/70 px-4 py-3 text-sm text-slate-300">
-                        No active available singers match this filter yet.
+                        {selectedPart === "all"
+                          ? "No one is available yet. Make yourself available so other singers know you want to sing."
+                          : "No active available singers match this filter yet."}
                       </p>
                     )}
 
