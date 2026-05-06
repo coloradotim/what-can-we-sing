@@ -72,6 +72,9 @@ describe("help content", () => {
     expect(guideText).toContain("First Time Setup");
     expect(guideText).toContain("copy songs from another singer");
     expect(guideText).toContain("Harmony Brigade songs");
+    expect(guideText).toContain("Event Mode lets signed-in singers");
+    expect(guideText).toContain("private event-scoped messages");
+    expect(guideText).toContain("do not expose your My Songs repertoire");
     expect(guideText).toContain("Song Title Autocomplete");
     expect(guideText).toContain("Suggestions are optional");
     expect(guideText).toContain("does not add it to anyone else’s saved songs");

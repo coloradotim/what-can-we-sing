@@ -17,6 +17,7 @@ const {
   isEventModeAvailabilityActive,
   normalizeEventModeText,
   parseEventModeCode,
+  validateEventModeMessageBody,
 } = await import("@/lib/eventMode");
 
 const storeSource = readFileSync(
@@ -228,6 +229,23 @@ describe("Event Mode helpers", () => {
     expect(storeSource).toContain("{ onConflict: \"event_id,user_id\" }");
     expect(storeSource).toContain("get_event_mode_availability_by_code");
     expect(storeSource).toContain('.eq("user_id", user.id)');
-    expect(storeSource).not.toContain("event_mode_messages");
+  });
+
+  it("keeps Event Mode messaging event-scoped and app-mediated", () => {
+    expect(validateEventModeMessageBody("  See you in the lobby?  ")).toBe(
+      "See you in the lobby?"
+    );
+    expect(() => validateEventModeMessageBody("   ")).toThrow(
+      "Message is required."
+    );
+    expect(() => validateEventModeMessageBody("x".repeat(1001))).toThrow(
+      "1000 characters"
+    );
+
+    expect(storeSource).toContain("get_event_mode_messages_by_code");
+    expect(storeSource).toContain("send_event_mode_message");
+    expect(storeSource).toContain("report_event_mode_message");
+    expect(storeSource).toContain("block_event_mode_user");
+    expect(storeSource).not.toContain("Invite to quartet");
   });
 });

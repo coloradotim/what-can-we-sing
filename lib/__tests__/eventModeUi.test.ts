@@ -25,6 +25,12 @@ describe("Event Mode UI copy", () => {
     expect(detailPage).toContain("Start a quartet");
     expect(detailPage).toContain("I&apos;m available to sing");
     expect(detailPage).toContain("Available singers");
+    expect(detailPage).toContain("Message");
+    expect(detailPage).toContain("Send a note to coordinate singing at this");
+    expect(detailPage).toContain("Messages");
+    expect(detailPage).toContain("Reply");
+    expect(detailPage).toContain("Report");
+    expect(detailPage).toContain("Block");
     expect(detailPage).toContain("Turn off my availability");
     expect(detailPage).toContain("Filter by voice part");
     expect(detailPage).toContain("Found people to sing with?");
@@ -40,6 +46,8 @@ describe("Event Mode UI copy", () => {
     expect(combined).not.toContain("Create an event board");
     expect(combined).not.toContain("Open event");
     expect(combined).not.toContain("Nearby singers");
+    expect(combined).not.toContain("Public chat room");
+    expect(combined).not.toContain("Global messaging");
     expect(combined).not.toContain("Location discovery");
     expect(combined).not.toContain("Public profile");
     expect(combined).not.toContain("Invite to quartet");

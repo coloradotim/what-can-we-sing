@@ -24,6 +24,10 @@ describe("privacy page copy", () => {
     expect(privacyPage).toContain("participant saved-song snapshots");
     expect(privacyPage).toContain("Private copy links");
     expect(privacyPage).toContain("Harmony Brigade songs");
+    expect(privacyPage).toContain("Event Mode");
+    expect(privacyPage).toContain("event-scoped messages");
+    expect(privacyPage).toContain("message reports");
+    expect(privacyPage).toContain("blocks");
     expect(privacyPage).toContain("other singers in that quartet may see");
     expect(privacyPage).toContain("Feedback forms");
     expect(privacyPage).toContain("PostHog");

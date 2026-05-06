@@ -2,6 +2,7 @@
 
 import { AppNav } from "@/components/AppNav";
 import {
+  blockEventModeUser,
   closeEventModeEvent,
   defaultEventModeAvailableUntil,
   eventModeVoicePartGroups,
@@ -12,12 +13,16 @@ import {
   formatEventModeDateRange,
   getEventModeAvailabilityByCode,
   getEventModeEventByCode,
+  getEventModeMessagesByCode,
   getEventModeLifecycle,
+  reportEventModeMessage,
+  sendEventModeMessage,
   turnOffEventModeAvailability,
   updateEventModeEvent,
   upsertEventModeAvailability,
   type EventModeAvailability,
   type EventModeEvent,
+  type EventModeMessage,
   type EventModeVisibility,
   type EventModeVoicePart,
 } from "@/lib/eventMode";
@@ -91,9 +96,15 @@ export default function EventModeDetailPage() {
   const [availabilityForm, setAvailabilityForm] =
     useState<AvailabilityFormState | null>(null);
   const [availability, setAvailability] = useState<EventModeAvailability[]>([]);
+  const [messages, setMessages] = useState<EventModeMessage[]>([]);
   const [selectedPart, setSelectedPart] = useState<EventModeVoicePart | "all">(
     "all"
   );
+  const [messageTarget, setMessageTarget] =
+    useState<EventModeAvailability | null>(null);
+  const [messageBody, setMessageBody] = useState("");
+  const [replyBodies, setReplyBodies] = useState<Record<string, string>>({});
+  const [busyMessageKey, setBusyMessageKey] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [messageTone, setMessageTone] = useState<"error" | "success">("error");
 
@@ -105,13 +116,18 @@ export default function EventModeDetailPage() {
           getCurrentUser().catch(() => null),
         ]);
         let loadedAvailability: EventModeAvailability[] = [];
+        let loadedMessages: EventModeMessage[] = [];
         if (loadedEvent && user) {
-          loadedAvailability = await getEventModeAvailabilityByCode(code);
+          [loadedAvailability, loadedMessages] = await Promise.all([
+            getEventModeAvailabilityByCode(code),
+            getEventModeMessagesByCode(code),
+          ]);
         }
         setEvent(loadedEvent);
         setForm(loadedEvent ? formFromEvent(loadedEvent) : null);
         setCurrentUserId(user?.id ?? null);
         setAvailability(loadedAvailability);
+        setMessages(loadedMessages);
         const myAvailability = loadedAvailability.find(
           (item) => item.user_id === user?.id
         );
@@ -177,6 +193,11 @@ export default function EventModeDetailPage() {
     if (event) {
       setAvailabilityForm(availabilityFormFromEvent(event, myAvailability));
     }
+  }
+
+  async function reloadMessages() {
+    const loadedMessages = await getEventModeMessagesByCode(code);
+    setMessages(loadedMessages);
   }
 
   async function saveEvent() {
@@ -268,6 +289,96 @@ export default function EventModeDetailPage() {
       );
     } finally {
       setTurningOffAvailability(false);
+    }
+  }
+
+  async function sendMessageToAvailability(target: EventModeAvailability) {
+    if (!event) return;
+    setBusyMessageKey(`send-${target.user_id}`);
+    setMessage("");
+
+    try {
+      await sendEventModeMessage({
+        eventId: event.id,
+        recipientUserId: target.user_id,
+        recipientAvailabilityId: target.id,
+        body: messageBody,
+      });
+      setMessageTarget(null);
+      setMessageBody("");
+      await reloadMessages();
+      setMessageTone("success");
+      setMessage("Message sent.");
+    } catch (err) {
+      console.error("Could not send Event Mode message", err);
+      setMessageTone("error");
+      setMessage(err instanceof Error ? err.message : "Could not send message.");
+    } finally {
+      setBusyMessageKey(null);
+    }
+  }
+
+  async function sendReply(recipientUserId: string) {
+    if (!event) return;
+    const body = replyBodies[recipientUserId] ?? "";
+    setBusyMessageKey(`reply-${recipientUserId}`);
+    setMessage("");
+
+    try {
+      await sendEventModeMessage({
+        eventId: event.id,
+        recipientUserId,
+        body,
+      });
+      setReplyBodies((current) => ({ ...current, [recipientUserId]: "" }));
+      await reloadMessages();
+      setMessageTone("success");
+      setMessage("Reply sent.");
+    } catch (err) {
+      console.error("Could not send Event Mode reply", err);
+      setMessageTone("error");
+      setMessage(err instanceof Error ? err.message : "Could not send reply.");
+    } finally {
+      setBusyMessageKey(null);
+    }
+  }
+
+  async function reportMessage(item: EventModeMessage) {
+    setBusyMessageKey(`report-${item.id}`);
+    setMessage("");
+
+    try {
+      await reportEventModeMessage(item.id);
+      await reloadMessages();
+      setMessageTone("success");
+      setMessage("Message reported.");
+    } catch (err) {
+      console.error("Could not report Event Mode message", err);
+      setMessageTone("error");
+      setMessage(
+        err instanceof Error ? err.message : "Could not report message."
+      );
+    } finally {
+      setBusyMessageKey(null);
+    }
+  }
+
+  async function blockUser(blockedUserId: string) {
+    if (!event) return;
+    setBusyMessageKey(`block-${blockedUserId}`);
+    setMessage("");
+
+    try {
+      await blockEventModeUser(event.id, blockedUserId);
+      await reloadMessages();
+      setMessageTone("success");
+      setMessage("That singer can no longer message you for this event.");
+    } catch (err) {
+      console.error("Could not block Event Mode user", err);
+      setMessageTone("error");
+      setMessage(err instanceof Error ? err.message : "Could not block user.");
+    } finally {
+      setBusyMessageKey(null);
     }
   }
 
@@ -533,8 +644,173 @@ export default function EventModeDetailPage() {
                             {item.meetup_note}
                           </p>
                         )}
+                        {item.user_id !== currentUserId && (
+                          <div className="mt-4">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setMessageTarget(item);
+                                setMessageBody("");
+                              }}
+                              className="rounded-xl bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200"
+                            >
+                              Message
+                            </button>
+
+                            {messageTarget?.id === item.id && (
+                              <div className="mt-3 rounded-xl border border-cyan-300/30 bg-cyan-300/10 p-3">
+                                <label className="block">
+                                  <span className="text-sm font-semibold text-white">
+                                    Message {item.display_name}
+                                  </span>
+                                  <span className="mt-1 block text-xs leading-5 text-cyan-50/80">
+                                    Send a note to coordinate singing at this
+                                    event. Your email address is not shown.
+                                  </span>
+                                  <textarea
+                                    value={messageBody}
+                                    onChange={(inputEvent) =>
+                                      setMessageBody(inputEvent.target.value)
+                                    }
+                                    rows={3}
+                                    maxLength={1000}
+                                    className="mt-2 w-full rounded-xl bg-slate-950 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                                  />
+                                </label>
+                                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                                  <button
+                                    type="button"
+                                    onClick={() => sendMessageToAvailability(item)}
+                                    disabled={busyMessageKey === `send-${item.user_id}`}
+                                    className="rounded-xl bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-50"
+                                  >
+                                    {busyMessageKey === `send-${item.user_id}`
+                                      ? "Sending..."
+                                      : "Send message"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setMessageTarget(null);
+                                      setMessageBody("");
+                                    }}
+                                    className="rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-700"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </article>
                     ))}
+                  </div>
+
+                  <div className="mt-6 rounded-xl border border-white/10 bg-slate-950/50 p-4">
+                    <h3 className="text-lg font-bold text-white">Messages</h3>
+                    <p className="mt-1 text-sm leading-6 text-slate-300">
+                      Event Mode messages are private to the sender and
+                      recipient for this event.
+                    </p>
+
+                    <div className="mt-4 space-y-3">
+                      {messages.length === 0 && (
+                        <p className="rounded-xl bg-slate-900/70 px-4 py-3 text-sm text-slate-300">
+                          No messages for this event yet.
+                        </p>
+                      )}
+
+                      {messages.map((item) => {
+                        const sentByMe = item.sender_user_id === currentUserId;
+                        const otherUserId = sentByMe
+                          ? item.recipient_user_id
+                          : item.sender_user_id;
+                        const otherName = sentByMe
+                          ? item.recipient_display_name
+                          : item.sender_display_name;
+                        const replyBody = replyBodies[otherUserId] ?? "";
+
+                        return (
+                          <article
+                            key={item.id}
+                            className="rounded-xl border border-white/10 bg-slate-900/80 p-4"
+                          >
+                            <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                              <div>
+                                <p className="text-sm font-semibold text-cyan-200">
+                                  {sentByMe
+                                    ? `You messaged ${item.recipient_display_name}`
+                                    : `${item.sender_display_name} messaged you`}
+                                </p>
+                                <p className="mt-1 text-xs text-slate-400">
+                                  {new Date(item.created_at).toLocaleString()}
+                                </p>
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => reportMessage(item)}
+                                  disabled={
+                                    item.reported_by_me ||
+                                    busyMessageKey === `report-${item.id}`
+                                  }
+                                  className="rounded-lg bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-100 hover:bg-slate-700 disabled:opacity-50"
+                                >
+                                  {item.reported_by_me ? "Reported" : "Report"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => blockUser(otherUserId)}
+                                  disabled={
+                                    item.blocked_by_me ||
+                                    busyMessageKey === `block-${otherUserId}`
+                                  }
+                                  className="rounded-lg bg-rose-200 px-3 py-1 text-xs font-semibold text-slate-950 hover:bg-rose-100 disabled:opacity-50"
+                                >
+                                  {item.blocked_by_me ? "Blocked" : "Block"}
+                                </button>
+                              </div>
+                            </div>
+                            <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-100">
+                              {item.body}
+                            </p>
+
+                            {!item.blocked_by_me && (
+                              <div className="mt-4 rounded-xl bg-white/5 p-3">
+                                <label className="block">
+                                  <span className="text-sm font-semibold text-slate-100">
+                                    Reply to {otherName}
+                                  </span>
+                                  <textarea
+                                    value={replyBody}
+                                    onChange={(inputEvent) =>
+                                      setReplyBodies((current) => ({
+                                        ...current,
+                                        [otherUserId]: inputEvent.target.value,
+                                      }))
+                                    }
+                                    rows={2}
+                                    maxLength={1000}
+                                    className="mt-2 w-full rounded-xl bg-slate-950 px-4 py-3 text-white outline-none ring-cyan-300 focus:ring-2"
+                                  />
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => sendReply(otherUserId)}
+                                  disabled={busyMessageKey === `reply-${otherUserId}`}
+                                  className="mt-2 rounded-xl bg-cyan-300 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-200 disabled:opacity-50"
+                                >
+                                  {busyMessageKey === `reply-${otherUserId}`
+                                    ? "Sending..."
+                                    : "Reply"}
+                                </button>
+                              </div>
+                            )}
+                          </article>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   <div className="mt-6 rounded-xl border border-cyan-300/30 bg-cyan-300/10 p-4">

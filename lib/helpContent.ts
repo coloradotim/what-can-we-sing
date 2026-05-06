@@ -57,6 +57,13 @@ export const helpGuideSections: HelpGuideSection[] = [
           "Start with songs you are likely to sing soon. You can add more later, copy songs from another singer, or add Harmony Brigade songs if that helps you get started faster. If you are already in a quartet, edits to My Songs refresh your active quartet snapshot so matches can update.",
         ],
       },
+      {
+        title: "Finding singers at an event",
+        body: [
+          "Event Mode lets signed-in singers find an event, mark themselves available there, and send private event-scoped messages to coordinate where and when to sing. Event Mode messages do not show your email address or phone number, do not expose your My Songs repertoire, and are separate from starting a quartet.",
+          "Once singers are physically together, use Start a quartet and have the others join by QR code, code, or link.",
+        ],
+      },
     ],
   },
   {

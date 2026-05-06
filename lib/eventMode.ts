@@ -75,6 +75,28 @@ export type EventModeAvailabilityInput = {
   availableUntil: string;
 };
 
+export type EventModeMessage = {
+  id: string;
+  event_id: string;
+  sender_user_id: string;
+  sender_display_name: string;
+  recipient_user_id: string;
+  recipient_display_name: string;
+  recipient_availability_id: string | null;
+  body: string;
+  created_at: string;
+  read_at: string | null;
+  reported_by_me: boolean;
+  blocked_by_me: boolean;
+};
+
+export type EventModeMessageInput = {
+  eventId: string;
+  recipientUserId: string;
+  body: string;
+  recipientAvailabilityId?: string | null;
+};
+
 export const eventModeVoicePartGroups = [
   {
     voicing: "TTBB",
@@ -389,6 +411,15 @@ function validateEventModeAvailabilityInput(input: EventModeAvailabilityInput) {
   };
 }
 
+export function validateEventModeMessageBody(value: string | null | undefined) {
+  const body = String(value ?? "").replace(/\s+/g, " ").trim();
+  if (!body) throw new Error("Message is required.");
+  if (body.length > 1000) {
+    throw new Error("Message must be 1000 characters or fewer.");
+  }
+  return body;
+}
+
 export async function searchEventModeEvents(query: string, now = new Date()) {
   const { data, error } = await supabase
     .from("event_mode_events")
@@ -549,4 +580,47 @@ export async function turnOffEventModeAvailability(eventId: string) {
 
   if (error) throw error;
   return data as Omit<EventModeAvailability, "display_name"> | null;
+}
+
+export async function getEventModeMessagesByCode(code: string) {
+  const parsedCode = parseEventModeCode(code);
+  if (!parsedCode) return [];
+
+  const { data, error } = await supabase.rpc("get_event_mode_messages_by_code", {
+    p_code: parsedCode,
+  });
+
+  if (error) throw error;
+  return (data ?? []) as EventModeMessage[];
+}
+
+export async function sendEventModeMessage(input: EventModeMessageInput) {
+  const body = validateEventModeMessageBody(input.body);
+  const { data, error } = await supabase.rpc("send_event_mode_message", {
+    p_event_id: input.eventId,
+    p_recipient_user_id: input.recipientUserId,
+    p_recipient_availability_id: input.recipientAvailabilityId ?? null,
+    p_body: body,
+  });
+
+  if (error) throw error;
+  return ((data ?? []) as EventModeMessage[])[0] ?? null;
+}
+
+export async function reportEventModeMessage(messageId: string, reason?: string) {
+  const { error } = await supabase.rpc("report_event_mode_message", {
+    p_message_id: messageId,
+    p_reason: cleanText(reason),
+  });
+
+  if (error) throw error;
+}
+
+export async function blockEventModeUser(eventId: string, blockedUserId: string) {
+  const { error } = await supabase.rpc("block_event_mode_user", {
+    p_event_id: eventId,
+    p_blocked_user_id: blockedUserId,
+  });
+
+  if (error) throw error;
 }
