@@ -107,7 +107,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-slate-950 px-5 py-8 text-white">
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-md flex-col justify-center">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl flex-col justify-center">
         <AppNav />
 
         <p className="mt-8 text-sm font-semibold uppercase text-cyan-300">
@@ -194,6 +194,34 @@ export default function Home() {
                 </a>
               ))}
             </div>
+
+            <section className="mt-4 rounded-xl border border-cyan-300/25 bg-cyan-300/10 px-5 py-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">
+                    Event Mode
+                  </h2>
+                  <p className="mt-1 text-sm leading-6 text-cyan-50/80">
+                    At a convention, afterglow, or singing event? Find other
+                    singers who want to sing.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 sm:min-w-40">
+                  <a
+                    href="/event-mode"
+                    className="rounded-xl bg-cyan-300 px-4 py-2 text-center text-sm font-semibold text-slate-950 hover:bg-cyan-200"
+                  >
+                    Find my event
+                  </a>
+                  <a
+                    href="/event-mode?create=1"
+                    className="rounded-xl bg-slate-800 px-4 py-2 text-center text-sm font-semibold text-slate-100 hover:bg-slate-700"
+                  >
+                    Create an event
+                  </a>
+                </div>
+              </div>
+            </section>
 
           </>
         )}

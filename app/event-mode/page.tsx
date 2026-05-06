@@ -76,8 +76,12 @@ export default function EventModePage() {
       try {
         const user = await getCurrentUser();
         setSignedIn(Boolean(user));
+        if (user) {
+          const searchParams = new URLSearchParams(window.location.search);
+          setShowCreateForm(searchParams.get("create") === "1");
+          await loadEvents("");
+        }
         setAuthChecked(true);
-        if (user) await loadEvents("");
       } catch (err) {
         console.error("Could not check Event Mode access", err);
         setAuthChecked(true);
@@ -144,8 +148,11 @@ export default function EventModePage() {
     return (
       <main className="min-h-screen bg-slate-950 px-5 py-8 text-white">
         <div className="mx-auto max-w-4xl">
-          <AppNav />
-          <p className="mt-8 text-slate-300">Loading Event Mode...</p>
+          <AppNav variant="public" />
+          <p className="mt-8 text-sm font-semibold uppercase text-cyan-300">
+            Event Mode
+          </p>
+          <p className="mt-3 text-slate-300">Loading Event Mode...</p>
         </div>
       </main>
     );
